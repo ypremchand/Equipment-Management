@@ -1,0 +1,59 @@
+# =========================
+# React / Node frontend
+# =========================
+
+# Node dependencies
+frontend-app/node_modules/
+
+# Build output
+frontend-app/build/
+frontend-app/dist/
+
+# Logs
+frontend-app/npm-debug.log*
+frontend-app/yarn-debug.log*
+frontend-app/yarn-error.log*
+
+# Local env files
+frontend-app/.env
+frontend-app/.env.local
+frontend-app/.env.development.local
+frontend-app/.env.test.local
+frontend-app/.env.production.local
+
+# Editor directories
+frontend-app/.vscode/
+frontend-app/.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Optional: coverage/test results
+frontend-app/coverage/
+
+# =========================
+# ASP.NET Core backend
+# =========================
+
+# Build output
+backend-app/bin/
+backend-app/obj/
+
+# User-specific files
+backend-app/*.user
+backend-app/*.suo
+backend-app/*.vs
+backend-app/*.vscode/
+
+# Database files (if local)
+*.db
+*.mdf
+*.ldf
+
+# ASP.NET publish folder
+backend-app/publish/
+
+# Logs
+backend-app/logs/
