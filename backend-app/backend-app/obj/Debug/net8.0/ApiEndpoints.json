@@ -9,7 +9,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.IEnumerable\u00601[[backend_app.Models.Asset, backend-app, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[System.Object, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -21,7 +21,7 @@
   },
   {
     "ContainingType": "backend_app.Controllers.AssetsController",
-    "Method": "AddAsset",
+    "Method": "CreateAsset",
     "RelativePath": "api/Assets",
     "HttpMethod": "POST",
     "IsController": true,
@@ -47,6 +47,22 @@
   },
   {
     "ContainingType": "backend_app.Controllers.AssetsController",
+    "Method": "GetAsset",
+    "RelativePath": "api/Assets/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_app.Controllers.AssetsController",
     "Method": "UpdateAsset",
     "RelativePath": "api/Assets/{id}",
     "HttpMethod": "PUT",
@@ -59,7 +75,7 @@
         "IsRequired": true
       },
       {
-        "Name": "updatedAsset",
+        "Name": "asset",
         "Type": "backend_app.Models.Asset",
         "IsRequired": true
       }
@@ -104,7 +120,7 @@
   },
   {
     "ContainingType": "backend_app.Controllers.LaptopsController",
-    "Method": "AddLaptop",
+    "Method": "PostLaptop",
     "RelativePath": "api/Laptops",
     "HttpMethod": "POST",
     "IsController": true,
@@ -130,7 +146,33 @@
   },
   {
     "ContainingType": "backend_app.Controllers.LaptopsController",
-    "Method": "UpdateLaptop",
+    "Method": "GetLaptop",
+    "RelativePath": "api/Laptops/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "backend_app.Models.Laptop",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "backend_app.Controllers.LaptopsController",
+    "Method": "PutLaptop",
     "RelativePath": "api/Laptops/{id}",
     "HttpMethod": "PUT",
     "IsController": true,
@@ -142,7 +184,7 @@
         "IsRequired": true
       },
       {
-        "Name": "updatedLaptop",
+        "Name": "laptop",
         "Type": "backend_app.Models.Laptop",
         "IsRequired": true
       }
@@ -153,6 +195,224 @@
     "ContainingType": "backend_app.Controllers.LaptopsController",
     "Method": "DeleteLaptop",
     "RelativePath": "api/Laptops/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_app.Controllers.MobilesController",
+    "Method": "GetMobiles",
+    "RelativePath": "api/Mobiles",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[backend_app.Models.Mobile, backend-app, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "backend_app.Controllers.MobilesController",
+    "Method": "PostMobile",
+    "RelativePath": "api/Mobiles",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "mobile",
+        "Type": "backend_app.Models.Mobile",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "backend_app.Models.Mobile",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "backend_app.Controllers.MobilesController",
+    "Method": "GetMobile",
+    "RelativePath": "api/Mobiles/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "backend_app.Models.Mobile",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "backend_app.Controllers.MobilesController",
+    "Method": "PutMobile",
+    "RelativePath": "api/Mobiles/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "mobile",
+        "Type": "backend_app.Models.Mobile",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_app.Controllers.MobilesController",
+    "Method": "DeleteMobile",
+    "RelativePath": "api/Mobiles/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_app.Controllers.TabletsController",
+    "Method": "GetTablets",
+    "RelativePath": "api/Tablets",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[backend_app.Models.Tablet, backend-app, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "backend_app.Controllers.TabletsController",
+    "Method": "PostTablet",
+    "RelativePath": "api/Tablets",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "tablet",
+        "Type": "backend_app.Models.Tablet",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "backend_app.Models.Tablet",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "backend_app.Controllers.TabletsController",
+    "Method": "GetTablet",
+    "RelativePath": "api/Tablets/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "backend_app.Models.Tablet",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "backend_app.Controllers.TabletsController",
+    "Method": "PutTablet",
+    "RelativePath": "api/Tablets/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "tablet",
+        "Type": "backend_app.Models.Tablet",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_app.Controllers.TabletsController",
+    "Method": "DeleteTablet",
+    "RelativePath": "api/Tablets/{id}",
     "HttpMethod": "DELETE",
     "IsController": true,
     "Order": 0,

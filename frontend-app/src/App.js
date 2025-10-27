@@ -64,18 +64,20 @@ function App() {
               path="/contactedus"
               element={user?.email?.includes("@admin") ? <ContactedUs /> : <Navigate to="/" />}
             />
+           
             <Route
-              path="/Laptops"
+              path="/laptops"
               element={user?.email?.includes("@admin") ? <Laptops /> : <Navigate to="/" />}
             />
-             <Route
-              path="/Mobiles"
+            <Route
+              path="/mobiles"
               element={user?.email?.includes("@admin") ? <Mobiles /> : <Navigate to="/" />}
             />
-             <Route
-              path="/Tablets"
+            <Route
+              path="/tablets"
               element={user?.email?.includes("@admin") ? <Tablets /> : <Navigate to="/" />}
             />
+
 
             <Route path="*" element={<Navigate to="/" />} />
           </>

@@ -47,7 +47,7 @@ function AdminPanel() {
     try {
       if (editingId) {
         // Update existing asset
-        await axios.put(`${API_URL}/${editingId}`, { name: asset, quantity: qty });
+        await axios.put(`${API_URL}/${editingId}`, { id: editingId, name: asset, quantity: qty });
         alert("Asset updated successfully!");
       } else {
         // Add new asset
@@ -161,7 +161,7 @@ function AdminPanel() {
                 <td>
                   <Link
                     to={
-                      item.name.toLowerCase() === "laptops" ? "/laptops" :
+                      item.name.toLowerCase() === "laptop" ? "/laptops" :
                       item.name.toLowerCase() === "mobiles" ? "/mobiles" :
                       item.name.toLowerCase() === "tablets" ? "/tablets" :
                       "/" // fallback route

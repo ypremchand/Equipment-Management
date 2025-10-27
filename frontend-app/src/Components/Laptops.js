@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { Modal, Button } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-function Laptop() {
+function Laptops() {
     const [laptops, setLaptops] = useState([]);
     const [loading, setLoading] = useState(true);
     const [editingId, setEditingId] = useState(null);
@@ -352,4 +352,4 @@ function Laptop() {
     );
 }
 
-export default Laptop;
+export default Laptops;
