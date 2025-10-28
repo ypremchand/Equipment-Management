@@ -194,7 +194,7 @@ function Tablets() {
                                             setShowModal(true);
                                         }}
                                     >
-                                        View
+                                        View Details
                                     </button>
                                     <button
                                         className="btn btn-warning btn-sm me-2"

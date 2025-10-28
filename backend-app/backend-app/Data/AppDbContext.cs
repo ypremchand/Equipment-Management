@@ -13,6 +13,7 @@ namespace backend_app.Data
         public DbSet<Laptop> Laptops { get; set; }
         public DbSet<Mobile> Mobiles { get; set; }
         public DbSet<Tablet> Tablets { get; set; }
+        public DbSet<Location> Locations { get; set; }
 
     }
 }

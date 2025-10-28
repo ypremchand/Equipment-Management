@@ -2,7 +2,6 @@
 using backend_app.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
 namespace backend_app.Controllers
 {
     [ApiController]

@@ -1,38 +1,30 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import Login from "./Components/Login";
-import Register from "./Components/Register";
-import Navbar from "./Components/Navbar";
-import Home from "./Components/Home";
-import About from "./Components/About";
-import Contact from "./Components/Contact";
-import AdminPanel from "./Components/AdminPanel";
-import Laptops from "./Components/Laptops";
-import Mobiles from "./Components/Mobiles";
-import Tablets from "./Components/Tablets";
-import ContactedUs from "./Components/ContactedUs";
+import Login from "./Components/Login/Login";
+import Register from "./Components/Register/Register";
+import Navbar from "./Components/Navbar/Navbar";
+import Home from "./Components/Home/Home";
+import About from "./Components/About/About";
+import Contact from "./Components/ContactUs/Contact";
+import AdminPanel from "./Components/AdminPanel/AdminPanel";
+import Laptops from "./Components/Laptops/Laptops";
+import Mobiles from "./Components/Mobiles/Mobiles";
+import Tablets from "./Components/Tablets/Tablets";
+import ContactedUs from "./Components/ContactedUs/ContactedUs";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
 function App() {
   const [user, setUser] = useState(null);
 
-  // Load user data from localStorage when the app starts
-  useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-  }, []);
-
   const handleLoginSuccess = (userData) => {
     setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData)); // ✅ Save to localStorage
+    localStorage.setItem("user", JSON.stringify(userData)); // still save user info
   };
 
   const handleLogout = () => {
     setUser(null);
-    localStorage.removeItem("user"); // ✅ Remove on logout
+    localStorage.removeItem("user");
   };
 
   return (
@@ -64,7 +56,6 @@ function App() {
               path="/contactedus"
               element={user?.email?.includes("@admin") ? <ContactedUs /> : <Navigate to="/" />}
             />
-           
             <Route
               path="/laptops"
               element={user?.email?.includes("@admin") ? <Laptops /> : <Navigate to="/" />}
@@ -77,8 +68,6 @@ function App() {
               path="/tablets"
               element={user?.email?.includes("@admin") ? <Tablets /> : <Navigate to="/" />}
             />
-
-
             <Route path="*" element={<Navigate to="/" />} />
           </>
         )}

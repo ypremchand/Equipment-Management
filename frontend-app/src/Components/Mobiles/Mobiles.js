@@ -298,7 +298,7 @@ function Mobiles() {
                   <td>{mobile.status}</td>
                   <td>
                     <button className="btn btn-info btn-sm me-2" onClick={() => handleShowModal(mobile)}>
-                      View
+                      View Details
                     </button>
                     <button className="btn btn-warning btn-sm me-2" onClick={() => handleEdit(mobile)}>
                       Edit

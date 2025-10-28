@@ -1,0 +1,52 @@
+/* Navbar Styling */
+
+.hover-dropdown {
+  position: relative;
+}
+
+.hover-dropdown .dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #212529;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  min-width: 160px;
+  z-index: 1000;
+}
+
+.hover-dropdown:hover .dropdown-menu {
+  display: block;
+}
+
+.dropdown-item {
+  color: white;
+  padding: 10px 15px;
+  text-decoration: none;
+  display: block;
+  background-color: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  background-color: #343a40;
+  color:white;
+}
+
+.dropdown-toggle-link {
+  color: white;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.dropdown-toggle-link:hover {
+  color: #adb5bd;
+}
+
+.no-caret::after {
+  display: none !important;
+}
