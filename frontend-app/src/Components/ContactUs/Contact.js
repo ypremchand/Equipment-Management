@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useLocation } from "react-router-dom"; // ✅ Added this
+import { useLocation, useNavigate } from "react-router-dom"; // ✅ Added useNavigate
 import "bootstrap/dist/css/bootstrap.min.css";
 
 function Contact() {
@@ -13,7 +13,8 @@ function Contact() {
   ]);
   const [message, setMessage] = useState("");
 
-  const location = useLocation(); // ✅ Added this
+  const location = useLocation();
+  const navigate = useNavigate(); // ✅ Hook for redirection
 
   const CONTACT_API = "http://localhost:5083/api/contact";
   const ASSETS_API = "http://localhost:5083/api/assets";
@@ -57,7 +58,7 @@ function Contact() {
     fetchLocations();
   }, []);
 
-  // ✅ Preselect the asset passed from Home page with correct quantity
+  // ✅ Preselect the asset passed from Home page
   useEffect(() => {
     const selectedAsset = location.state?.selectedAsset;
     if (selectedAsset && assets.length > 0) {
@@ -103,12 +104,17 @@ function Contact() {
     setAssetRequests(updatedRequests);
   };
 
-  // Submit form
+  // ✅ Submit form
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!selectedLocation) {
       alert("Please select a location");
+      return;
+    }
+
+    if (!user.phone || !/^\d{10}$/.test(user.phone)) {
+      alert("Please enter a valid 10-digit phone number");
       return;
     }
 
@@ -134,10 +140,12 @@ function Contact() {
       await axios.post(CONTACT_API, {
         username: user.name,
         email: user.email,
+        phoneNumber: user.phone,
         location: selectedLocation,
         assetRequests: assetRequests.map((r) => ({
           asset: r.assetName,
           requestedQuantity: Number(r.requestedQuantity),
+          availableQuantity: Number(r.availableQuantity),
         })),
         message:
           message ||
@@ -149,6 +157,11 @@ function Contact() {
       });
 
       alert("Request sent successfully!");
+
+      // ✅ Navigate to home page after success
+      navigate("/requests");
+
+      // Optionally clear the form
       setAssetRequests([{ assetName: "", availableQuantity: 0, requestedQuantity: "" }]);
       setSelectedLocation("");
       setMessage("");
@@ -192,22 +205,32 @@ function Contact() {
             />
           </div>
 
-          {/* Phone Number (editable if not available) */}
+          {/* Phone Number with validation */}
           <div className="mb-3">
             <label htmlFor="phoneNumber" className="form-label">
               Phone Number
             </label>
             <input
               type="tel"
-              className="form-control"
+              className={`form-control ${
+                user.phone && user.phone.length < 10 ? "is-invalid" : ""
+              }`}
               id="phoneNumber"
-              value={user.phone || ""}
-              onChange={(e) => setUser({ ...user, phone: e.target.value })}
-              placeholder="Enter your phone number"
-              readOnly={!!user.phone} // ✅ makes it editable only if missing
+              value={user.phone}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, "");
+                if (value.length <= 10) {
+                  setUser({ ...user, phone: value });
+                }
+              }}
+              placeholder="Enter 10-digit phone number"
             />
+            {user.phone && user.phone.length < 10 && (
+              <div className="invalid-feedback">
+                Phone number must be 10 digits long.
+              </div>
+            )}
           </div>
-
 
           {/* Location Dropdown */}
           <div className="mb-3">
@@ -255,7 +278,7 @@ function Contact() {
                   <label className="form-label">Available</label>
                   <input
                     type="text"
-                    className="form-control"  
+                    className="form-control"
                     value={req.availableQuantity}
                     readOnly
                   />

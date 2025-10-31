@@ -54,7 +54,7 @@ function Navbar({ user, onLogout }) {
                   <span className="nav-link dropdown-toggle-link no-caret">
                     Inventory
                   </span>
-                  <div className="dropdown-menu">
+                  <div className="dropdown-menu bg-black">
                     <button
                       className="dropdown-item"
                       onClick={() => {
@@ -112,6 +112,15 @@ function Navbar({ user, onLogout }) {
                     onClick={() => setIsOpen(false)}
                   >
                     ContactUs
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link
+                    className="nav-link"
+                    to="/requests"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Requests
                   </Link>
                 </li>
               </>

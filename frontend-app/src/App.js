@@ -6,6 +6,7 @@ import Navbar from "./Components/Navbar/Navbar";
 import Home from "./Components/Home/Home";
 import About from "./Components/About/About";
 import Contact from "./Components/ContactUs/Contact";
+import Requests from "./Components/Requests/Requests";
 import AdminPanel from "./Components/AdminPanel/AdminPanel";
 import Laptops from "./Components/Laptops/Laptops";
 import Mobiles from "./Components/Mobiles/Mobiles";
@@ -46,6 +47,7 @@ function App() {
             />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/requests" element={<Requests />} />
 
             {/* Admin-only routes */}
             <Route

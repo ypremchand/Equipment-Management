@@ -109,6 +109,75 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "EquipmentDispatchManagement.Controllers.ContactController",
+    "Method": "PostRequest",
+    "RelativePath": "api/Contact",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDto",
+        "Type": "EquipmentDispatchManagement.Controllers.AssetRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EquipmentDispatchManagement.Controllers.ContactController",
+    "Method": "GetRequests",
+    "RelativePath": "api/Contact",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "email",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EquipmentDispatchManagement.Controllers.ContactController",
+    "Method": "UpdateRequest",
+    "RelativePath": "api/Contact/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "updatedRequest",
+        "Type": "EquipmentDispatchManagement.Models.AssetRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EquipmentDispatchManagement.Controllers.ContactController",
+    "Method": "DeleteRequest",
+    "RelativePath": "api/Contact/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "backend_app.Controllers.LaptopsController",
     "Method": "GetLaptops",
     "RelativePath": "api/Laptops",

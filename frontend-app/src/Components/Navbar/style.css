@@ -1,52 +1,66 @@
-/* Navbar Styling */
+/* ===============================
+   Navbar Dropdown Styling (Black-White Hover Effect)
+===================================*/
 
 .hover-dropdown {
   position: relative;
 }
 
+/* Dropdown menu */
 .hover-dropdown .dropdown-menu {
   display: none;
   position: absolute;
-  top: 100%;
+  top: 98%; /* small overlap to avoid flicker */
   left: 0;
-  background-color: #212529;
-  border: none;
-  border-radius: 0;
+  background-color: #000000; /* black background when dropdown opens */
+  /* border: 1px solid #343a40; */
+  border-radius: 0.25rem;
   padding: 0;
-  min-width: 160px;
+  min-width: 180px;
   z-index: 1000;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
+/* Show menu on hover */
 .hover-dropdown:hover .dropdown-menu {
   display: block;
 }
 
+/* Dropdown item default (inside black dropdown) */
 .dropdown-item {
-  color: white;
+  color: #ffffff !important; /* white text */
   padding: 10px 15px;
-  text-decoration: none;
   display: block;
   background-color: transparent;
   border: none;
   width: 100%;
   text-align: left;
+  transition: all 0.2s ease-in-out;
 }
 
-.dropdown-item:hover {
-  background-color: #343a40;
-  color:white;
+/* On hover/focus — switch to white background & black text */
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background-color: #ffffff; /* white background */
+  color: #000000 !important; /* black text */
 }
 
+/* Inventory link (main nav link) */
 .dropdown-toggle-link {
-  color: white;
+  color: #ffffff;
   text-decoration: none;
   cursor: pointer;
+  font-weight: 500;
+  transition: color 0.2s ease-in-out;
 }
 
-.dropdown-toggle-link:hover {
-  color: #adb5bd;
+/* Inventory text stays white on hover/open */
+.dropdown-toggle-link:hover,
+.hover-dropdown:hover .dropdown-toggle-link {
+  color: #ffffff !important;
 }
 
+/* Remove caret */
 .no-caret::after {
   display: none !important;
 }

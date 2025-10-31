@@ -5,6 +5,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 
 function AdminPanel() {
   const [asset, setAsset] = useState("");
+  // const [assetQuantity, setAssetQuantity] = useState(""); // still exists, used internally
   const [assets, setAssets] = useState([]);
   const [loadingAssets, setLoadingAssets] = useState(true);
   const [editingAssetId, setEditingAssetId] = useState(null);
@@ -69,6 +70,12 @@ function AdminPanel() {
     }
   };
 
+  const handleDeleteAsset = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this asset?")) return;
+    await axios.delete(`${ASSETS_API}/${id}`);
+    fetchAssets();
+  };
+
   const handleLocationSubmit = async (e) => {
     e.preventDefault();
     if (!location.trim()) return alert("Please enter a location name");
@@ -92,12 +99,6 @@ function AdminPanel() {
     }
   };
 
-  const handleDeleteAsset = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this asset?")) return;
-    await axios.delete(`${ASSETS_API}/${id}`);
-    fetchAssets();
-  };
-
   const handleDeleteLocation = async (id) => {
     if (!window.confirm("Are you sure you want to delete this location?")) return;
     await axios.delete(`${LOCATIONS_API}/${id}`);
@@ -108,7 +109,6 @@ function AdminPanel() {
     <div className="container mt-4">
       <h3 className="text-center mb-4">Admin Panel</h3>
 
-      {/* ====== SIDE BY SIDE SECTIONS ====== */}
       <div className="row">
         {/* ====== ASSET SECTION ====== */}
         <div className="col-md-6">
@@ -116,7 +116,9 @@ function AdminPanel() {
             <h4>{editingAssetId ? "Edit Asset" : "Add Asset"}</h4>
             <form onSubmit={handleAssetSubmit}>
               <div className="mb-3">
-                <label htmlFor="asset" className="form-label">Asset Name</label>
+                <label htmlFor="asset" className="form-label">
+                  Asset Name
+                </label>
                 <input
                   type="text"
                   className="form-control"
@@ -126,6 +128,7 @@ function AdminPanel() {
                   onChange={(e) => setAsset(e.target.value)}
                 />
               </div>
+
               <button type="submit" className="btn btn-primary me-2">
                 {editingAssetId ? "Update" : "Add Asset"}
               </button>
@@ -155,7 +158,7 @@ function AdminPanel() {
                 <tr>
                   <th>#</th>
                   <th>Asset Name</th>
-                  <th>Qty</th>
+                  <th>Available Qty</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -177,7 +180,7 @@ function AdminPanel() {
                         {item.name}
                       </Link>
                     </td>
-                    <td>{item.quantity}</td>
+                    <td>{item.availableQuantity}</td>
                     <td>
                       <button
                         className="btn btn-warning btn-sm me-2"
@@ -208,7 +211,9 @@ function AdminPanel() {
             <h4>{editingLocationId ? "Edit Location" : "Add Location"}</h4>
             <form onSubmit={handleLocationSubmit}>
               <div className="mb-3">
-                <label htmlFor="location" className="form-label">Location Name</label>
+                <label htmlFor="location" className="form-label">
+                  Location Name
+                </label>
                 <input
                   type="text"
                   className="form-control"

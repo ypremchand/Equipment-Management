@@ -1,5 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
-using backend_app.Models;
+﻿using backend_app.Models;
+using EquipmentDispatchManagement.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace backend_app.Data
 {
@@ -14,6 +15,9 @@ namespace backend_app.Data
         public DbSet<Mobile> Mobiles { get; set; }
         public DbSet<Tablet> Tablets { get; set; }
         public DbSet<Location> Locations { get; set; }
+        public DbSet<AssetRequest> AssetRequests { get; set; }
+        public DbSet<AssetRequestItem> AssetRequestItems { get; set; }
+
 
     }
 }
