@@ -13,5 +13,7 @@ namespace backend_app.Models
 
         [Range(0, int.MaxValue)]
         public int Quantity { get; set; }
+
+        public ICollection<Laptop>? Laptops { get; set; }
     }
 }

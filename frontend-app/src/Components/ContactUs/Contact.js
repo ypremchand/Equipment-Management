@@ -159,7 +159,7 @@ function Contact() {
       alert("Request sent successfully!");
 
       // ✅ Navigate to home page after success
-      navigate("/requests");
+      navigate("/");
 
       // Optionally clear the form
       setAssetRequests([{ assetName: "", availableQuantity: 0, requestedQuantity: "" }]);

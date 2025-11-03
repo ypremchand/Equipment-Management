@@ -1,27 +1,35 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace EquipmentDispatchManagement.Models
+namespace backend_app.Models
 {
     public class AssetRequest
     {
         [Key]
         public int Id { get; set; }
 
+        // ✅ User who made the request
+        [ForeignKey("User")]
+        public int UserId { get; set; }
+        public User User { get; set; }
+
+        // ✅ Location to which assets are to be delivered
+        [ForeignKey("Location")]
+        public int LocationId { get; set; }
+        public Location Location { get; set; }
+
         [Required]
-        public string Username { get; set; }
-
-        [Required, EmailAddress]
-        public string Email { get; set; }
-        [Phone]
-        public string? PhoneNumber { get; set; }
+        public DateTime RequestDate { get; set; } = DateTime.Now;
 
         [Required]
-        public string Location { get; set; }
-
+        public string Status { get; set; } = "Pending"; // Pending, Approved, Rejected
+                                                        // ✅ Optional message from the user
+        [StringLength(500)]
         public string? Message { get; set; }
 
-        // Navigation property (one-to-many)
+        // ✅ One request can include multiple asset types
         public ICollection<AssetRequestItem> AssetRequestItems { get; set; }
     }
 }

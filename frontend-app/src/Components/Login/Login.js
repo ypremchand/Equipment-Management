@@ -10,28 +10,33 @@ function Login({ onLoginSuccess }) {
 
   const handleSubmit = async (e) => {
   e.preventDefault();
-  try {
-    const res = await fetch("http://localhost:5083/api/user/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
+try {
+  const res = await fetch("http://localhost:5083/api/user/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(form),
+  });
 
-    if (!res.ok) throw new Error("Invalid login credentials");
-    const data = await res.json();
+  const text = await res.text(); // get raw response text
+  console.log("Response status:", res.status);
+  console.log("Response body:", text);
 
-    onLoginSuccess(data.user); // store user object
-
-    // Redirect based on email
-    if (data.user.email.includes("@admin")) {
-      navigate("/adminpanel"); // send admin to admin panel
-    } else {
-      navigate("/"); // normal user goes to home
-    }
-  } catch (err) {
-    console.error(err);
-    setMessage("Login failed. Please check your credentials.");
+  if (!res.ok) {
+    throw new Error(text || "Invalid login credentials");
   }
+
+  const data = JSON.parse(text);
+  onLoginSuccess(data.user);
+
+  if (data.user.email.includes("@admin")) {
+    navigate("/adminpanel");
+  } else {
+    navigate("/");
+  }
+} catch (err) {
+  console.error("Login error:", err);
+  setMessage(err.message);
+}
 };
 
 

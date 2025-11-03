@@ -5,6 +5,114 @@
     "version": "1.0"
   },
   "paths": {
+    "/api/AssetRequests": {
+      "post": {
+        "tags": [
+          "AssetRequests"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssetRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssetRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssetRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "AssetRequests"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/AssetRequests/by-email": {
+      "get": {
+        "tags": [
+          "AssetRequests"
+        ],
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/AssetRequests/approve/{id}": {
+      "post": {
+        "tags": [
+          "AssetRequests"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/AssetRequests/reject/{id}": {
+      "post": {
+        "tags": [
+          "AssetRequests"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Assets": {
       "get": {
         "tags": [
@@ -214,88 +322,6 @@
             }
           }
         },
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "Contact"
-        ],
-        "parameters": [
-          {
-            "name": "email",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/api/Contact/{id}": {
-      "put": {
-        "tags": [
-          "Contact"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AssetRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AssetRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/AssetRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Contact"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -522,153 +548,6 @@
                 }
               }
             }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Locations"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Location"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Location"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/Location"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/Location"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Location"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Location"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/Locations/{id}": {
-      "get": {
-        "tags": [
-          "Locations"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/Location"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Location"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Location"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "Locations"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Location"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Location"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/Location"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Locations"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
           }
         }
       }
@@ -1083,17 +962,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/User"
+                "$ref": "#/components/schemas/LoginModel"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/User"
+                "$ref": "#/components/schemas/LoginModel"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/User"
+                "$ref": "#/components/schemas/LoginModel"
               }
             }
           }
@@ -1167,15 +1046,21 @@
             "minimum": 0,
             "type": "integer",
             "format": "int32"
+          },
+          "laptops": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Laptop"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
       },
       "AssetRequest": {
         "required": [
-          "email",
-          "location",
-          "username"
+          "requestDate",
+          "status"
         ],
         "type": "object",
         "properties": {
@@ -1183,25 +1068,31 @@
             "type": "integer",
             "format": "int32"
           },
-          "username": {
-            "minLength": 1,
-            "type": "string"
+          "userId": {
+            "type": "integer",
+            "format": "int32"
           },
-          "email": {
-            "minLength": 1,
-            "type": "string",
-            "format": "email"
+          "user": {
+            "$ref": "#/components/schemas/User"
           },
-          "phoneNumber": {
-            "type": "string",
-            "format": "tel",
-            "nullable": true
+          "locationId": {
+            "type": "integer",
+            "format": "int32"
           },
           "location": {
+            "$ref": "#/components/schemas/Location"
+          },
+          "requestDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
             "minLength": 1,
             "type": "string"
           },
           "message": {
+            "maxLength": 500,
+            "minLength": 0,
             "type": "string",
             "nullable": true
           },
@@ -1250,25 +1141,11 @@
       },
       "AssetRequestItem": {
         "required": [
-          "asset",
-          "availableQuantity",
           "requestedQuantity"
         ],
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "asset": {
-            "minLength": 1,
-            "type": "string"
-          },
-          "requestedQuantity": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "availableQuantity": {
             "type": "integer",
             "format": "int32"
           },
@@ -1278,6 +1155,22 @@
           },
           "assetRequest": {
             "$ref": "#/components/schemas/AssetRequest"
+          },
+          "assetId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "asset": {
+            "$ref": "#/components/schemas/Asset"
+          },
+          "requestedQuantity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "approvedQuantity": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -1303,20 +1196,15 @@
       "Laptop": {
         "required": [
           "assetTag",
-          "assignedTo",
           "batteryCapacity",
           "brand",
           "displaySize",
           "graphicsCard",
-          "lastServicedDate",
-          "location",
           "operatingSystem",
           "processor",
           "purchaseDate",
           "ram",
-          "remarks",
           "serialNumber",
-          "status",
           "storage",
           "warrantyExpiry"
         ],
@@ -1374,25 +1262,30 @@
             "minLength": 1,
             "type": "string"
           },
-          "location": {
-            "minLength": 1,
-            "type": "string"
-          },
           "status": {
-            "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "assignedTo": {
-            "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "remarks": {
-            "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "lastServicedDate": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "nullable": true
+          },
+          "assetId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "asset": {
+            "$ref": "#/components/schemas/Asset"
           }
         },
         "additionalProperties": false
@@ -1410,6 +1303,25 @@
           "name": {
             "maxLength": 100,
             "minLength": 0,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "LoginModel": {
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "minLength": 1,
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "minLength": 1,
             "type": "string"
           }
         },
@@ -1507,6 +1419,14 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "assetId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "asset": {
+            "$ref": "#/components/schemas/Asset"
           }
         },
         "additionalProperties": false
@@ -1608,11 +1528,24 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "assetId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "asset": {
+            "$ref": "#/components/schemas/Asset"
           }
         },
         "additionalProperties": false
       },
       "User": {
+        "required": [
+          "email",
+          "name",
+          "password"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -1620,16 +1553,18 @@
             "format": "int32"
           },
           "name": {
-            "type": "string",
-            "nullable": true
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string"
           },
           "email": {
+            "minLength": 1,
             "type": "string",
-            "nullable": true
+            "format": "email"
           },
           "password": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "type": "string"
           }
         },
         "additionalProperties": false

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using backend_app.Data;
 
@@ -11,9 +12,11 @@ using backend_app.Data;
 namespace backend_app.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251103092803_UpdatedAssetsTableAgain")]
+    partial class UpdatedAssetsTableAgain
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -41,69 +44,6 @@ namespace backend_app.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Assets");
-                });
-
-            modelBuilder.Entity("backend_app.Models.AssetRequest", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("LocationId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Message")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime>("RequestDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("LocationId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("AssetRequests");
-                });
-
-            modelBuilder.Entity("backend_app.Models.AssetRequestItem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("ApprovedQuantity")
-                        .HasColumnType("int");
-
-                    b.Property<int>("AssetId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("AssetRequestId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("RequestedQuantity")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AssetId");
-
-                    b.HasIndex("AssetRequestId");
-
-                    b.ToTable("AssetRequestItems");
                 });
 
             modelBuilder.Entity("backend_app.Models.Laptop", b =>
@@ -209,9 +149,6 @@ namespace backend_app.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("AssetId")
-                        .HasColumnType("int");
-
                     b.Property<string>("AssetTag")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -280,8 +217,6 @@ namespace backend_app.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AssetId");
-
                     b.ToTable("Mobiles");
                 });
 
@@ -292,9 +227,6 @@ namespace backend_app.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("AssetId")
-                        .HasColumnType("int");
 
                     b.Property<string>("AssetTag")
                         .IsRequired()
@@ -368,8 +300,6 @@ namespace backend_app.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AssetId");
-
                     b.ToTable("Tablets");
                 });
 
@@ -399,44 +329,6 @@ namespace backend_app.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("backend_app.Models.AssetRequest", b =>
-                {
-                    b.HasOne("backend_app.Models.Location", "Location")
-                        .WithMany()
-                        .HasForeignKey("LocationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("backend_app.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Location");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("backend_app.Models.AssetRequestItem", b =>
-                {
-                    b.HasOne("backend_app.Models.Asset", "Asset")
-                        .WithMany()
-                        .HasForeignKey("AssetId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("backend_app.Models.AssetRequest", "AssetRequest")
-                        .WithMany("AssetRequestItems")
-                        .HasForeignKey("AssetRequestId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Asset");
-
-                    b.Navigation("AssetRequest");
-                });
-
             modelBuilder.Entity("backend_app.Models.Laptop", b =>
                 {
                     b.HasOne("backend_app.Models.Asset", "Asset")
@@ -446,32 +338,9 @@ namespace backend_app.Migrations
                     b.Navigation("Asset");
                 });
 
-            modelBuilder.Entity("backend_app.Models.Mobile", b =>
-                {
-                    b.HasOne("backend_app.Models.Asset", "Asset")
-                        .WithMany()
-                        .HasForeignKey("AssetId");
-
-                    b.Navigation("Asset");
-                });
-
-            modelBuilder.Entity("backend_app.Models.Tablet", b =>
-                {
-                    b.HasOne("backend_app.Models.Asset", "Asset")
-                        .WithMany()
-                        .HasForeignKey("AssetId");
-
-                    b.Navigation("Asset");
-                });
-
             modelBuilder.Entity("backend_app.Models.Asset", b =>
                 {
                     b.Navigation("Laptops");
-                });
-
-            modelBuilder.Entity("backend_app.Models.AssetRequest", b =>
-                {
-                    b.Navigation("AssetRequestItems");
                 });
 #pragma warning restore 612, 618
         }

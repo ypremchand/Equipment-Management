@@ -1,12 +1,12 @@
 ﻿using backend_app.Data;
-using EquipmentDispatchManagement.Models;
+using backend_app.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace EquipmentDispatchManagement.Controllers
+namespace backend_app.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class ContactController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -16,100 +16,63 @@ namespace EquipmentDispatchManagement.Controllers
             _context = context;
         }
 
-        // ✅ POST: api/contact
         [HttpPost]
-        public async Task<IActionResult> PostRequest([FromBody] AssetRequestDto requestDto)
+        public async Task<IActionResult> CreateContact([FromBody] AssetRequestDto request)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            if (request == null)
+                return BadRequest("Invalid request data.");
 
-            var newRequest = new AssetRequest
+            // Find the user by email
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+            if (user == null)
+                return NotFound("User not found.");
+
+            // Find location by name
+            var location = await _context.Locations.FirstOrDefaultAsync(l => l.Name == request.Location);
+            if (location == null)
+                return NotFound("Location not found.");
+
+            var assetRequest = new AssetRequest
             {
-                Username = requestDto.Username,
-                Email = requestDto.Email,
-                PhoneNumber = requestDto.PhoneNumber,
-                Location = requestDto.Location,
-                Message = requestDto.Message,
-                AssetRequestItems = requestDto.AssetRequests.Select(a => new AssetRequestItem
-                {
-                    Asset = a.Asset,
-                    RequestedQuantity = a.RequestedQuantity,
-                    AvailableQuantity = a.AvailableQuantity
-                }).ToList()
+                UserId = user.Id,
+                LocationId = location.Id,
+                RequestDate = DateTime.Now,
+                Status = "Pending",
+                Message = request.Message   // ✅ Now this will work
             };
 
-            _context.AssetRequests.Add(newRequest);
+            _context.AssetRequests.Add(assetRequest);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Request submitted successfully" });
-        }
-
-        // ✅ GET: api/contact?email=user@example.com
-        [HttpGet]
-        public async Task<IActionResult> GetRequests([FromQuery] string? email)
-        {
-            var query = _context.AssetRequests.AsQueryable();
-
-            if (!string.IsNullOrEmpty(email))
-                query = query.Where(r => r.Email.ToLower() == email.ToLower());
-
-            var requests = await query
-                .Select(r => new
+            // Save the individual items
+            foreach (var item in request.AssetRequests)
+            {
+                var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Name == item.Asset);
+                if (asset != null)
                 {
-                    r.Id,
-                    r.Username,
-                    r.Email,
-                    r.PhoneNumber,
-                    r.Location,
-                    r.Message
-                })
-                .ToListAsync();
-
-            return Ok(requests);
-        }
-
-
-
-        // ✅ PUT: api/contact/{id}
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateRequest(int id, [FromBody] AssetRequest updatedRequest)
-        {
-            var existing = await _context.AssetRequests.FindAsync(id);
-            if (existing == null)
-                return NotFound("Request not found.");
-
-            existing.Username = updatedRequest.Username;
-            existing.Email = updatedRequest.Email;
-            existing.PhoneNumber = updatedRequest.PhoneNumber;
-            existing.Location = updatedRequest.Location;
-            existing.Message = updatedRequest.Message;
+                    _context.AssetRequestItems.Add(new AssetRequestItem
+                    {
+                        AssetRequestId = assetRequest.Id,
+                        AssetId = asset.Id,
+                        RequestedQuantity = item.RequestedQuantity,
+                    });
+                }
+            }
 
             await _context.SaveChangesAsync();
-            return Ok(existing);
-        }
 
-        // ✅ DELETE: api/contact/{id}
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteRequest(int id)
-        {
-            var request = await _context.AssetRequests.FindAsync(id);
-            if (request == null)
-                return NotFound("Request not found.");
-
-            _context.AssetRequests.Remove(request);
-            await _context.SaveChangesAsync();
-            return Ok(new { message = "Deleted successfully" });
+            return Ok(new { message = "Request saved successfully." });
         }
     }
 
-    // ✅ DTOs
+    // ✅ DTOs for request mapping
     public class AssetRequestDto
     {
         public string Username { get; set; }
         public string Email { get; set; }
-        public string? PhoneNumber { get; set; }
+        public string PhoneNumber { get; set; }
         public string Location { get; set; }
-        public string? Message { get; set; }
+        public string Message { get; set; }
         public List<AssetRequestItemDto> AssetRequests { get; set; }
     }
 
@@ -119,4 +82,5 @@ namespace EquipmentDispatchManagement.Controllers
         public int RequestedQuantity { get; set; }
         public int AvailableQuantity { get; set; }
     }
+
 }

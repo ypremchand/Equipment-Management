@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace backend_app.Models
 {
@@ -58,5 +59,11 @@ namespace backend_app.Models
         public string Remarks { get; set; }
 
         public DateTime? LastServicedDate { get; set; }
+        // ✅ Foreign Key (linked to Asset table)
+        [ForeignKey("Asset")]
+        public int? AssetId { get; set; }
+
+        // ✅ Navigation property
+        public Asset? Asset { get; set; }
     }
 }

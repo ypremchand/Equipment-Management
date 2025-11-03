@@ -18,11 +18,11 @@ namespace backend_app.Controllers
             _context = context;
         }
 
+        // ✅ REGISTER: Add new user into Users table
         [HttpPost("register")]
-        public async Task<IActionResult> Register(User user)
+        public async Task<IActionResult> Register([FromBody] User user)
         {
-            var exists = await _context.Users.AnyAsync(u => u.Email == user.Email);
-            if (exists)
+            if (await _context.Users.AnyAsync(u => u.Email == user.Email))
                 return BadRequest(new { message = "Email already registered" });
 
             user.Password = HashPassword(user.Password);
@@ -34,8 +34,11 @@ namespace backend_app.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login(User login)
+        public async Task<IActionResult> Login([FromBody] LoginModel login)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == login.Email);
             if (user == null || user.Password != HashPassword(login.Password))
                 return Unauthorized(new { message = "Invalid email or password" });
@@ -47,11 +50,12 @@ namespace backend_app.Controllers
             });
         }
 
+
+        // ✅ Hash password using SHA256
         private static string HashPassword(string password)
         {
             var bytes = Encoding.UTF8.GetBytes(password);
             return Convert.ToBase64String(SHA256.HashData(bytes));
         }
-
     }
 }
