@@ -168,17 +168,20 @@ function AdminPanel() {
                     <td>{i + 1}</td>
                     <td>
                       <Link
-                        to={
-                          item.name.toLowerCase() === "laptop"
-                            ? "/laptops"
-                            : item.name.toLowerCase() === "mobiles"
-                            ? "/mobiles"
-                            : "/"
-                        }
-                        className="text-decoration-none"
-                      >
-                        {item.name}
-                      </Link>
+  to={
+    item.name.toLowerCase().includes("laptop")
+      ? "/laptops"
+      : item.name.toLowerCase().includes("mobile")
+      ? "/mobiles"
+        : item.name.toLowerCase().includes("tablet")
+      ? "/tablets"
+      : "/"
+  }
+  className="text-decoration-none"
+>
+  {item.name}
+</Link>
+
                     </td>
                     <td>{item.availableQuantity}</td>
                     <td>

@@ -27,9 +27,14 @@ namespace backend_app.Models
         public string? Remarks { get; set; }
         public DateTime? LastServicedDate { get; set; }
 
-        // ✅ Foreign Keys
+        // ✅ Add this missing property
+        [Required]
+        public string Location { get; set; }
+
+        // ✅ Foreign Key to Asset
         [ForeignKey("Asset")]
         public int? AssetId { get; set; }
+
         // ✅ Navigation property
         public Asset? Asset { get; set; }
     }

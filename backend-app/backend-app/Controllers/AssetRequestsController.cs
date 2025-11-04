@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace backend_app.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/AssetRequests")]
     [ApiController]
     public class AssetRequestsController : ControllerBase
     {
@@ -16,59 +16,31 @@ namespace backend_app.Controllers
             _context = context;
         }
 
-        // ✅ POST: api/AssetRequests
+        // ✅ POST: api/AssetRequests (User creates request)
         [HttpPost]
         public async Task<IActionResult> CreateAssetRequest([FromBody] AssetRequest request)
         {
             if (request == null || request.AssetRequestItems == null || !request.AssetRequestItems.Any())
                 return BadRequest("Request must include at least one asset item.");
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // 🧩 Validate stock before deducting
-                foreach (var item in request.AssetRequestItems)
-                {
-                    var asset = await _context.Assets.FindAsync(item.AssetId);
-                    if (asset == null)
-                        return NotFound($"Asset with ID {item.AssetId} not found.");
-
-                    if (asset.Quantity < item.RequestedQuantity)
-                        return BadRequest($"Not enough {asset.Name} available. Only {asset.Quantity} in stock.");
-                }
-
-                // 🧩 Deduct quantities (reserve items)
-                foreach (var item in request.AssetRequestItems)
-                {
-                    var asset = await _context.Assets.FindAsync(item.AssetId);
-                    if (asset != null)
-                    {
-                        asset.Quantity -= item.RequestedQuantity;
-                        _context.Assets.Update(asset);
-                    }
-                }
-
-                // 🧩 Save request
                 request.Status = "Pending";
                 request.RequestDate = DateTime.Now;
+
+                // 🟨 Do NOT modify asset quantity here
                 _context.AssetRequests.Add(request);
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
 
-                return Ok(new
-                {
-                    Message = "Request submitted successfully.",
-                    RequestId = request.Id
-                });
+                return Ok(new { Message = "✅ Request submitted successfully.", RequestId = request.Id });
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
                 return StatusCode(500, $"Error processing request: {ex.Message}");
             }
         }
 
-        // ✅ GET: api/AssetRequests (admin view)
+        // ✅ GET: api/AssetRequests (Admin view)
         [HttpGet]
         public async Task<IActionResult> GetAllRequests()
         {
@@ -83,7 +55,7 @@ namespace backend_app.Controllers
             return Ok(requests);
         }
 
-        // ✅ GET: api/AssetRequests?email=user@example.com (user view)
+        // ✅ GET: api/AssetRequests/by-email?email=user@example.com (User view)
         [HttpGet("by-email")]
         public async Task<IActionResult> GetRequestsByEmail([FromQuery] string email)
         {
@@ -117,20 +89,42 @@ namespace backend_app.Controllers
             if (request.Status == "Approved")
                 return BadRequest("Request already approved.");
 
-            foreach (var item in request.AssetRequestItems)
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
             {
-                if (item.Asset == null)
-                    continue;
+                foreach (var item in request.AssetRequestItems)
+                {
+                    var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Id == item.AssetId);
 
-                // Ensure valid approval
-                item.ApprovedQuantity = item.RequestedQuantity;
+                    if (asset == null)
+                        return NotFound($"Asset with ID {item.AssetId} not found.");
+
+                    if (asset.Quantity < item.RequestedQuantity)
+                        return BadRequest($"Not enough {asset.Name} available. Only {asset.Quantity} left in stock.");
+
+                    // ✅ Decrease the quantity and mark as modified
+                    asset.Quantity -= item.RequestedQuantity;
+                    _context.Entry(asset).State = EntityState.Modified;
+
+                    item.ApprovedQuantity = item.RequestedQuantity;
+                }
+
+                request.Status = "Approved";
+                _context.Entry(request).State = EntityState.Modified;
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Ok(new { Message = "✅ Request approved and stock updated successfully." });
             }
-
-            request.Status = "Approved";
-            await _context.SaveChangesAsync();
-
-            return Ok(new { Message = "Request approved successfully." });
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(500, $"Error approving request: {ex.Message}");
+            }
         }
+
 
         // ✅ POST: api/AssetRequests/reject/{id}
         [HttpPost("reject/{id}")]
@@ -147,21 +141,61 @@ namespace backend_app.Controllers
             if (request.Status == "Rejected")
                 return BadRequest("Request already rejected.");
 
-            // 🧩 Return reserved quantities back to stock
-            foreach (var item in request.AssetRequestItems)
-            {
-                var asset = item.Asset;
-                if (asset != null)
-                {
-                    asset.Quantity += item.RequestedQuantity;
-                    _context.Assets.Update(asset);
-                }
-            }
-
+            // 🟨 No stock changes on rejection
             request.Status = "Rejected";
             await _context.SaveChangesAsync();
 
-            return Ok(new { Message = "Request rejected and stock restored." });
+            return Ok(new { Message = "🚫 Request rejected successfully (no stock change)." });
         }
+        // ✅ POST: api/AssetRequests/cancel/{id}
+        [HttpPost("cancel/{id}")]
+        public async Task<IActionResult> CancelRequest(int id)
+        {
+            var request = await _context.AssetRequests
+                .Include(r => r.AssetRequestItems)
+                    .ThenInclude(i => i.Asset)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (request == null)
+                return NotFound("Request not found.");
+
+            if (request.Status != "Approved")
+                return BadRequest("Only approved requests can be cancelled.");
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                foreach (var item in request.AssetRequestItems)
+                {
+                    var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Id == item.AssetId);
+                    if (asset == null)
+                        return NotFound($"Asset with ID {item.AssetId} not found.");
+
+                    // ✅ Restore quantity to stock
+                    asset.Quantity += (item.ApprovedQuantity ?? 0);
+                    _context.Entry(asset).State = EntityState.Modified;
+
+                    // Reset approved quantity
+                    item.ApprovedQuantity = 0;
+                }
+
+                // ✅ Update request status
+                request.Status = "Cancelled";
+                _context.Entry(request).State = EntityState.Modified;
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Ok(new { Message = "❌ Approved request cancelled and stock restored successfully." });
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(500, $"Error cancelling request: {ex.Message}");
+            }
+        }
+
+
     }
 }

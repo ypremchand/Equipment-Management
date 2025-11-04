@@ -113,6 +113,29 @@
         }
       }
     },
+    "/api/AssetRequests/cancel/{id}": {
+      "post": {
+        "tags": [
+          "AssetRequests"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Assets": {
       "get": {
         "tags": [
@@ -1153,9 +1176,6 @@
             "type": "integer",
             "format": "int32"
           },
-          "assetRequest": {
-            "$ref": "#/components/schemas/AssetRequest"
-          },
           "assetId": {
             "type": "integer",
             "format": "int32"
@@ -1200,6 +1220,7 @@
           "brand",
           "displaySize",
           "graphicsCard",
+          "location",
           "operatingSystem",
           "processor",
           "purchaseDate",
@@ -1278,6 +1299,10 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "location": {
+            "minLength": 1,
+            "type": "string"
           },
           "assetId": {
             "type": "integer",

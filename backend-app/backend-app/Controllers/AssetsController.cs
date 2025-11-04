@@ -19,30 +19,17 @@ namespace backend_app.Controllers
             _context = context;
         }
 
-        // ✅ GET: api/assets - dynamically calculate and update quantity in DB
+        // ✅ GET: api/assets
+        // Returns all assets as they exist in the database
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Asset>>> GetAssets()
         {
             var assets = await _context.Assets.ToListAsync();
-
-            // Update quantities in DB for each asset
-            foreach (var asset in assets)
-            {
-                int liveCount = GetAssetQuantity(asset.Name);
-
-                if (asset.Quantity != liveCount) // update only if changed
-                {
-                    asset.Quantity = liveCount;
-                    _context.Entry(asset).State = EntityState.Modified;
-                }
-            }
-
-            await _context.SaveChangesAsync(); // persist updated counts
-
             return Ok(assets);
         }
 
         // ✅ GET: api/assets/5
+        // Returns a specific asset by ID
         [HttpGet("{id}")]
         public async Task<ActionResult<Asset>> GetAsset(int id)
         {
@@ -50,25 +37,14 @@ namespace backend_app.Controllers
             if (asset == null)
                 return NotFound();
 
-            int liveCount = GetAssetQuantity(asset.Name);
-
-            // Update DB if quantity is outdated
-            if (asset.Quantity != liveCount)
-            {
-                asset.Quantity = liveCount;
-                _context.Entry(asset).State = EntityState.Modified;
-                await _context.SaveChangesAsync();
-            }
-
             return Ok(asset);
         }
 
         // ✅ POST: api/assets
+        // Adds a new asset entry
         [HttpPost]
         public async Task<ActionResult<Asset>> CreateAsset(Asset asset)
         {
-            // Set live quantity before saving
-            asset.Quantity = GetAssetQuantity(asset.Name);
             _context.Assets.Add(asset);
             await _context.SaveChangesAsync();
 
@@ -76,14 +52,13 @@ namespace backend_app.Controllers
         }
 
         // ✅ PUT: api/assets/5
+        // Updates an existing asset
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateAsset(int id, Asset asset)
         {
             if (id != asset.Id)
                 return BadRequest();
 
-            // Always refresh live quantity before updating
-            asset.Quantity = GetAssetQuantity(asset.Name);
             _context.Entry(asset).State = EntityState.Modified;
 
             try
@@ -102,6 +77,7 @@ namespace backend_app.Controllers
         }
 
         // ✅ DELETE: api/assets/5
+        // Deletes an asset by ID
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAsset(int id)
         {
@@ -113,18 +89,6 @@ namespace backend_app.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
-        }
-
-        // 🔧 Helper Method — Returns real-time count from respective tables
-        private int GetAssetQuantity(string assetName)
-        {
-            return assetName.ToLower() switch
-            {
-                "laptop" or "laptops" => _context.Laptops.Count(),
-                "mobile" or "mobiles" => _context.Mobiles.Count(),
-                "tablet" or "tablets" => _context.Tablets.Count(),
-                _ => 0
-            };
         }
     }
 }

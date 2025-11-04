@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace backend_app.Models
 {
@@ -10,6 +11,7 @@ namespace backend_app.Models
 
         [ForeignKey("AssetRequest")]
         public int AssetRequestId { get; set; }
+        [JsonIgnore]  // ✅ Prevent sending back full request inside each item
         public AssetRequest AssetRequest { get; set; }
 
         [ForeignKey("Asset")]

@@ -84,6 +84,15 @@ function Navbar({ user, onLogout }) {
                     </button>
                   </div>
                 </li>
+                 <li className="nav-item">
+                  <Link
+                    className="nav-link"
+                    to="/requests"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Requests
+                  </Link>
+                </li>
               </>
             ) : (
               <>
@@ -112,15 +121,6 @@ function Navbar({ user, onLogout }) {
                     onClick={() => setIsOpen(false)}
                   >
                     ContactUs
-                  </Link>
-                </li>
-                <li className="nav-item">
-                  <Link
-                    className="nav-link"
-                    to="/requests"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Requests
                   </Link>
                 </li>
               </>

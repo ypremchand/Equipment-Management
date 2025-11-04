@@ -59,29 +59,31 @@ function Contact() {
   }, []);
 
   // ✅ Preselect the asset passed from Home page
-  useEffect(() => {
-    const selectedAsset = location.state?.selectedAsset;
-    if (selectedAsset && assets.length > 0) {
-      const selectedAssetData = assets.find((a) => a.name === selectedAsset);
-      setAssetRequests([
-        {
-          assetName: selectedAsset,
-          availableQuantity: selectedAssetData ? selectedAssetData.quantity : 0,
-          requestedQuantity: "",
-        },
-      ]);
-    }
-  }, [location.state, assets]);
+useEffect(() => {
+  const selectedAsset = location.state?.selectedAsset;
+  if (selectedAsset && assets.length > 0) {
+    const selectedAssetData = assets.find((a) => a.name === selectedAsset);
+    setAssetRequests([
+      {
+        assetName: selectedAsset,
+        availableQuantity: selectedAssetData ? selectedAssetData.availableQuantity : 0,
+        requestedQuantity: "",
+      },
+    ]);
+  }
+}, [location.state, assets]);
+
 
   // Handle asset dropdown change
-  const handleAssetChange = (index, assetName) => {
-    const updatedRequests = [...assetRequests];
-    const assetData = assets.find((a) => a.name === assetName);
-    updatedRequests[index].assetName = assetName;
-    updatedRequests[index].availableQuantity = assetData ? assetData.quantity : 0;
-    updatedRequests[index].requestedQuantity = "";
-    setAssetRequests(updatedRequests);
-  };
+const handleAssetChange = (index, assetName) => {
+  const updatedRequests = [...assetRequests];
+  const assetData = assets.find((a) => a.name === assetName);
+  updatedRequests[index].assetName = assetName;
+  updatedRequests[index].availableQuantity = assetData ? assetData.availableQuantity : 0;
+  updatedRequests[index].requestedQuantity = "";
+  setAssetRequests(updatedRequests);
+};
+
 
   // Handle requested quantity change
   const handleQuantityChange = (index, value) => {
@@ -94,7 +96,7 @@ function Contact() {
   const handleAddAssetRow = () => {
     setAssetRequests([
       ...assetRequests,
-      { assetName: "", availableQuantity: 0, requestedQuantity: "" },
+      { assetName: "", availableQuantity: "", requestedQuantity: "" },
     ]);
   };
 

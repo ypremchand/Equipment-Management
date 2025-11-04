@@ -59,6 +59,22 @@
   },
   {
     "ContainingType": "backend_app.Controllers.AssetRequestsController",
+    "Method": "CancelRequest",
+    "RelativePath": "api/AssetRequests/cancel/{id}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_app.Controllers.AssetRequestsController",
     "Method": "RejectRequest",
     "RelativePath": "api/AssetRequests/reject/{id}",
     "HttpMethod": "POST",

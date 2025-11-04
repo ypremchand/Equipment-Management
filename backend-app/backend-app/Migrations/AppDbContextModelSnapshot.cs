@@ -40,7 +40,7 @@ namespace backend_app.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Assets");
+                    b.ToTable("Assets", (string)null);
                 });
 
             modelBuilder.Entity("backend_app.Models.AssetRequest", b =>
@@ -74,7 +74,7 @@ namespace backend_app.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AssetRequests");
+                    b.ToTable("AssetRequests", (string)null);
                 });
 
             modelBuilder.Entity("backend_app.Models.AssetRequestItem", b =>
@@ -103,7 +103,7 @@ namespace backend_app.Migrations
 
                     b.HasIndex("AssetRequestId");
 
-                    b.ToTable("AssetRequestItems");
+                    b.ToTable("AssetRequestItems", (string)null);
                 });
 
             modelBuilder.Entity("backend_app.Models.Laptop", b =>
@@ -180,7 +180,7 @@ namespace backend_app.Migrations
 
                     b.HasIndex("AssetId");
 
-                    b.ToTable("Laptops");
+                    b.ToTable("Laptops", (string)null);
                 });
 
             modelBuilder.Entity("backend_app.Models.Location", b =>
@@ -198,7 +198,7 @@ namespace backend_app.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Locations");
+                    b.ToTable("Locations", (string)null);
                 });
 
             modelBuilder.Entity("backend_app.Models.Mobile", b =>
@@ -282,7 +282,7 @@ namespace backend_app.Migrations
 
                     b.HasIndex("AssetId");
 
-                    b.ToTable("Mobiles");
+                    b.ToTable("Mobiles", (string)null);
                 });
 
             modelBuilder.Entity("backend_app.Models.Tablet", b =>
@@ -370,7 +370,7 @@ namespace backend_app.Migrations
 
                     b.HasIndex("AssetId");
 
-                    b.ToTable("Tablets");
+                    b.ToTable("Tablets", (string)null);
                 });
 
             modelBuilder.Entity("backend_app.Models.User", b =>
@@ -396,7 +396,7 @@ namespace backend_app.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("backend_app.Models.AssetRequest", b =>
