@@ -28,28 +28,42 @@ namespace backend_app.Controllers
         public async Task<ActionResult<Laptop>> GetLaptop(int id)
         {
             var laptop = await _context.Laptops.FindAsync(id);
-
             if (laptop == null)
                 return NotFound();
 
             return laptop;
         }
 
-        // POST: api/laptops
+        // ✅ POST: api/laptops
         [HttpPost]
-        public async Task<ActionResult<Laptop>> PostLaptop(Laptop laptop)
+        public async Task<ActionResult<Laptop>> PostLaptop([FromBody] Laptop laptop)
         {
+            // 🔍 Check if same AssetTag already exists
+            bool exists = await _context.Laptops.AnyAsync(l =>
+                l.AssetTag.ToLower() == laptop.AssetTag.ToLower());
+
+            if (exists)
+                return BadRequest(new { message = "Asset number already exists" });
+
             _context.Laptops.Add(laptop);
             await _context.SaveChangesAsync();
+
             return CreatedAtAction(nameof(GetLaptop), new { id = laptop.Id }, laptop);
         }
 
-        // PUT: api/laptops/5
+        // ✅ PUT: api/laptops/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutLaptop(int id, Laptop laptop)
+        public async Task<IActionResult> PutLaptop(int id, [FromBody] Laptop laptop)
         {
             if (id != laptop.Id)
                 return BadRequest();
+
+            // 🔍 Check for duplicate AssetTag excluding the current record
+            bool exists = await _context.Laptops.AnyAsync(l =>
+                l.Id != id && l.AssetTag.ToLower() == laptop.AssetTag.ToLower());
+
+            if (exists)
+                return BadRequest(new { message = "Another laptop with the same Asset number already exists" });
 
             _context.Entry(laptop).State = EntityState.Modified;
 
@@ -80,6 +94,17 @@ namespace backend_app.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
+        }
+
+        // ✅ Extra API for real-time AssetTag validation
+        [HttpGet("check-duplicate")]
+        public async Task<IActionResult> CheckDuplicate([FromQuery] string assetTag)
+        {
+            if (string.IsNullOrWhiteSpace(assetTag))
+                return BadRequest(new { message = "Asset tag is required" });
+
+            bool exists = await _context.Laptops.AnyAsync(l => l.AssetTag.ToLower() == assetTag.ToLower());
+            return Ok(new { exists });
         }
     }
 }

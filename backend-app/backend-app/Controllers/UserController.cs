@@ -17,21 +17,41 @@ namespace backend_app.Controllers
         {
             _context = context;
         }
+       [HttpPost("register")]
+public async Task<IActionResult> Register([FromBody] User user)
+{
+    try
+    {
+        if (user == null)
+            return BadRequest(new { message = "Invalid request body" });
 
-        // ✅ REGISTER: Add new user into Users table
-        [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] User user)
+        if (string.IsNullOrWhiteSpace(user.Name) ||
+            string.IsNullOrWhiteSpace(user.Email) ||
+            string.IsNullOrWhiteSpace(user.Password))
+            return BadRequest(new { message = "All fields are required" });
+
+        if (await _context.Users.AnyAsync(u => u.Email == user.Email))
+            return BadRequest(new { message = "Email already registered" });
+
+        user.Password = HashPassword(user.Password);
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Registration successful" });
+    }
+    catch (Exception ex)
+    {
+        // 🔍 Return full exception details
+        return StatusCode(500, new
         {
-            if (await _context.Users.AnyAsync(u => u.Email == user.Email))
-                return BadRequest(new { message = "Email already registered" });
+            message = "Internal server error",
+            error = ex.Message,
+            inner = ex.InnerException?.Message
+        });
+    }
+}
 
-            user.Password = HashPassword(user.Password);
 
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Registration successful" });
-        }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginModel login)

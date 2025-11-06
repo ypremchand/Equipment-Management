@@ -40,7 +40,7 @@ namespace backend_app.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Assets", (string)null);
+                    b.ToTable("Assets");
                 });
 
             modelBuilder.Entity("backend_app.Models.AssetRequest", b =>
@@ -74,7 +74,7 @@ namespace backend_app.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AssetRequests", (string)null);
+                    b.ToTable("AssetRequests");
                 });
 
             modelBuilder.Entity("backend_app.Models.AssetRequestItem", b =>
@@ -103,7 +103,7 @@ namespace backend_app.Migrations
 
                     b.HasIndex("AssetRequestId");
 
-                    b.ToTable("AssetRequestItems", (string)null);
+                    b.ToTable("AssetRequestItems");
                 });
 
             modelBuilder.Entity("backend_app.Models.Laptop", b =>
@@ -143,6 +143,10 @@ namespace backend_app.Migrations
                     b.Property<DateTime?>("LastServicedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("OperatingSystem")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -180,7 +184,7 @@ namespace backend_app.Migrations
 
                     b.HasIndex("AssetId");
 
-                    b.ToTable("Laptops", (string)null);
+                    b.ToTable("Laptops");
                 });
 
             modelBuilder.Entity("backend_app.Models.Location", b =>
@@ -198,7 +202,7 @@ namespace backend_app.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Locations", (string)null);
+                    b.ToTable("Locations");
                 });
 
             modelBuilder.Entity("backend_app.Models.Mobile", b =>
@@ -282,7 +286,7 @@ namespace backend_app.Migrations
 
                     b.HasIndex("AssetId");
 
-                    b.ToTable("Mobiles", (string)null);
+                    b.ToTable("Mobiles");
                 });
 
             modelBuilder.Entity("backend_app.Models.Tablet", b =>
@@ -370,7 +374,7 @@ namespace backend_app.Migrations
 
                     b.HasIndex("AssetId");
 
-                    b.ToTable("Tablets", (string)null);
+                    b.ToTable("Tablets");
                 });
 
             modelBuilder.Entity("backend_app.Models.User", b =>
@@ -396,7 +400,7 @@ namespace backend_app.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("backend_app.Models.AssetRequest", b =>
@@ -440,7 +444,7 @@ namespace backend_app.Migrations
             modelBuilder.Entity("backend_app.Models.Laptop", b =>
                 {
                     b.HasOne("backend_app.Models.Asset", "Asset")
-                        .WithMany("Laptops")
+                        .WithMany()
                         .HasForeignKey("AssetId");
 
                     b.Navigation("Asset");
@@ -462,11 +466,6 @@ namespace backend_app.Migrations
                         .HasForeignKey("AssetId");
 
                     b.Navigation("Asset");
-                });
-
-            modelBuilder.Entity("backend_app.Models.Asset", b =>
-                {
-                    b.Navigation("Laptops");
                 });
 
             modelBuilder.Entity("backend_app.Models.AssetRequest", b =>

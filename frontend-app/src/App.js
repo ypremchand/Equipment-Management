@@ -6,6 +6,7 @@ import Navbar from "./Components/Navbar/Navbar";
 import Home from "./Components/Home/Home";
 import About from "./Components/About/About";
 import Contact from "./Components/ContactUs/Contact";
+import ReturnAssets from "./Components/ReturnAssets/ReturnAssets";
 import Requests from "./Components/Requests/Requests";
 import AdminPanel from "./Components/AdminPanel/AdminPanel";
 import Laptops from "./Components/Laptops/Laptops";
@@ -47,7 +48,7 @@ function App() {
             />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
-            <Route path="/requests" element={<Requests />} />
+            <Route path="/returnassets" element={<ReturnAssets />} />
 
             {/* Admin-only routes */}
             <Route
@@ -69,6 +70,10 @@ function App() {
             <Route
               path="/tablets"
               element={user?.email?.includes("@admin") ? <Tablets /> : <Navigate to="/" />}
+            />
+            <Route
+              path="/requests"
+              element={user?.email?.includes("@admin") ? <Requests /> : <Navigate to="/" />}
             />
             <Route path="*" element={<Navigate to="/" />} />
           </>

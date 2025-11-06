@@ -2,6 +2,7 @@
 using backend_app.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+
 namespace backend_app.Controllers
 {
     [ApiController]
@@ -36,8 +37,15 @@ namespace backend_app.Controllers
 
         // ✅ POST: api/mobiles
         [HttpPost]
-        public async Task<ActionResult<Mobile>> PostMobile(Mobile mobile)
+        public async Task<ActionResult<Mobile>> PostMobile([FromBody] Mobile mobile)
         {
+            // 🔍 Check if AssetTag already exists
+            bool exists = await _context.Mobiles.AnyAsync(m =>
+                m.AssetTag.ToLower() == mobile.AssetTag.ToLower());
+
+            if (exists)
+                return BadRequest(new { message = "Asset number already exists" });
+
             _context.Mobiles.Add(mobile);
             await _context.SaveChangesAsync();
 
@@ -46,10 +54,17 @@ namespace backend_app.Controllers
 
         // ✅ PUT: api/mobiles/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutMobile(int id, Mobile mobile)
+        public async Task<IActionResult> PutMobile(int id, [FromBody] Mobile mobile)
         {
             if (id != mobile.Id)
                 return BadRequest();
+
+            // 🔍 Check for duplicate AssetTag (excluding current record)
+            bool exists = await _context.Mobiles.AnyAsync(m =>
+                m.Id != id && m.AssetTag.ToLower() == mobile.AssetTag.ToLower());
+
+            if (exists)
+                return BadRequest(new { message = "Another mobile with the same Asset number already exists" });
 
             _context.Entry(mobile).State = EntityState.Modified;
 
@@ -80,6 +95,19 @@ namespace backend_app.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
+        }
+
+        // ✅ Real-time check endpoint for frontend validation
+        [HttpGet("check-duplicate")]
+        public async Task<IActionResult> CheckDuplicate([FromQuery] string assetTag)
+        {
+            if (string.IsNullOrWhiteSpace(assetTag))
+                return BadRequest(new { message = "Asset tag is required" });
+
+            bool exists = await _context.Mobiles.AnyAsync(m =>
+                m.AssetTag.ToLower() == assetTag.ToLower());
+
+            return Ok(new { exists });
         }
     }
 }

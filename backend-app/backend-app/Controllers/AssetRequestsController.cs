@@ -28,7 +28,6 @@ namespace backend_app.Controllers
                 request.Status = "Pending";
                 request.RequestDate = DateTime.Now;
 
-                // 🟨 Do NOT modify asset quantity here
                 _context.AssetRequests.Add(request);
                 await _context.SaveChangesAsync();
 
@@ -73,14 +72,13 @@ namespace backend_app.Controllers
 
             return Ok(requests);
         }
-
         // ✅ POST: api/AssetRequests/approve/{id}
         [HttpPost("approve/{id}")]
         public async Task<IActionResult> ApproveRequest(int id)
         {
             var request = await _context.AssetRequests
                 .Include(r => r.AssetRequestItems)
-                    .ThenInclude(i => i.Asset)
+                .ThenInclude(i => i.Asset)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
             if (request == null)
@@ -90,24 +88,23 @@ namespace backend_app.Controllers
                 return BadRequest("Request already approved.");
 
             using var transaction = await _context.Database.BeginTransactionAsync();
-
             try
             {
                 foreach (var item in request.AssetRequestItems)
                 {
-                    var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Id == item.AssetId);
+                    var asset = item.Asset;
 
                     if (asset == null)
-                        return NotFound($"Asset with ID {item.AssetId} not found.");
+                        return NotFound($"Asset not found for item {item.Id}.");
 
                     if (asset.Quantity < item.RequestedQuantity)
-                        return BadRequest($"Not enough {asset.Name} available. Only {asset.Quantity} left in stock.");
+                        return BadRequest($"Not enough stock for {asset.Name}. Only {asset.Quantity} left.");
 
-                    // ✅ Decrease the quantity and mark as modified
+                    // ✅ Deduct stock only once here
                     asset.Quantity -= item.RequestedQuantity;
-                    _context.Entry(asset).State = EntityState.Modified;
-
                     item.ApprovedQuantity = item.RequestedQuantity;
+
+                    _context.Entry(asset).State = EntityState.Modified;
                 }
 
                 request.Status = "Approved";
@@ -116,7 +113,7 @@ namespace backend_app.Controllers
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return Ok(new { Message = "✅ Request approved and stock updated successfully." });
+                return Ok(new { message = "✅ Request approved and quantity updated." });
             }
             catch (Exception ex)
             {
@@ -125,14 +122,13 @@ namespace backend_app.Controllers
             }
         }
 
-
         // ✅ POST: api/AssetRequests/reject/{id}
         [HttpPost("reject/{id}")]
         public async Task<IActionResult> RejectRequest(int id)
         {
             var request = await _context.AssetRequests
                 .Include(r => r.AssetRequestItems)
-                    .ThenInclude(i => i.Asset)
+                .ThenInclude(i => i.Asset)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
             if (request == null)
@@ -141,61 +137,73 @@ namespace backend_app.Controllers
             if (request.Status == "Rejected")
                 return BadRequest("Request already rejected.");
 
-            // 🟨 No stock changes on rejection
+            // ✅ Reject request but do NOT change stock
             request.Status = "Rejected";
             await _context.SaveChangesAsync();
 
-            return Ok(new { Message = "🚫 Request rejected successfully (no stock change)." });
+            return Ok(new { message = "🚫 Request rejected successfully. Quantity unchanged." });
         }
-        // ✅ POST: api/AssetRequests/cancel/{id}
-        [HttpPost("cancel/{id}")]
-        public async Task<IActionResult> CancelRequest(int id)
+
+
+        // ✅ DELETE: api/AssetRequests/{id}
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteRequest(int id)
         {
-            var request = await _context.AssetRequests
-                .Include(r => r.AssetRequestItems)
-                    .ThenInclude(i => i.Asset)
-                .FirstOrDefaultAsync(r => r.Id == id);
+            Console.WriteLine($"🧩 Trying to delete request ID: {id}");
+
+            bool exists = await _context.AssetRequests.AnyAsync(r => r.Id == id);
+            Console.WriteLine($"🧩 Exists in EF? {exists}");
+
+            // ✅ Simplified query (avoid Include() tracking issues)
+            var request = await _context.AssetRequests.FindAsync(id);
 
             if (request == null)
-                return NotFound("Request not found.");
+            {
+                Console.WriteLine("🧩 Not found inside simplified query!");
+                return NotFound(new { Message = $"Request with ID {id} not found in EF." });
+            }
 
-            if (request.Status != "Approved")
-                return BadRequest("Only approved requests can be cancelled.");
+            // ✅ Load related items manually (EF-safe)
+            await _context.Entry(request)
+                .Collection(r => r.AssetRequestItems)
+                .Query()
+                .Include(i => i.Asset)
+                .LoadAsync();
 
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
-                foreach (var item in request.AssetRequestItems)
+                // ✅ Restore stock if Approved
+                if (request.Status == "Approved")
                 {
-                    var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Id == item.AssetId);
-                    if (asset == null)
-                        return NotFound($"Asset with ID {item.AssetId} not found.");
-
-                    // ✅ Restore quantity to stock
-                    asset.Quantity += (item.ApprovedQuantity ?? 0);
-                    _context.Entry(asset).State = EntityState.Modified;
-
-                    // Reset approved quantity
-                    item.ApprovedQuantity = 0;
+                    foreach (var item in request.AssetRequestItems)
+                    {
+                        var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Id == item.AssetId);
+                        if (asset != null)
+                        {
+                            asset.Quantity += (item.ApprovedQuantity ?? 0);
+                            _context.Entry(asset).State = EntityState.Modified;
+                        }
+                    }
                 }
 
-                // ✅ Update request status
-                request.Status = "Cancelled";
-                _context.Entry(request).State = EntityState.Modified;
+                // ✅ Remove related items and main request
+                _context.AssetRequestItems.RemoveRange(request.AssetRequestItems);
+                _context.AssetRequests.Remove(request);
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return Ok(new { Message = "❌ Approved request cancelled and stock restored successfully." });
+                Console.WriteLine($"✅ Successfully deleted request ID: {id}");
+                return Ok(new { Message = "🗑️ Request deleted successfully." });
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                return StatusCode(500, $"Error cancelling request: {ex.Message}");
+                Console.WriteLine($"❌ Error deleting request: {ex.Message}");
+                return StatusCode(500, $"Error deleting request: {ex.Message}");
             }
         }
-
-
     }
 }

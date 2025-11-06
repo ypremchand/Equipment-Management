@@ -12,7 +12,6 @@ function Requests() {
 
   const API_URL = "http://localhost:5083/api/AssetRequests";
 
-
   // ✅ Fetch all requests (admin view)
   const fetchRequests = async () => {
     try {
@@ -32,22 +31,20 @@ function Requests() {
   }, []);
 
   // ✅ Approve a request
-const handleApprove = async (id) => {
-  if (!window.confirm("Approve this request?")) return;
-  try {
-    await axios.post(`${API_URL}/approve/${id}`);
-    setMessage("✅ Request approved successfully!");
-    fetchRequests(); // already refreshes requests
+  const handleApprove = async (id) => {
+    if (!window.confirm("Approve this request?")) return;
+    try {
+      await axios.post(`${API_URL}/approve/${id}`);
+      setMessage("✅ Request approved successfully!");
+      fetchRequests();
 
-    // ✅ refresh AdminPanel assets count too (optional)
-    // You can trigger fetchAssets in AdminPanel via global state or simple page reload
-    // window.location.reload(); // simplest approach
-  } catch (error) {
-    console.error(error);
-    setMessage("❌ Error approving request");
-  }
-};
-
+      // ✅ Notify AdminPanel to refresh assets live
+      window.dispatchEvent(new Event("assetsUpdated"));
+    } catch (error) {
+      console.error(error);
+      setMessage("❌ Error approving request");
+    }
+  };
 
   // ✅ Reject a request
   const handleReject = async (id) => {
@@ -56,29 +53,41 @@ const handleApprove = async (id) => {
       await axios.post(`${API_URL}/reject/${id}`);
       setMessage("🚫 Request rejected successfully!");
       fetchRequests();
+
+      // ✅ Notify AdminPanel to refresh assets live
+      window.dispatchEvent(new Event("assetsUpdated"));
     } catch (error) {
       console.error(error);
       setMessage("❌ Error rejecting request");
     }
   };
-  const handleCancel = async (id) => {
-  if (!window.confirm("Cancel this approved request? This will restore the stock.")) return;
-  try {
-    await axios.post(`${API_URL}/cancel/${id}`);
-    setMessage("❌ Request cancelled and stock restored!");
-    fetchRequests();
-  } catch (error) {
-    console.error(error);
-    setMessage("❌ Error cancelling request");
-  }
-};
-
-
 
   // ✅ View request details (Modal)
   const handleView = (request) => {
     setSelectedRequest(request);
     setShowModal(true);
+  };
+
+  // ✅ Delete request (permanent)
+  const handleDelete = async (id) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to permanently delete this request? (If approved, stock will be restored automatically)"
+      )
+    )
+      return;
+
+    try {
+      await axios.delete(`${API_URL}/${id}`);
+      setMessage("🗑️ Request deleted successfully!");
+      fetchRequests();
+
+      // ✅ Notify AdminPanel to refresh assets live
+      window.dispatchEvent(new Event("assetsUpdated"));
+    } catch (error) {
+      console.error(error);
+      setMessage("❌ Error deleting request");
+    }
   };
 
   return (
@@ -125,7 +134,9 @@ const handleApprove = async (id) => {
                           ? "bg-warning text-dark"
                           : req.status === "Approved"
                           ? "bg-success"
-                          : "bg-danger"
+                          : req.status === "Rejected"
+                          ? "bg-danger"
+                          : "bg-secondary"
                       }`}
                     >
                       {req.status}
@@ -140,36 +151,33 @@ const handleApprove = async (id) => {
                     >
                       View
                     </Button>
-                   {req.status === "Pending" && (
-  <>
-    <Button
-      variant="success"
-      size="sm"
-      className="me-2"
-      onClick={() => handleApprove(req.id)}
-    >
-      Approve
-    </Button>
-    <Button
-      variant="danger"
-      size="sm"
-      onClick={() => handleReject(req.id)}
-    >
-      Reject
-    </Button>
-  </>
-)}
-
-{req.status === "Approved" && (
-  <Button
-    variant="warning"
-    size="sm"
-    onClick={() => handleCancel(req.id)}
-  >
-    Cancel
-  </Button>
-)}
-
+                    {req.status === "Pending" && (
+                      <>
+                        <Button
+                          variant="success"
+                          size="sm"
+                          className="me-2"
+                          onClick={() => handleApprove(req.id)}
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          className="me-2"
+                          onClick={() => handleReject(req.id)}
+                        >
+                          Reject
+                        </Button>
+                      </>
+                    )}
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      onClick={() => handleDelete(req.id)}
+                    >
+                      Delete
+                    </Button>
                   </td>
                 </tr>
               ))
@@ -186,10 +194,18 @@ const handleApprove = async (id) => {
         <Modal.Body>
           {selectedRequest && (
             <>
-              <p><strong>User:</strong> {selectedRequest.user?.name}</p>
-              <p><strong>Email:</strong> {selectedRequest.user?.email}</p>
-              <p><strong>Location:</strong> {selectedRequest.location?.name}</p>
-              <p><strong>Status:</strong> {selectedRequest.status}</p>
+              <p>
+                <strong>User:</strong> {selectedRequest.user?.name}
+              </p>
+              <p>
+                <strong>Email:</strong> {selectedRequest.user?.email}
+              </p>
+              <p>
+                <strong>Location:</strong> {selectedRequest.location?.name}
+              </p>
+              <p>
+                <strong>Status:</strong> {selectedRequest.status}
+              </p>
               <hr />
               <h5>Requested Items:</h5>
               <Table bordered hover responsive>

@@ -123,6 +123,16 @@ function Navbar({ user, onLogout }) {
                     ContactUs
                   </Link>
                 </li>
+                <li className="nav-item">
+  <Link
+    className="nav-link"
+    to="/returnassets"
+    onClick={() => setIsOpen(false)}
+  >
+    Return Assets
+  </Link>
+</li>
+
               </>
             )}
           </ul>

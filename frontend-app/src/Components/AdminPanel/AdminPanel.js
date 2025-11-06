@@ -59,8 +59,16 @@ function AdminPanel() {
         });
         alert("Asset updated successfully!");
       } else {
-        await axios.post(ASSETS_API, { name: asset });
-        alert("Asset added successfully!");
+        // ✅ Prevent duplicate assets (case-insensitive)
+const exists = assets.some(a => a.name.toLowerCase() === asset.toLowerCase());
+if (exists) {
+  alert("Asset already exists!");
+  return;
+}
+
+await axios.post(ASSETS_API, { name: asset });
+alert("Asset added successfully!");
+
       }
       setAsset("");
       setEditingAssetId(null);
@@ -183,7 +191,7 @@ function AdminPanel() {
 </Link>
 
                     </td>
-                    <td>{item.availableQuantity}</td>
+                    <td>{item.quantity}</td>
                     <td>
                       <button
                         className="btn btn-warning btn-sm me-2"

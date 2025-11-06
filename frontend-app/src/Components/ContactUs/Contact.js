@@ -9,9 +9,15 @@ function Contact() {
   const [locations, setLocations] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState("");
   const [assetRequests, setAssetRequests] = useState([
-    { assetName: "", availableQuantity: 0, requestedQuantity: "" },
+    { assetName: "", quantity: 0, requestedQuantity: "" },
   ]);
   const [message, setMessage] = useState("");
+  // ✅ Compute total requested quantity dynamically
+  const totalRequested = assetRequests.reduce(
+    (sum, req) => sum + Number(req.requestedQuantity || 0),
+    0
+  );
+
 
   const location = useLocation();
   const navigate = useNavigate(); // ✅ Hook for redirection
@@ -59,31 +65,33 @@ function Contact() {
   }, []);
 
   // ✅ Preselect the asset passed from Home page
-useEffect(() => {
-  const selectedAsset = location.state?.selectedAsset;
-  if (selectedAsset && assets.length > 0) {
-    const selectedAssetData = assets.find((a) => a.name === selectedAsset);
-    setAssetRequests([
-      {
-        assetName: selectedAsset,
-        availableQuantity: selectedAssetData ? selectedAssetData.availableQuantity : 0,
-        requestedQuantity: "",
-      },
-    ]);
-  }
-}, [location.state, assets]);
+  // ✅ Preselect the asset passed from Home page
+  useEffect(() => {
+    const selectedAsset = location.state?.selectedAsset;
+    if (selectedAsset && assets.length > 0) {
+      const selectedAssetData = assets.find((a) => a.name === selectedAsset);
+      setAssetRequests([
+        {
+          assetName: selectedAsset,
+          quantity: selectedAssetData ? selectedAssetData.quantity : 0, // ✅ unified property
+          requestedQuantity: "",
+        },
+      ]);
+    }
+  }, [location.state, assets]);
+
 
 
   // Handle asset dropdown change
-const handleAssetChange = (index, assetName) => {
-  const updatedRequests = [...assetRequests];
-  const assetData = assets.find((a) => a.name === assetName);
-  updatedRequests[index].assetName = assetName;
-  updatedRequests[index].availableQuantity = assetData ? assetData.availableQuantity : 0;
-  updatedRequests[index].requestedQuantity = "";
-  setAssetRequests(updatedRequests);
-};
+  const handleAssetChange = (index, assetName) => {
+    const updatedRequests = [...assetRequests];
+    const assetData = assets.find((a) => a.name === assetName);
 
+    updatedRequests[index].assetName = assetName;
+    updatedRequests[index].quantity = assetData ? assetData.quantity : 0; // ✅ lowercase
+    updatedRequests[index].requestedQuantity = "";
+    setAssetRequests(updatedRequests);
+  };
 
   // Handle requested quantity change
   const handleQuantityChange = (index, value) => {
@@ -107,71 +115,91 @@ const handleAssetChange = (index, assetName) => {
   };
 
   // ✅ Submit form
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // ✅ Submit form
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (!selectedLocation) {
-      alert("Please select a location");
-      return;
-    }
+  if (!selectedLocation) {
+    alert("Please select a location");
+    return;
+  }
 
-    if (!user.phone || !/^\d{10}$/.test(user.phone)) {
-      alert("Please enter a valid 10-digit phone number");
-      return;
-    }
+  if (!user.phone || !/^\d{10}$/.test(user.phone)) {
+    alert("Please enter a valid 10-digit phone number");
+    return;
+  }
 
-    if (
-      assetRequests.some(
-        (req) =>
-          !req.assetName ||
-          !req.requestedQuantity ||
-          isNaN(req.requestedQuantity) ||
-          req.requestedQuantity <= 0
-      )
-    ) {
-      alert("Please fill all asset fields correctly");
-      return;
-    }
+  if (
+    assetRequests.some(
+      (req) =>
+        !req.assetName ||
+        !req.requestedQuantity ||
+        isNaN(req.requestedQuantity) ||
+        req.requestedQuantity <= 0
+    )
+  ) {
+    alert("Please fill all asset fields correctly");
+    return;
+  }
 
-    if (assetRequests.some((req) => req.requestedQuantity > req.availableQuantity)) {
-      alert("One or more requested quantities exceed available stock");
-      return;
-    }
+  if (assetRequests.some((req) => req.requestedQuantity > req.Quantity)) {
+    alert("One or more requested quantities exceed available stock");
+    return;
+  }
 
-    try {
-      await axios.post(CONTACT_API, {
-        username: user.name,
-        email: user.email,
-        phoneNumber: user.phone,
-        location: selectedLocation,
-        assetRequests: assetRequests.map((r) => ({
-          asset: r.assetName,
-          requestedQuantity: Number(r.requestedQuantity),
-          availableQuantity: Number(r.availableQuantity),
-        })),
-        message:
-          message ||
-          assetRequests
-            .map(
-              (r) => `Requesting ${r.requestedQuantity} unit(s) of ${r.assetName}`
-            )
-            .join(", "),
-      });
+  // 🧩 ADD THIS DEBUG LOG HERE
+  console.log("Submitting Request:", {
+    username: user.name,
+    email: user.email,
+    phoneNumber: user.phone,
+    location: selectedLocation,
+    assetRequests: assetRequests.map((r) => ({
+      asset: r.assetName,
+      requestedQuantity: Number(r.requestedQuantity),
+      availableQuantity: Number(r.Quantity),
+    })),
+    message:
+      message ||
+      assetRequests
+        .map(
+          (r) => `Requesting ${r.requestedQuantity} unit(s) of ${r.assetName}`
+        )
+        .join(", "),
+  });
 
-      alert("Request sent successfully!");
+  try {
+    await axios.post(CONTACT_API, {
+      username: user.name,
+      email: user.email,
+      phoneNumber: user.phone,
+      location: selectedLocation,
+      assetRequests: assetRequests.map((r) => ({
+        asset: r.assetName,
+        requestedQuantity: Number(r.requestedQuantity),
+        availableQuantity: Number(r.quantity),
+      })),
+      message:
+        message ||
+        assetRequests
+          .map(
+            (r) => `Requesting ${r.requestedQuantity} unit(s) of ${r.assetName}`
+          )
+          .join(", "),
+    });
 
-      // ✅ Navigate to home page after success
-      navigate("/");
+    alert("Request sent successfully!");
+    navigate("/");
 
-      // Optionally clear the form
-      setAssetRequests([{ assetName: "", availableQuantity: 0, requestedQuantity: "" }]);
-      setSelectedLocation("");
-      setMessage("");
-    } catch (error) {
-      console.error("Error sending request:", error);
-      alert("Failed to send request");
-    }
-  };
+    // Reset form
+    setAssetRequests([{ assetName: "", availableQuantity: 0, requestedQuantity: "" }]);
+    setSelectedLocation("");
+    setMessage("");
+  } catch (error) {
+    console.error("Error sending request:", error);
+    alert("Failed to send request");
+  }
+};
+
 
   return (
     <div className="container mt-4">
@@ -214,9 +242,8 @@ const handleAssetChange = (index, assetName) => {
             </label>
             <input
               type="tel"
-              className={`form-control ${
-                user.phone && user.phone.length < 10 ? "is-invalid" : ""
-              }`}
+              className={`form-control ${user.phone && user.phone.length < 10 ? "is-invalid" : ""
+                }`}
               id="phoneNumber"
               value={user.phone}
               onChange={(e) => {
@@ -281,9 +308,10 @@ const handleAssetChange = (index, assetName) => {
                   <input
                     type="text"
                     className="form-control"
-                    value={req.availableQuantity}
+                    value={req.quantity}
                     readOnly
                   />
+
                 </div>
 
                 {/* Requested Quantity */}
@@ -323,6 +351,13 @@ const handleAssetChange = (index, assetName) => {
           >
             + Add Another Asset
           </button>
+
+          {/* ✅ Total Requested Quantity */}
+          <div className="mb-3">
+            <strong>Total Requested Quantity:</strong>{" "}
+            <span className="text-primary">{totalRequested}</span>
+          </div>
+
 
           {/* Message */}
           <div className="mb-3">
