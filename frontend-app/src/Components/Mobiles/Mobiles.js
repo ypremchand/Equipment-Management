@@ -9,6 +9,9 @@ function Mobiles() {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [assetError, setAssetError] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [selectedMobile, setSelectedMobile] = useState(null);
 
   const [form, setForm] = useState({
     brand: "",
@@ -27,12 +30,12 @@ function Mobiles() {
     status: "Available",
     assignedTo: "",
     remarks: "",
-    lastServicedDate: ""
+    lastServicedDate: "",
   });
 
   const API_URL = "http://localhost:5083/api/mobiles";
 
-  // Fetch mobiles
+  // ✅ Fetch mobiles
   const fetchMobiles = async () => {
     setLoading(true);
     try {
@@ -49,21 +52,44 @@ function Mobiles() {
     fetchMobiles();
   }, []);
 
-  // Handle form change
+  // ✅ Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
+
+    if (name === "assetTag") {
+      handleAssetTagChange(value);
+    }
   };
 
-  // Submit (Add/Update)
+  // ✅ Real-time AssetTag duplicate validation
+  const handleAssetTagChange = async (value) => {
+    if (!value.trim()) {
+      setAssetError("");
+      return;
+    }
+    try {
+      const res = await axios.get(`${API_URL}/check-duplicate?assetTag=${value}`);
+      if (res.data.exists) {
+        setAssetError("Asset number already exists");
+      } else {
+        setAssetError("");
+      }
+    } catch (error) {
+      console.error("Error checking asset tag:", error);
+    }
+  };
+
+  // ✅ Submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      if (!form.brand.trim() || !form.model.trim() || !form.imeiNumber.trim()) {
-        alert("Brand, Model, and IMEI Number are required!");
-        return;
-      }
 
+    if (assetError) {
+      alert("Please fix the asset tag issue before saving.");
+      return;
+    }
+
+    try {
       if (editingId) {
         await axios.put(`${API_URL}/${editingId}`, form);
         alert("Mobile updated successfully!");
@@ -71,27 +97,29 @@ function Mobiles() {
         await axios.post(API_URL, form);
         alert("Mobile added successfully!");
       }
+
       resetForm();
       setShowForm(false);
       fetchMobiles();
     } catch (error) {
       console.error("Error saving mobile:", error);
-      alert("Failed to save mobile");
+      alert(error.response?.data?.message || "Failed to save mobile");
     }
   };
 
-  // Edit
+  // ✅ Edit
   const handleEdit = (mobile) => {
     setEditingId(mobile.id);
     setForm({
       ...mobile,
       purchaseDate: mobile.purchaseDate?.split("T")[0] || "",
-      lastServicedDate: mobile.lastServicedDate?.split("T")[0] || ""
+      lastServicedDate: mobile.lastServicedDate?.split("T")[0] || "",
     });
+    setAssetError("");
     setShowForm(true);
   };
 
-  // Delete
+  // ✅ Delete
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this mobile?")) return;
     try {
@@ -104,7 +132,7 @@ function Mobiles() {
     }
   };
 
-  // Reset
+  // ✅ Reset
   const resetForm = () => {
     setEditingId(null);
     setForm({
@@ -124,13 +152,10 @@ function Mobiles() {
       status: "Available",
       assignedTo: "",
       remarks: "",
-      lastServicedDate: ""
+      lastServicedDate: "",
     });
+    setAssetError("");
   };
-
-  // Modal
-  const [showModal, setShowModal] = useState(false);
-  const [selectedMobile, setSelectedMobile] = useState(null);
 
   return (
     <div className="container mt-4">
@@ -169,14 +194,19 @@ function Mobiles() {
                     name={key}
                     value={form[key] || ""}
                     onChange={handleChange}
-                    className="form-control"
+                    className={`form-control ${
+                      key === "assetTag" && assetError ? "is-invalid" : ""
+                    }`}
                   />
+                )}
+                {key === "assetTag" && assetError && (
+                  <div className="invalid-feedback">{assetError}</div>
                 )}
               </div>
             ))}
           </div>
           <div className="text-center">
-            <button type="submit" className="btn btn-primary me-2">
+            <button type="submit" className="btn btn-primary me-2" disabled={!!assetError}>
               {editingId ? "Update" : "Save"}
             </button>
             <button
@@ -193,6 +223,7 @@ function Mobiles() {
         </form>
       )}
 
+      {/* Table */}
       {loading ? (
         <div className="text-center my-3">
           <div className="spinner-border" role="status"></div>
@@ -249,28 +280,31 @@ function Mobiles() {
       )}
 
       {/* Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Mobile Details</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {selectedMobile && (
-            <div>
-              {Object.keys(selectedMobile).map((key) => (
-                <p key={key}>
-                  <strong className="text-capitalize">{key}: </strong>
-                  {selectedMobile[key]?.toString()}
-                </p>
-              ))}
-            </div>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Close
-          </Button>
-        </Modal.Footer>
-      </Modal>
+ <Modal show={showModal} onHide={() => setShowModal(false)}>
+  <Modal.Header closeButton>
+    <Modal.Title>Mobile Details</Modal.Title>
+  </Modal.Header>
+  <Modal.Body>
+    {selectedMobile && (
+      <div>
+        {Object.entries(selectedMobile).map(([key, value]) => (
+          <p key={key}>
+            <strong className="text-capitalize">{key}: </strong>
+            {typeof value === "object" && value !== null
+              ? value.name || JSON.stringify(value) // ✅ Show asset name if object
+              : value?.toString() || "-"}
+          </p>
+        ))}
+      </div>
+    )}
+  </Modal.Body>
+  <Modal.Footer>
+    <Button variant="secondary" onClick={() => setShowModal(false)}>
+      Close
+    </Button>
+  </Modal.Footer>
+</Modal>
+
 
       <Link to="/adminpanel" className="btn btn-secondary mt-3">
         Back to Admin Panel

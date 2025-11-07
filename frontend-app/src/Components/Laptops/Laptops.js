@@ -370,25 +370,31 @@ function Laptops() {
       )}
 
       {/* Details Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Laptop Details</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {selectedLaptop &&
-            Object.entries(selectedLaptop).map(([key, value]) => (
-              <p key={key}>
-                <strong className="text-capitalize">{key}: </strong>
-                {value ? value.toString() : "-"}
-              </p>
-            ))}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Close
-          </Button>
-        </Modal.Footer>
-      </Modal>
+   <Modal show={showModal} onHide={() => setShowModal(false)}>
+  <Modal.Header closeButton>
+    <Modal.Title>Laptop Details</Modal.Title>
+  </Modal.Header>
+  <Modal.Body>
+    {selectedLaptop && (
+      <div>
+        {Object.entries(selectedLaptop).map(([key, value]) => (
+          <p key={key}>
+            <strong className="text-capitalize">{key}: </strong>
+            {typeof value === "object" && value !== null
+              ? value.name || JSON.stringify(value) // ✅ Show asset name or stringify object
+              : value?.toString() || "-"}
+          </p>
+        ))}
+      </div>
+    )}
+  </Modal.Body>
+  <Modal.Footer>
+    <Button variant="secondary" onClick={() => setShowModal(false)}>
+      Close
+    </Button>
+  </Modal.Footer>
+</Modal>
+
 
       <Link to="/adminpanel" className="btn btn-secondary mt-3">
         Back to Admin Panel

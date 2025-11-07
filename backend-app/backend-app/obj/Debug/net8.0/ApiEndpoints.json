@@ -689,6 +689,22 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "backend_app.Controllers.TabletsController",
+    "Method": "CheckDuplicate",
+    "RelativePath": "api/Tablets/check-duplicate",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "assetTag",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "backend_app.Controllers.UserController",
     "Method": "Login",
     "RelativePath": "api/User/login",

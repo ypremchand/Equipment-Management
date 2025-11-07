@@ -1138,6 +1138,27 @@
         }
       }
     },
+    "/api/Tablets/check-duplicate": {
+      "get": {
+        "tags": [
+          "Tablets"
+        ],
+        "parameters": [
+          {
+            "name": "assetTag",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/User/register": {
       "post": {
         "tags": [
