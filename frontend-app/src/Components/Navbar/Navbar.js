@@ -129,7 +129,7 @@ function Navbar({ user, onLogout }) {
     to="/returnassets"
     onClick={() => setIsOpen(false)}
   >
-    Return Assets
+    RequestedAssets
   </Link>
 </li>
 
@@ -152,3 +152,4 @@ function Navbar({ user, onLogout }) {
 }
 
 export default Navbar;
+  
