@@ -147,7 +147,7 @@ const handleSubmit = async (e) => {
     return;
   }
 
-  // 🧩 ADD THIS DEBUG LOG HERE
+  //  ADD THIS DEBUG LOG HERE
   console.log("Submitting Request:", {
     username: user.name,
     email: user.email,
@@ -156,7 +156,7 @@ const handleSubmit = async (e) => {
     assetRequests: assetRequests.map((r) => ({
       asset: r.assetName,
       requestedQuantity: Number(r.requestedQuantity),
-      availableQuantity: Number(r.Quantity),
+      availableQuantity: Number(r.quantity),
     })),
     message:
       message ||
@@ -321,7 +321,7 @@ const handleSubmit = async (e) => {
                     type="number"
                     className="form-control"
                     min="1"
-                    max={req.availableQuantity}
+                    max={req.quantity}
                     value={req.requestedQuantity}
                     onChange={(e) => handleQuantityChange(index, e.target.value)}
                   />

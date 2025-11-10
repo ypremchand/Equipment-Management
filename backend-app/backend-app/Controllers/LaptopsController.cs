@@ -2,9 +2,9 @@
 using backend_app.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace backend_app.Controllers
 {
@@ -19,19 +19,64 @@ namespace backend_app.Controllers
             _context = context;
         }
 
-        // ✅ GET all laptops
+        // ✅ GET all laptops (with pagination + search)
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Laptop>>> GetLaptops()
+        public async Task<ActionResult<object>> GetLaptops(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 5,
+            [FromQuery] string? search = null)
         {
-            return await _context.Laptops.Include(l => l.Asset).ToListAsync();
+            if (page <= 0) page = 1;
+            if (pageSize <= 0) pageSize = 5;
+
+            var query = _context.Laptops
+                .Include(l => l.Asset)
+                .AsQueryable();
+
+            // ✅ Apply case-insensitive + space-insensitive search
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                search = search.Trim().ToLower().Replace(" ", "");
+
+                query = query.Where(l =>
+                    EF.Functions.Like(l.Brand.ToLower().Replace(" ", ""), $"%{search}%") ||
+                    EF.Functions.Like(l.ModelNumber.ToLower().Replace(" ", ""), $"%{search}%") ||
+                    EF.Functions.Like(l.AssetTag.ToLower().Replace(" ", ""), $"%{search}%") ||
+                    EF.Functions.Like(l.Processor.ToLower().Replace(" ", ""), $"%{search}%") ||
+                    EF.Functions.Like(l.Ram.ToLower().Replace(" ", ""), $"%{search}%") ||
+                    EF.Functions.Like(l.Storage.ToLower().Replace(" ", ""), $"%{search}%") ||
+                    EF.Functions.Like(l.OperatingSystem.ToLower().Replace(" ", ""), $"%{search}%") ||
+                    EF.Functions.Like(l.Location.ToLower().Replace(" ", ""), $"%{search}%")
+                );
+            }
+
+            var totalItems = await query.CountAsync();
+            var laptops = await query
+                .OrderBy(l => l.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+            return Ok(new
+            {
+                currentPage = page,
+                pageSize,
+                totalItems,
+                totalPages,
+                data = laptops
+            });
         }
 
         // ✅ GET single laptop
         [HttpGet("{id}")]
         public async Task<ActionResult<Laptop>> GetLaptop(int id)
         {
-            var laptop = await _context.Laptops.Include(l => l.Asset)
-                                               .FirstOrDefaultAsync(l => l.Id == id);
+            var laptop = await _context.Laptops
+                .Include(l => l.Asset)
+                .FirstOrDefaultAsync(l => l.Id == id);
+
             if (laptop == null)
                 return NotFound();
 
@@ -42,40 +87,27 @@ namespace backend_app.Controllers
         [HttpPost]
         public async Task<ActionResult<Laptop>> PostLaptop([FromBody] Laptop laptop)
         {
-            // Prevent duplicate AssetTag
             bool exists = await _context.Laptops
                 .AnyAsync(l => l.AssetTag.ToLower() == laptop.AssetTag.ToLower());
 
             if (exists)
                 return BadRequest(new { message = "Asset number already exists" });
 
-            // ✅ Find or create a generic asset dynamically
-            // Look for existing asset whose name loosely matches "laptop"
             var asset = await _context.Assets
                 .FirstOrDefaultAsync(a => a.Name.ToLower().Contains("laptop"));
 
-            // If no such asset found, create one dynamically
             if (asset == null)
             {
-                asset = new Asset
-                {
-                    Name = "Laptops",
-                    Quantity = 0
-                };
+                asset = new Asset { Name = "Laptops", Quantity = 0 };
                 _context.Assets.Add(asset);
                 await _context.SaveChangesAsync();
             }
 
-            // ✅ Link laptop to asset
             laptop.AssetId = asset.Id;
-
             _context.Laptops.Add(laptop);
             await _context.SaveChangesAsync();
 
-            // ✅ Update asset quantity automatically
-            asset.Quantity = await _context.Laptops
-                .CountAsync(l => l.AssetId == asset.Id);
-
+            asset.Quantity = await _context.Laptops.CountAsync(l => l.AssetId == asset.Id);
             _context.Entry(asset).State = EntityState.Modified;
             await _context.SaveChangesAsync();
 
@@ -86,8 +118,7 @@ namespace backend_app.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutLaptop(int id, [FromBody] Laptop laptop)
         {
-            if (id != laptop.Id)
-                return BadRequest();
+            laptop.Id = id;
 
             bool exists = await _context.Laptops
                 .AnyAsync(l => l.Id != id && l.AssetTag.ToLower() == laptop.AssetTag.ToLower());
@@ -96,17 +127,25 @@ namespace backend_app.Controllers
                 return BadRequest(new { message = "Another laptop with the same AssetTag exists" });
 
             _context.Entry(laptop).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
 
-            // ✅ Ensure the asset link remains consistent
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!_context.Laptops.Any(e => e.Id == id))
+                    return NotFound();
+                else
+                    throw;
+            }
+
             if (laptop.AssetId.HasValue)
             {
                 var asset = await _context.Assets.FindAsync(laptop.AssetId.Value);
                 if (asset != null)
                 {
-                    asset.Quantity = await _context.Laptops
-                        .CountAsync(l => l.AssetId == asset.Id);
-
+                    asset.Quantity = await _context.Laptops.CountAsync(l => l.AssetId == asset.Id);
                     _context.Entry(asset).State = EntityState.Modified;
                     await _context.SaveChangesAsync();
                 }
@@ -115,7 +154,7 @@ namespace backend_app.Controllers
             return NoContent();
         }
 
-        // ✅ DELETE
+        // ✅ DELETE (with delete history)
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteLaptop(int id)
         {
@@ -123,20 +162,26 @@ namespace backend_app.Controllers
             if (laptop == null)
                 return NotFound();
 
+            var history = new AdminDeleteHistory
+            {
+                DeletedItemName = laptop.AssetTag,
+                ItemType = "Laptop",
+                AdminName = "AdminUser",
+                DeletedAt = DateTime.Now
+            };
+            _context.AdminDeleteHistories.Add(history);
+
             int? assetId = laptop.AssetId;
 
             _context.Laptops.Remove(laptop);
             await _context.SaveChangesAsync();
 
-            // ✅ Auto-update linked asset’s quantity
             if (assetId.HasValue)
             {
                 var asset = await _context.Assets.FindAsync(assetId.Value);
                 if (asset != null)
                 {
-                    asset.Quantity = await _context.Laptops
-                        .CountAsync(l => l.AssetId == asset.Id);
-
+                    asset.Quantity = await _context.Laptops.CountAsync(l => l.AssetId == asset.Id);
                     _context.Entry(asset).State = EntityState.Modified;
                     await _context.SaveChangesAsync();
                 }

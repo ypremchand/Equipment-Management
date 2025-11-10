@@ -1,5 +1,25 @@
 [
   {
+    "ContainingType": "backend_app.Controllers.AdminDeleteHistoriesController",
+    "Method": "GetHistory",
+    "RelativePath": "api/AdminDeleteHistories",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[backend_app.Models.AdminDeleteHistory, backend-app, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
     "ContainingType": "backend_app.Controllers.AssetRequestsController",
     "Method": "CreateAssetRequest",
     "RelativePath": "api/AssetRequests",
@@ -175,7 +195,7 @@
         "IsRequired": true
       },
       {
-        "Name": "asset",
+        "Name": "updatedAsset",
         "Type": "backend_app.Models.Asset",
         "IsRequired": true
       }
@@ -253,18 +273,24 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": [
+    "Parameters": [
       {
-        "Type": "System.Collections.Generic.IEnumerable\u00601[[backend_app.Models.Laptop, backend-app, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
+        "Name": "page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "pageSize",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "search",
+        "Type": "System.String",
+        "IsRequired": false
       }
-    ]
+    ],
+    "ReturnTypes": []
   },
   {
     "ContainingType": "backend_app.Controllers.LaptopsController",
@@ -735,6 +761,26 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_app.Controllers.UserDeleteHistoriesController",
+    "Method": "GetHistory",
+    "RelativePath": "api/UserDeleteHistories",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[backend_app.Models.UserDeleteHistory, backend-app, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   },
   {
     "ContainingType": "backend_app.Controllers.WeatherForecastController",

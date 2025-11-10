@@ -12,8 +12,8 @@ using backend_app.Data;
 namespace backend_app.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251108074657_AddActionHistoryTable")]
-    partial class AddActionHistoryTable
+    [Migration("20251110094026_RemoveStatusAndAssignedToFromMobile")]
+    partial class RemoveStatusAndAssignedToFromMobile
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,7 +25,7 @@ namespace backend_app.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("backend_app.Models.AdminActionHistory", b =>
+            modelBuilder.Entity("backend_app.Models.AdminDeleteHistory", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -33,30 +33,24 @@ namespace backend_app.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("ActionDate")
+                    b.Property<string>("AdminName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("DeletedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("ActionType")
+                    b.Property<string>("DeletedItemName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("EntityName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("NewValue")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("OldValue")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PerformedBy")
+                    b.Property<string>("ItemType")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("AdminActionHistories");
+                    b.ToTable("AdminDeleteHistories");
                 });
 
             modelBuilder.Entity("backend_app.Models.Asset", b =>
@@ -158,9 +152,6 @@ namespace backend_app.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("AssignedTo")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("BatteryCapacity")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -206,16 +197,9 @@ namespace backend_app.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Storage")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("WarrantyExpiry")
-                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -254,10 +238,6 @@ namespace backend_app.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("AssetTag")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("AssignedTo")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -304,14 +284,9 @@ namespace backend_app.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Remarks")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SIMType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -440,7 +415,7 @@ namespace backend_app.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("backend_app.Models.UserActionHistory", b =>
+            modelBuilder.Entity("backend_app.Models.UserDeleteHistory", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -448,30 +423,24 @@ namespace backend_app.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("ActionDate")
+                    b.Property<DateTime>("DeletedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("ActionType")
+                    b.Property<string>("DeletedItemName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("EntityName")
+                    b.Property<string>("ItemType")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("NewValue")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("OldValue")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PerformedBy")
+                    b.Property<string>("UserName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("UserActionHistories");
+                    b.ToTable("UserDeleteHistories");
                 });
 
             modelBuilder.Entity("backend_app.Models.AssetRequest", b =>

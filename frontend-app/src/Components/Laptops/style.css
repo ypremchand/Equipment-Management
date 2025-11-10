@@ -1,0 +1,43 @@
+/* ✅ Prevent horizontal overflow everywhere */
+html,
+body {
+  width: 100%;
+  overflow-x: hidden !important;
+  margin: 0;
+  padding: 0;
+}
+
+/* ✅ Ensure table, modal, and form scale down properly */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ✅ Reduce Bootstrap's column padding on phones */
+@media (max-width: 576px) {
+  .row {
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+  }
+
+  [class*="col-"] {
+    padding-right: 6px !important;
+    padding-left: 6px !important;
+  }
+
+  input.form-control,
+  select.form-control,
+  button.btn {
+    font-size: 14px !important;
+  }
+
+  .container-fluid {
+    padding-right: 10px !important;
+    padding-left: 10px !important;
+  }
+
+  .table {
+    font-size: 13px !important;
+  }
+}

@@ -2,6 +2,7 @@
 using backend_app.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,7 +21,7 @@ namespace backend_app.Controllers
         }
 
         // ✅ GET: api/assets
-        // Returns all assets as they exist in the database
+        // Returns all assets from the database
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Asset>>> GetAssets()
         {
@@ -28,7 +29,7 @@ namespace backend_app.Controllers
             return Ok(assets);
         }
 
-        // ✅ GET: api/assets/5
+        // ✅ GET: api/assets/{id}
         // Returns a specific asset by ID
         [HttpGet("{id}")]
         public async Task<ActionResult<Asset>> GetAsset(int id)
@@ -51,33 +52,33 @@ namespace backend_app.Controllers
             return CreatedAtAction(nameof(GetAsset), new { id = asset.Id }, asset);
         }
 
-        // ✅ PUT: api/assets/5
+        // ✅ PUT: api/assets/{id}
         // Updates an existing asset
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateAsset(int id, Asset asset)
+        public async Task<IActionResult> UpdateAsset(int id, Asset updatedAsset)
         {
-            if (id != asset.Id)
-                return BadRequest();
+            if (id != updatedAsset.Id)
+                return BadRequest("Asset ID mismatch");
 
-            _context.Entry(asset).State = EntityState.Modified;
+            var existingAsset = await _context.Assets.FindAsync(id);
+            if (existingAsset == null)
+                return NotFound();
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!_context.Assets.Any(e => e.Id == id))
-                    return NotFound();
-                else
-                    throw;
-            }
+            // ✅ Update only the fields that are actually editable
+            existingAsset.Name = updatedAsset.Name;
+
+            // Keep the existing quantity intact
+            // (or update quantity only if it's explicitly provided)
+            // existingAsset.Quantity = updatedAsset.Quantity != 0 ? updatedAsset.Quantity : existingAsset.Quantity;
+
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // ✅ DELETE: api/assets/5
-        // Deletes an asset by ID
+
+        // ✅ DELETE: api/assets/{id}
+        // Deletes an asset and logs delete history
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAsset(int id)
         {
@@ -85,6 +86,18 @@ namespace backend_app.Controllers
             if (asset == null)
                 return NotFound();
 
+            // ✅ Save Delete History
+            var history = new AdminDeleteHistory
+            {
+                DeletedItemName = asset.Name,
+                ItemType = "Asset",
+                AdminName = "AdminUser", // 🔧 Replace with actual logged-in admin name if available
+                DeletedAt = DateTime.Now
+            };
+
+            _context.AdminDeleteHistories.Add(history);
+
+            // ✅ Remove the asset from database
             _context.Assets.Remove(asset);
             await _context.SaveChangesAsync();
 

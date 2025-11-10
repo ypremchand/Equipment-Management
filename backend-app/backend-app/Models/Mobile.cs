@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace backend_app.Models
@@ -23,7 +24,6 @@ namespace backend_app.Models
         [Required]
         public DateTime PurchaseDate { get; set; }
 
-
         [Required]
         public string Processor { get; set; }
 
@@ -32,7 +32,6 @@ namespace backend_app.Models
 
         [Required]
         public string Storage { get; set; }
-
 
         [Required]
         public string BatteryCapacity { get; set; }
@@ -49,19 +48,13 @@ namespace backend_app.Models
         [Required]
         public string Location { get; set; }
 
-        [Required]
-        public string Status { get; set; } = "Available"; // Available, Assigned, Repair, etc.
-
-        [Required]
-        public string AssignedTo { get; set; }
-
-        public string Remarks { get; set; }
+        public string? Remarks { get; set; }
 
         public DateTime? LastServicedDate { get; set; }
+
         [ForeignKey("Asset")]
         public int? AssetId { get; set; } // ✅ make nullable
 
         public Asset? Asset { get; set; } // ✅ allow null navigation
-
     }
 }

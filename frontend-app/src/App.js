@@ -13,6 +13,8 @@ import Laptops from "./Components/Laptops/Laptops";
 import Mobiles from "./Components/Mobiles/Mobiles";
 import Tablets from "./Components/Tablets/Tablets";
 import ContactedUs from "./Components/ContactedUs/ContactedUs";
+import AdminDeleteHistory from "./Components/AdminDeleteHistory/AdminDeleteHistory";
+import UserDeleteHistory from "./Components/UserDeleteHistory/UserDeleteHistory";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
@@ -75,6 +77,17 @@ function App() {
               path="/requests"
               element={user?.email?.includes("@admin") ? <Requests /> : <Navigate to="/" />}
             />
+            <Route
+  path="/admindeletehistory"
+  element={user?.email?.includes("@admin") ? <AdminDeleteHistory /> : <Navigate to="/" />}
+/>
+
+<Route
+  path="/userdeletehistory"
+  element={user?.email?.includes("@admin") ? <UserDeleteHistory /> : <Navigate to="/" />}
+/>
+
+
             <Route path="*" element={<Navigate to="/" />} />
           </>
         )}

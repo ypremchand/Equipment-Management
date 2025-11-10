@@ -69,6 +69,10 @@ if (exists) {
 await axios.post(ASSETS_API, { name: asset });
 alert("Asset added successfully!");
 
+// ✅ Notify Navbar to refresh Inventory
+window.dispatchEvent(new Event("inventoryUpdated"));
+
+
       }
       setAsset("");
       setEditingAssetId(null);

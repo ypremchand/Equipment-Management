@@ -12,6 +12,22 @@ namespace backend_app.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "AdminDeleteHistories",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    DeletedItemName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ItemType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    AdminName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AdminDeleteHistories", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Assets",
                 columns: table => new
                 {
@@ -36,6 +52,22 @@ namespace backend_app.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Locations", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserDeleteHistories",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    DeletedItemName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ItemType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UserName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserDeleteHistories", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -256,6 +288,9 @@ namespace backend_app.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "AdminDeleteHistories");
+
+            migrationBuilder.DropTable(
                 name: "AssetRequestItems");
 
             migrationBuilder.DropTable(
@@ -266,6 +301,9 @@ namespace backend_app.Migrations
 
             migrationBuilder.DropTable(
                 name: "Tablets");
+
+            migrationBuilder.DropTable(
+                name: "UserDeleteHistories");
 
             migrationBuilder.DropTable(
                 name: "AssetRequests");

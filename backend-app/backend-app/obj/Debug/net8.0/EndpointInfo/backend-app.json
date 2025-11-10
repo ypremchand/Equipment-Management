@@ -5,6 +5,44 @@
     "version": "1.0"
   },
   "paths": {
+    "/api/AdminDeleteHistories": {
+      "get": {
+        "tags": [
+          "AdminDeleteHistories"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminDeleteHistory"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminDeleteHistory"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminDeleteHistory"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/AssetRequests": {
       "post": {
         "tags": [
@@ -399,35 +437,36 @@
         "tags": [
           "Laptops"
         ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 5
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Laptop"
-                  }
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Laptop"
-                  }
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Laptop"
-                  }
-                }
-              }
-            }
+            "description": "OK"
           }
         }
       },
@@ -1221,6 +1260,44 @@
         }
       }
     },
+    "/api/UserDeleteHistories": {
+      "get": {
+        "tags": [
+          "UserDeleteHistories"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserDeleteHistory"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserDeleteHistory"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserDeleteHistory"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/WeatherForecast": {
       "get": {
         "tags": [
@@ -1263,6 +1340,32 @@
   },
   "components": {
     "schemas": {
+      "AdminDeleteHistory": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "deletedItemName": {
+            "type": "string",
+            "nullable": true
+          },
+          "itemType": {
+            "type": "string",
+            "nullable": true
+          },
+          "adminName": {
+            "type": "string",
+            "nullable": true
+          },
+          "deletedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
       "Asset": {
         "required": [
           "name"
@@ -1428,13 +1531,12 @@
           "displaySize",
           "graphicsCard",
           "location",
+          "modelNumber",
           "operatingSystem",
           "processor",
           "purchaseDate",
           "ram",
-          "serialNumber",
-          "storage",
-          "warrantyExpiry"
+          "storage"
         ],
         "type": "object",
         "properties": {
@@ -1446,7 +1548,7 @@
             "minLength": 1,
             "type": "string"
           },
-          "serialNumber": {
+          "modelNumber": {
             "minLength": 1,
             "type": "string"
           },
@@ -1455,10 +1557,6 @@
             "type": "string"
           },
           "purchaseDate": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "warrantyExpiry": {
             "type": "string",
             "format": "date-time"
           },
@@ -1490,13 +1588,9 @@
             "minLength": 1,
             "type": "string"
           },
-          "status": {
-            "type": "string",
-            "nullable": true
-          },
-          "assignedTo": {
-            "type": "string",
-            "nullable": true
+          "location": {
+            "minLength": 1,
+            "type": "string"
           },
           "remarks": {
             "type": "string",
@@ -1506,10 +1600,6 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
-          },
-          "location": {
-            "minLength": 1,
-            "type": "string"
           },
           "assetId": {
             "type": "integer",
@@ -1562,7 +1652,6 @@
       "Mobile": {
         "required": [
           "assetTag",
-          "assignedTo",
           "batteryCapacity",
           "brand",
           "displaySize",
@@ -1574,7 +1663,6 @@
           "purchaseDate",
           "ram",
           "simType",
-          "status",
           "storage"
         ],
         "type": "object",
@@ -1635,14 +1723,6 @@
             "minLength": 1,
             "type": "string"
           },
-          "status": {
-            "minLength": 1,
-            "type": "string"
-          },
-          "assignedTo": {
-            "minLength": 1,
-            "type": "string"
-          },
           "remarks": {
             "type": "string",
             "nullable": true
@@ -1666,20 +1746,16 @@
       "Tablet": {
         "required": [
           "assetTag",
-          "assignedTo",
           "batteryCapacity",
           "brand",
           "displaySize",
           "location",
           "model",
           "networkType",
-          "operatingSystem",
           "processor",
           "purchaseDate",
           "ram",
-          "serialNumber",
           "simSupport",
-          "status",
           "storage"
         ],
         "type": "object",
@@ -1693,10 +1769,6 @@
             "type": "string"
           },
           "model": {
-            "minLength": 1,
-            "type": "string"
-          },
-          "serialNumber": {
             "minLength": 1,
             "type": "string"
           },
@@ -1728,9 +1800,9 @@
             "minLength": 1,
             "type": "string"
           },
-          "operatingSystem": {
-            "minLength": 1,
-            "type": "string"
+          "imeiNumber": {
+            "type": "string",
+            "nullable": true
           },
           "simSupport": {
             "minLength": 1,
@@ -1741,14 +1813,6 @@
             "type": "string"
           },
           "location": {
-            "minLength": 1,
-            "type": "string"
-          },
-          "status": {
-            "minLength": 1,
-            "type": "string"
-          },
-          "assignedTo": {
             "minLength": 1,
             "type": "string"
           },
@@ -1797,6 +1861,32 @@
           "password": {
             "minLength": 1,
             "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UserDeleteHistory": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "deletedItemName": {
+            "type": "string",
+            "nullable": true
+          },
+          "itemType": {
+            "type": "string",
+            "nullable": true
+          },
+          "userName": {
+            "type": "string",
+            "nullable": true
+          },
+          "deletedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "additionalProperties": false

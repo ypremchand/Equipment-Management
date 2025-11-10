@@ -27,8 +27,6 @@ function Mobiles() {
     simType: "",
     networkType: "",
     location: "",
-    status: "Available",
-    assignedTo: "",
     remarks: "",
     lastServicedDate: "",
   });
@@ -56,10 +54,7 @@ function Mobiles() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
-
-    if (name === "assetTag") {
-      handleAssetTagChange(value);
-    }
+    if (name === "assetTag") handleAssetTagChange(value);
   };
 
   // ✅ Real-time AssetTag duplicate validation
@@ -70,11 +65,7 @@ function Mobiles() {
     }
     try {
       const res = await axios.get(`${API_URL}/check-duplicate?assetTag=${value}`);
-      if (res.data.exists) {
-        setAssetError("Asset number already exists");
-      } else {
-        setAssetError("");
-      }
+      setAssetError(res.data.exists ? "Asset number already exists" : "");
     } catch (error) {
       console.error("Error checking asset tag:", error);
     }
@@ -149,8 +140,6 @@ function Mobiles() {
       simType: "",
       networkType: "",
       location: "",
-      status: "Available",
-      assignedTo: "",
       remarks: "",
       lastServicedDate: "",
     });
@@ -176,29 +165,13 @@ function Mobiles() {
             {Object.keys(form).map((key) => (
               <div className="col-md-4 mb-3" key={key}>
                 <label className="form-label text-capitalize">{key}</label>
-                {key === "status" ? (
-                  <select
-                    name={key}
-                    className="form-select"
-                    value={form[key]}
-                    onChange={handleChange}
-                  >
-                    <option>Available</option>
-                    <option>Assigned</option>
-                    <option>Repair</option>
-                    <option>Disposed</option>
-                  </select>
-                ) : (
-                  <input
-                    type={key.toLowerCase().includes("date") ? "date" : "text"}
-                    name={key}
-                    value={form[key] || ""}
-                    onChange={handleChange}
-                    className={`form-control ${
-                      key === "assetTag" && assetError ? "is-invalid" : ""
-                    }`}
-                  />
-                )}
+                <input
+                  type={key.toLowerCase().includes("date") ? "date" : "text"}
+                  name={key}
+                  value={form[key] || ""}
+                  onChange={handleChange}
+                  className={`form-control ${key === "assetTag" && assetError ? "is-invalid" : ""}`}
+                />
                 {key === "assetTag" && assetError && (
                   <div className="invalid-feedback">{assetError}</div>
                 )}
@@ -236,7 +209,6 @@ function Mobiles() {
               <th>Brand</th>
               <th>Model</th>
               <th>IMEI</th>
-              <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -247,7 +219,6 @@ function Mobiles() {
                 <td>{mobile.brand}</td>
                 <td>{mobile.model}</td>
                 <td>{mobile.imeiNumber}</td>
-                <td>{mobile.status}</td>
                 <td>
                   <button
                     className="btn btn-info btn-sm me-2"
@@ -256,18 +227,12 @@ function Mobiles() {
                       setShowModal(true);
                     }}
                   >
-                    View Details
+                    View
                   </button>
-                  <button
-                    className="btn btn-warning btn-sm me-2"
-                    onClick={() => handleEdit(mobile)}
-                  >
+                  <button className="btn btn-warning btn-sm me-2" onClick={() => handleEdit(mobile)}>
                     Edit
                   </button>
-                  <button
-                    className="btn btn-danger btn-sm"
-                    onClick={() => handleDelete(mobile.id)}
-                  >
+                  <button className="btn btn-danger btn-sm" onClick={() => handleDelete(mobile.id)}>
                     Delete
                   </button>
                 </td>
@@ -280,31 +245,30 @@ function Mobiles() {
       )}
 
       {/* Modal */}
- <Modal show={showModal} onHide={() => setShowModal(false)}>
-  <Modal.Header closeButton>
-    <Modal.Title>Mobile Details</Modal.Title>
-  </Modal.Header>
-  <Modal.Body>
-    {selectedMobile && (
-      <div>
-        {Object.entries(selectedMobile).map(([key, value]) => (
-          <p key={key}>
-            <strong className="text-capitalize">{key}: </strong>
-            {typeof value === "object" && value !== null
-              ? value.name || JSON.stringify(value) // ✅ Show asset name if object
-              : value?.toString() || "-"}
-          </p>
-        ))}
-      </div>
-    )}
-  </Modal.Body>
-  <Modal.Footer>
-    <Button variant="secondary" onClick={() => setShowModal(false)}>
-      Close
-    </Button>
-  </Modal.Footer>
-</Modal>
-
+      <Modal show={showModal} onHide={() => setShowModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Mobile Details</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedMobile && (
+            <div>
+              {Object.entries(selectedMobile).map(([key, value]) => (
+                <p key={key}>
+                  <strong className="text-capitalize">{key}: </strong>
+                  {typeof value === "object" && value !== null
+                    ? value.name || JSON.stringify(value)
+                    : value?.toString() || "-"}
+                </p>
+              ))}
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
       <Link to="/adminpanel" className="btn btn-secondary mt-3">
         Back to Admin Panel

@@ -130,11 +130,15 @@ function Requests() {
                   <td>
                     <span
                       className={`badge ${
-                        req.status === "Pending"
+                        String(req.status).trim().toLowerCase() === "pending" ||
+                        String(req.status).trim().toLowerCase() === "requested" ||
+                        String(req.status).trim() === "0"
                           ? "bg-warning text-dark"
-                          : req.status === "Approved"
+                          : String(req.status).trim().toLowerCase() ===
+                            "approved"
                           ? "bg-success"
-                          : req.status === "Rejected"
+                          : String(req.status).trim().toLowerCase() ===
+                            "rejected"
                           ? "bg-danger"
                           : "bg-secondary"
                       }`}
@@ -151,7 +155,11 @@ function Requests() {
                     >
                       View
                     </Button>
-                    {req.status === "Pending" && (
+
+                    {/* ✅ Approve/Reject shown only for pending/requested */}
+                    {["pending", "requested", "0"].includes(
+                      String(req.status).trim().toLowerCase()
+                    ) && (
                       <>
                         <Button
                           variant="success"
@@ -171,6 +179,7 @@ function Requests() {
                         </Button>
                       </>
                     )}
+
                     <Button
                       variant="outline-danger"
                       size="sm"

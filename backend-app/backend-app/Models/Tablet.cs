@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace backend_app.Models
@@ -13,9 +14,6 @@ namespace backend_app.Models
 
         [Required]
         public string Model { get; set; }
-
-        [Required]
-        public string SerialNumber { get; set; }
 
         [Required]
         public string AssetTag { get; set; }
@@ -38,32 +36,27 @@ namespace backend_app.Models
         [Required]
         public string BatteryCapacity { get; set; }
 
+        // ✅ Optional IMEI number (only required for "Wi-Fi + Cellular")
+        public string? IMEINumber { get; set; }
+
+        // ✅ SIM Support: Wi-Fi Only / Wi-Fi + Cellular
         [Required]
-        public string OperatingSystem { get; set; }
+        public string SIMSupport { get; set; }
 
         [Required]
-        public string SIMSupport { get; set; } // e.g. WiFi / WiFi + Cellular
-
-        [Required]
-        public string NetworkType { get; set; } // e.g. 4G / 5G / None
+        public string NetworkType { get; set; } // e.g., 4G / 5G / None
 
         [Required]
         public string Location { get; set; }
 
-        [Required]
-        public string Status { get; set; } = "Available";
-
-        [Required]
-        public string AssignedTo { get; set; }
-
-        public string Remarks { get; set; }
+        public string? Remarks { get; set; }
 
         public DateTime? LastServicedDate { get; set; }
-        // ✅ Foreign Key (linked to Asset table)
+
+        // ✅ Relation to Asset table (for inventory tracking)
         [ForeignKey("Asset")]
         public int? AssetId { get; set; }
 
-        // ✅ Navigation property
         public Asset? Asset { get; set; }
     }
 }
