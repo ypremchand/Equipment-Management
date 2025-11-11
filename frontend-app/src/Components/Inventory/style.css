@@ -1,0 +1,31 @@
+/* Components/Inventory/style.css */
+
+/* Keep dropdown visually consistent with your navbar styles */
+.inventory-dropdown {
+  min-width: 200px;
+  padding: 0.25rem 0;
+}
+
+/* make each asset look nice */
+.inventory-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #fff;
+}
+
+.inventory-item:hover {
+  background: #fff;
+  color: #000;
+}
+
+/* small responsiveness tweak */
+@media (max-width: 576px) {
+  .inventory-dropdown {
+    min-width: 160px;
+  }
+}

@@ -3,14 +3,13 @@ using backend_app.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace backend_app.Controllers
 {
-    [ApiController]
     [Route("api/[controller]")]
+    [ApiController]
     public class MobilesController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -20,34 +19,83 @@ namespace backend_app.Controllers
             _context = context;
         }
 
+        // ✅ GET all mobiles (with pagination + search)
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Mobile>>> GetMobiles()
+        public async Task<ActionResult<object>> GetMobiles(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 5,
+            [FromQuery] string? search = null)
         {
-            return await _context.Mobiles.Include(m => m.Asset).ToListAsync();
+            if (page <= 0) page = 1;
+            if (pageSize <= 0) pageSize = 5;
+
+            var query = _context.Mobiles
+                .Include(m => m.Asset)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                search = search.Trim().ToLower().Replace(" ", "");
+
+                query = query.Where(m =>
+                    EF.Functions.Like(m.Brand.ToLower().Replace(" ", ""), $"%{search}%") ||
+                    EF.Functions.Like(m.Model.ToLower().Replace(" ", ""), $"%{search}%") ||
+                    EF.Functions.Like(m.AssetTag.ToLower().Replace(" ", ""), $"%{search}%") ||
+                    EF.Functions.Like(m.Processor.ToLower().Replace(" ", ""), $"%{search}%") ||
+                    EF.Functions.Like(m.Ram.ToLower().Replace(" ", ""), $"%{search}%") ||
+                    EF.Functions.Like(m.Storage.ToLower().Replace(" ", ""), $"%{search}%") ||
+                    EF.Functions.Like(m.Location.ToLower().Replace(" ", ""), $"%{search}%")
+                );
+            }
+
+            var totalItems = await query.CountAsync();
+            var mobiles = await query
+                .OrderBy(m => m.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+            return Ok(new
+            {
+                currentPage = page,
+                pageSize,
+                totalItems,
+                totalPages,
+                data = mobiles
+            });
         }
 
+        // ✅ GET single mobile
         [HttpGet("{id}")]
         public async Task<ActionResult<Mobile>> GetMobile(int id)
         {
-            var mobile = await _context.Mobiles.Include(m => m.Asset)
-                                               .FirstOrDefaultAsync(m => m.Id == id);
+            var mobile = await _context.Mobiles
+                .Include(m => m.Asset)
+                .FirstOrDefaultAsync(m => m.Id == id);
+
             if (mobile == null)
                 return NotFound();
 
             return mobile;
         }
 
+        // ✅ POST new mobile
         [HttpPost]
         public async Task<ActionResult<Mobile>> PostMobile([FromBody] Mobile mobile)
         {
-            if (await _context.Mobiles.AnyAsync(m => m.AssetTag.ToLower() == mobile.AssetTag.ToLower()))
+            bool exists = await _context.Mobiles
+                .AnyAsync(m => m.AssetTag.ToLower() == mobile.AssetTag.ToLower());
+
+            if (exists)
                 return BadRequest(new { message = "Asset number already exists" });
 
-            var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Name.ToLower().Contains("mobile"))
-                        ?? new Asset { Name = "Mobiles", Quantity = 0 };
+            var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Name.ToLower().Contains("mobile"));
 
-            if (asset.Id == 0)
+            if (asset == null)
             {
+                asset = new Asset { Name = "Mobiles", Quantity = 0 };
                 _context.Assets.Add(asset);
                 await _context.SaveChangesAsync();
             }
@@ -63,17 +111,31 @@ namespace backend_app.Controllers
             return CreatedAtAction(nameof(GetMobile), new { id = mobile.Id }, mobile);
         }
 
+        // ✅ PUT existing mobile
         [HttpPut("{id}")]
         public async Task<IActionResult> PutMobile(int id, [FromBody] Mobile mobile)
         {
-            if (id != mobile.Id)
-                return BadRequest();
+            mobile.Id = id;
 
-            if (await _context.Mobiles.AnyAsync(m => m.Id != id && m.AssetTag.ToLower() == mobile.AssetTag.ToLower()))
-                return BadRequest(new { message = "Duplicate asset tag" });
+            bool exists = await _context.Mobiles
+                .AnyAsync(m => m.Id != id && m.AssetTag.ToLower() == mobile.AssetTag.ToLower());
+
+            if (exists)
+                return BadRequest(new { message = "Another mobile with the same AssetTag exists" });
 
             _context.Entry(mobile).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!_context.Mobiles.Any(e => e.Id == id))
+                    return NotFound();
+                else
+                    throw;
+            }
 
             if (mobile.AssetId.HasValue)
             {
@@ -89,7 +151,7 @@ namespace backend_app.Controllers
             return NoContent();
         }
 
-        // ✅ DELETE + log
+        // ✅ DELETE + Log delete
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteMobile(int id)
         {
@@ -107,6 +169,7 @@ namespace backend_app.Controllers
             _context.AdminDeleteHistories.Add(history);
 
             int? assetId = mobile.AssetId;
+
             _context.Mobiles.Remove(mobile);
             await _context.SaveChangesAsync();
 
@@ -124,11 +187,12 @@ namespace backend_app.Controllers
             return NoContent();
         }
 
+        // ✅ Duplicate assetTag check
         [HttpGet("check-duplicate")]
         public async Task<IActionResult> CheckDuplicate([FromQuery] string assetTag)
         {
             if (string.IsNullOrWhiteSpace(assetTag))
-                return BadRequest(new { message = "Asset tag is required" });
+                return BadRequest(new { message = "AssetTag is required" });
 
             bool exists = await _context.Mobiles
                 .AnyAsync(m => m.AssetTag.ToLower() == assetTag.ToLower());

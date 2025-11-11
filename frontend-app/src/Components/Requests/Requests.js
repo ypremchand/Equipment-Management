@@ -37,8 +37,6 @@ function Requests() {
       await axios.post(`${API_URL}/approve/${id}`);
       setMessage("✅ Request approved successfully!");
       fetchRequests();
-
-      // ✅ Notify AdminPanel to refresh assets live
       window.dispatchEvent(new Event("assetsUpdated"));
     } catch (error) {
       console.error(error);
@@ -53,8 +51,6 @@ function Requests() {
       await axios.post(`${API_URL}/reject/${id}`);
       setMessage("🚫 Request rejected successfully!");
       fetchRequests();
-
-      // ✅ Notify AdminPanel to refresh assets live
       window.dispatchEvent(new Event("assetsUpdated"));
     } catch (error) {
       console.error(error);
@@ -81,8 +77,6 @@ function Requests() {
       await axios.delete(`${API_URL}/${id}`);
       setMessage("🗑️ Request deleted successfully!");
       fetchRequests();
-
-      // ✅ Notify AdminPanel to refresh assets live
       window.dispatchEvent(new Event("assetsUpdated"));
     } catch (error) {
       console.error(error);
@@ -134,11 +128,9 @@ function Requests() {
                         String(req.status).trim().toLowerCase() === "requested" ||
                         String(req.status).trim() === "0"
                           ? "bg-warning text-dark"
-                          : String(req.status).trim().toLowerCase() ===
-                            "approved"
+                          : String(req.status).trim().toLowerCase() === "approved"
                           ? "bg-success"
-                          : String(req.status).trim().toLowerCase() ===
-                            "rejected"
+                          : String(req.status).trim().toLowerCase() === "rejected"
                           ? "bg-danger"
                           : "bg-secondary"
                       }`}
@@ -156,7 +148,7 @@ function Requests() {
                       View
                     </Button>
 
-                    {/* ✅ Approve/Reject shown only for pending/requested */}
+                    {/* ✅ Approve/Reject only for pending/requested */}
                     {["pending", "requested", "0"].includes(
                       String(req.status).trim().toLowerCase()
                     ) && (
@@ -217,21 +209,20 @@ function Requests() {
               </p>
               <hr />
               <h5>Requested Items:</h5>
+
+              {/* ✅ Embed assignment logic here */}
               <Table bordered hover responsive>
                 <thead className="table-secondary">
                   <tr>
                     <th>Asset</th>
-                    <th>Requested Quantity</th>
-                    <th>Approved Quantity</th>
+                    <th>Requested Qty</th>
+                    <th>Approved Qty</th>
+                    <th>Assign Laptops</th>
                   </tr>
                 </thead>
                 <tbody>
                   {selectedRequest.assetRequestItems?.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.asset?.name}</td>
-                      <td>{item.requestedQuantity}</td>
-                      <td>{item.approvedQuantity || "-"}</td>
-                    </tr>
+                    <RequestItemRow key={item.id} item={item} />
                   ))}
                 </tbody>
               </Table>
@@ -244,3 +235,98 @@ function Requests() {
 }
 
 export default Requests;
+
+/* ✅ Child component inside same file */
+function RequestItemRow({ item }) {
+  const [availableLaptops, setAvailableLaptops] = useState([]);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [assigning, setAssigning] = useState(false);
+
+  const API_URL = "http://localhost:5083/api/AssetRequests";
+  const LAPTOPS_API = "http://localhost:5083/api/laptops";
+
+  useEffect(() => {
+    if (item.asset?.name?.toLowerCase().includes("laptop")) {
+      axios.get(LAPTOPS_API).then((res) => {
+        setAvailableLaptops(res.data.data || []);
+      });
+    }
+  }, [item]);
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleAssign = async () => {
+    if (selectedIds.length === 0) {
+      alert("Please select at least one laptop.");
+      return;
+    }
+    setAssigning(true);
+    try {
+      await axios.post(`${API_URL}/assign/${item.id}`, selectedIds);
+      alert("✅ Laptops assigned successfully!");
+      setSelectedIds([]);
+    } catch (err) {
+      console.error(err);
+      alert("❌ Failed to assign laptops.");
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  return (
+    <tr>
+      <td>{item.asset?.name}</td>
+      <td>{item.requestedQuantity}</td>
+      <td>{item.approvedQuantity || "-"}</td>
+      <td>
+        {item.asset?.name?.toLowerCase().includes("laptop") ? (
+          <>
+            <div
+              style={{
+                maxHeight: "150px",
+                overflowY: "auto",
+                border: "1px solid #ddd",
+                padding: "5px",
+                borderRadius: "5px",
+              }}
+            >
+              {availableLaptops.map((l) => (
+                <div key={l.id} className="form-check">
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id={`laptop-${l.id}`}
+                    checked={selectedIds.includes(l.id)}
+                    onChange={() => toggleSelect(l.id)}
+                    disabled={assigning}
+                  />
+                  <label
+                    className="form-check-label"
+                    htmlFor={`laptop-${l.id}`}
+                  >
+                    {l.assetTag} ({l.brand} - {l.modelNumber})
+                  </label>
+                </div>
+              ))}
+            </div>
+            <Button
+              size="sm"
+              variant="primary"
+              className="mt-2"
+              onClick={handleAssign}
+              disabled={assigning}
+            >
+              {assigning ? "Assigning..." : "Assign Selected"}
+            </Button>
+          </>
+        ) : (
+          <em>Not applicable</em>
+        )}
+      </td>
+    </tr>
+  );
+}

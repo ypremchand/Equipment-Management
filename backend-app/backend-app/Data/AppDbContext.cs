@@ -17,8 +17,11 @@ namespace backend_app.Data
         public DbSet<Location> Locations { get; set; }
         public DbSet<AssetRequest> AssetRequests { get; set; }
         public DbSet<AssetRequestItem> AssetRequestItems { get; set; }
+        public DbSet<AssignedAsset> AssignedAssets { get; set; }
+
         public DbSet<AdminDeleteHistory> AdminDeleteHistories { get; set; }
         public DbSet<UserDeleteHistory> UserDeleteHistories { get; set; }
+
 
 
 

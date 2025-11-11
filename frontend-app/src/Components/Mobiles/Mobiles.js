@@ -3,6 +3,7 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import { Modal, Button } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "./style.css";
 
 function Mobiles() {
   const [mobiles, setMobiles] = useState([]);
@@ -31,33 +32,51 @@ function Mobiles() {
     lastServicedDate: "",
   });
 
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const pageSize = 5;
+  const [searchInput, setSearchInput] = useState("");
+
   const API_URL = "http://localhost:5083/api/mobiles";
 
-  // ✅ Fetch mobiles
-  const fetchMobiles = async () => {
+  // ✅ Fetch mobiles (pagination + search)
+  const fetchMobiles = async (currentPage = 1, searchText = "") => {
     setLoading(true);
     try {
-      const res = await axios.get(API_URL);
-      setMobiles(res.data);
+      const res = await axios.get(
+        `${API_URL}?page=${currentPage}&pageSize=${pageSize}&search=${encodeURIComponent(
+          searchText.trim()
+        )}`
+      );
+
+      if (res.data && Array.isArray(res.data.data)) {
+        setMobiles(res.data.data);
+        setTotalPages(res.data.totalPages);
+        setPage(res.data.currentPage);
+      } else setMobiles([]);
     } catch (error) {
-      console.error("Error fetching mobiles:", error);
+      console.error("Error fetching Mobiles:", error);
+      setMobiles([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchMobiles();
-  }, []);
+    const delayDebounce = setTimeout(() => fetchMobiles(1, searchInput), 400);
+    return () => clearTimeout(delayDebounce);
+  }, [searchInput]);
 
-  // ✅ Handle input changes
+  useEffect(() => {
+    fetchMobiles(page, searchInput);
+  }, [page, searchInput]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
     if (name === "assetTag") handleAssetTagChange(value);
   };
 
-  // ✅ Real-time AssetTag duplicate validation
   const handleAssetTagChange = async (value) => {
     if (!value.trim()) {
       setAssetError("");
@@ -71,15 +90,12 @@ function Mobiles() {
     }
   };
 
-  // ✅ Submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (assetError) {
       alert("Please fix the asset tag issue before saving.");
       return;
     }
-
     try {
       if (editingId) {
         await axios.put(`${API_URL}/${editingId}`, form);
@@ -88,17 +104,14 @@ function Mobiles() {
         await axios.post(API_URL, form);
         alert("Mobile added successfully!");
       }
-
       resetForm();
-      setShowForm(false);
-      fetchMobiles();
+      fetchMobiles(page, searchInput);
     } catch (error) {
       console.error("Error saving mobile:", error);
       alert(error.response?.data?.message || "Failed to save mobile");
     }
   };
 
-  // ✅ Edit
   const handleEdit = (mobile) => {
     setEditingId(mobile.id);
     setForm({
@@ -110,20 +123,18 @@ function Mobiles() {
     setShowForm(true);
   };
 
-  // ✅ Delete
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this mobile?")) return;
     try {
       await axios.delete(`${API_URL}/${id}`);
       alert("Mobile deleted successfully!");
-      fetchMobiles();
+      fetchMobiles(page, searchInput);
     } catch (error) {
       console.error("Error deleting mobile:", error);
       alert("Failed to delete mobile");
     }
   };
 
-  // ✅ Reset
   const resetForm = () => {
     setEditingId(null);
     setForm({
@@ -144,27 +155,53 @@ function Mobiles() {
       lastServicedDate: "",
     });
     setAssetError("");
+    setShowForm(false);
   };
 
   return (
-    <div className="container mt-4">
-      <h3 className="text-center mb-4">Mobile Inventory</h3>
+    <div
+      className="mobiles-page container-fluid mt-4 mb-5 px-2"
+      style={{
+        maxWidth: "100vw",
+        overflowX: "hidden",
+        paddingLeft: "10px",
+        paddingRight: "10px",
+      }}
+    >
+      <h3 className="text-center mb-4">📱 Mobiles</h3>
+
+      {/* ✅ Search */}
+      <div className="row justify-content-center mb-3 mx-0">
+        <div className="col-12 col-sm-10 col-md-6 px-2">
+          <input
+            type="text"
+            placeholder="🔍 Search Mobiles..."
+            className="form-control w-100"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
+        </div>
+      </div>
 
       {!showForm && (
         <div className="text-center mb-3">
           <button className="btn btn-success" onClick={() => setShowForm(true)}>
-            Add New Mobile
+            ➕ Add New Mobile
           </button>
         </div>
       )}
 
       {showForm && (
         <form className="card p-4 shadow-sm mb-4" onSubmit={handleSubmit}>
-          <h4>{editingId ? "Edit Mobile" : "Add Mobile"}</h4>
+          <h5 className="mb-3 text-center fw-bold">
+            {editingId ? "✏️ Edit Mobile" : "🆕 Add Mobile"}
+          </h5>
           <div className="row">
             {Object.keys(form).map((key) => (
               <div className="col-md-4 mb-3" key={key}>
-                <label className="form-label text-capitalize">{key}</label>
+                <label className="form-label text-capitalize">
+                  {key.replace(/([A-Z])/g, " $1")}
+                </label>
                 <input
                   type={key.toLowerCase().includes("date") ? "date" : "text"}
                   name={key}
@@ -180,71 +217,89 @@ function Mobiles() {
           </div>
           <div className="text-center">
             <button type="submit" className="btn btn-primary me-2" disabled={!!assetError}>
-              {editingId ? "Update" : "Save"}
+              {editingId ? "Update Mobile" : "Save Mobile"}
             </button>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => {
-                setShowForm(false);
-                resetForm();
-              }}
-            >
+            <button type="button" className="btn btn-secondary" onClick={resetForm}>
               Cancel
             </button>
           </div>
         </form>
       )}
 
-      {/* Table */}
+      {/* ✅ Table */}
       {loading ? (
         <div className="text-center my-3">
           <div className="spinner-border" role="status"></div>
         </div>
       ) : mobiles.length > 0 ? (
-        <table className="table table-bordered text-center">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Brand</th>
-              <th>Model</th>
-              <th>IMEI</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {mobiles.map((mobile, idx) => (
-              <tr key={mobile.id}>
-                <td>{idx + 1}</td>
-                <td>{mobile.brand}</td>
-                <td>{mobile.model}</td>
-                <td>{mobile.imeiNumber}</td>
-                <td>
-                  <button
-                    className="btn btn-info btn-sm me-2"
-                    onClick={() => {
-                      setSelectedMobile(mobile);
-                      setShowModal(true);
-                    }}
-                  >
-                    View
-                  </button>
-                  <button className="btn btn-warning btn-sm me-2" onClick={() => handleEdit(mobile)}>
-                    Edit
-                  </button>
-                  <button className="btn btn-danger btn-sm" onClick={() => handleDelete(mobile.id)}>
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <>
+          <div className="table-responsive">
+            <table className="table table-bordered text-center align-middle table-striped table-hover">
+              <thead className="table-dark">
+                <tr>
+                  <th>#</th>
+                  <th>Brand</th>
+                  <th>Model</th>
+                  <th>IMEI</th>
+                  <th>Processor</th>
+                  <th>RAM</th>
+                  <th>Storage</th>
+                  <th>Location</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mobiles.map((mobile, idx) => (
+                  <tr key={mobile.id}>
+                    <td>{(page - 1) * pageSize + idx + 1}</td>
+                    <td>{mobile.brand}</td>
+                    <td>{mobile.model}</td>
+                    <td>{mobile.imeiNumber}</td>
+                    <td>{mobile.processor}</td>
+                    <td>{mobile.ram}</td>
+                    <td>{mobile.storage}</td>
+                    <td>{mobile.location}</td>
+                    <td>
+                      <button
+                        className="btn btn-info btn-sm me-2"
+                        onClick={() => {
+                          setSelectedMobile(mobile);
+                          setShowModal(true);
+                        }}
+                      >
+                        View
+                      </button>
+                      <button className="btn btn-warning btn-sm me-2" onClick={() => handleEdit(mobile)}>
+                        Edit
+                      </button>
+                      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(mobile.id)}>
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* ✅ Unified Pagination */}
+          <div className="d-flex justify-content-center align-items-center mt-4 gap-3 flex-wrap">
+            <Button variant="dark" className="px-3 py-1" disabled={page === 1} onClick={() => setPage(page - 1)}>
+              ◀ Previous
+            </Button>
+            <span className="fw-semibold text-dark">
+              Page {page} of {totalPages}
+            </span>
+            <Button variant="dark" className="px-3 py-1" disabled={page === totalPages} onClick={() => setPage(page + 1)}>
+              Next ▶
+            </Button>
+          </div>
+        </>
       ) : (
-        <p>No mobiles found.</p>
+        <p className="text-center">No mobiles found.</p>
       )}
 
-      {/* Modal */}
+      {/* ✅ Modal */}
       <Modal show={showModal} onHide={() => setShowModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Mobile Details</Modal.Title>
@@ -254,7 +309,7 @@ function Mobiles() {
             <div>
               {Object.entries(selectedMobile).map(([key, value]) => (
                 <p key={key}>
-                  <strong className="text-capitalize">{key}: </strong>
+                  <strong>{key.replace(/([A-Z])/g, " $1")}: </strong>
                   {typeof value === "object" && value !== null
                     ? value.name || JSON.stringify(value)
                     : value?.toString() || "-"}
@@ -270,9 +325,11 @@ function Mobiles() {
         </Modal.Footer>
       </Modal>
 
-      <Link to="/adminpanel" className="btn btn-secondary mt-3">
-        Back to Admin Panel
-      </Link>
+      <div className="text-center mt-4">
+        <Link to="/adminpanel" className="btn btn-outline-dark px-3 px-sm-4 py-2 w-sm-auto">
+          ⬅ Back to Admin Panel
+        </Link>
+      </div>
     </div>
   );
 }

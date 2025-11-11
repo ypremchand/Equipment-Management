@@ -60,17 +60,17 @@ function AdminPanel() {
         alert("Asset updated successfully!");
       } else {
         // ✅ Prevent duplicate assets (case-insensitive)
-const exists = assets.some(a => a.name.toLowerCase() === asset.toLowerCase());
-if (exists) {
-  alert("Asset already exists!");
-  return;
-}
+        const exists = assets.some(a => a.name.toLowerCase() === asset.toLowerCase());
+        if (exists) {
+          alert("Asset already exists!");
+          return;
+        }
 
-await axios.post(ASSETS_API, { name: asset });
-alert("Asset added successfully!");
+        await axios.post(ASSETS_API, { name: asset });
+        alert("Asset added successfully!");
 
-// ✅ Notify Navbar to refresh Inventory
-window.dispatchEvent(new Event("inventoryUpdated"));
+        // ✅ Notify Navbar to refresh Inventory
+        window.dispatchEvent(new Event("inventoryUpdated"));
 
 
       }
@@ -178,23 +178,15 @@ window.dispatchEvent(new Event("inventoryUpdated"));
                 {assets.map((item, i) => (
                   <tr key={item.id}>
                     <td>{i + 1}</td>
-                    <td>
-                      <Link
-  to={
-    item.name.toLowerCase().includes("laptop")
-      ? "/laptops"
-      : item.name.toLowerCase().includes("mobile")
-      ? "/mobiles"
-        : item.name.toLowerCase().includes("tablet")
-      ? "/tablets"
-      : "/"
-  }
-  className="text-decoration-none"
->
-  {item.name}
-</Link>
+                   <td>
+  <Link
+    to={`/${item.name.toLowerCase().replace(/\s+/g, "")}`} // ✅ Dynamic path
+    className="text-decoration-none"
+  >
+    {item.name}
+  </Link>
+</td>
 
-                    </td>
                     <td>{item.quantity}</td>
                     <td>
                       <button

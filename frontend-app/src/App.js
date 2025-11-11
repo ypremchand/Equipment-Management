@@ -9,9 +9,11 @@ import Contact from "./Components/ContactUs/Contact";
 import ReturnAssets from "./Components/ReturnAssets/ReturnAssets";
 import Requests from "./Components/Requests/Requests";
 import AdminPanel from "./Components/AdminPanel/AdminPanel";
+import Inventory from "./Components/Inventory/Inventory";
 import Laptops from "./Components/Laptops/Laptops";
 import Mobiles from "./Components/Mobiles/Mobiles";
 import Tablets from "./Components/Tablets/Tablets";
+import Desktops from "./Components/Desktops/Desktops";
 import ContactedUs from "./Components/ContactedUs/ContactedUs";
 import AdminDeleteHistory from "./Components/AdminDeleteHistory/AdminDeleteHistory";
 import UserDeleteHistory from "./Components/UserDeleteHistory/UserDeleteHistory";
@@ -51,11 +53,16 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/returnassets" element={<ReturnAssets />} />
+            
 
             {/* Admin-only routes */}
             <Route
               path="/adminpanel"
               element={user?.email?.includes("@admin") ? <AdminPanel /> : <Navigate to="/" />}
+            />
+            <Route
+              path="/inventory"
+              element={user?.email?.includes("@admin") ? <Inventory /> : <Navigate to="/" />}
             />
             <Route
               path="/contactedus"
@@ -74,18 +81,22 @@ function App() {
               element={user?.email?.includes("@admin") ? <Tablets /> : <Navigate to="/" />}
             />
             <Route
+              path="/desktops"
+              element={user?.email?.includes("@admin") ? <Desktops /> : <Navigate to="/" />}
+            />
+            <Route
               path="/requests"
               element={user?.email?.includes("@admin") ? <Requests /> : <Navigate to="/" />}
             />
             <Route
-  path="/admindeletehistory"
-  element={user?.email?.includes("@admin") ? <AdminDeleteHistory /> : <Navigate to="/" />}
-/>
+              path="/admindeletehistory"
+              element={user?.email?.includes("@admin") ? <AdminDeleteHistory /> : <Navigate to="/" />}
+            />
 
-<Route
-  path="/userdeletehistory"
-  element={user?.email?.includes("@admin") ? <UserDeleteHistory /> : <Navigate to="/" />}
-/>
+            <Route
+              path="/userdeletehistory"
+              element={user?.email?.includes("@admin") ? <UserDeleteHistory /> : <Navigate to="/" />}
+            />
 
 
             <Route path="*" element={<Navigate to="/" />} />

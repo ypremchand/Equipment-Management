@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace backend_app.Controllers
 {
-    [Route("api/AssetRequests")]
+    [Route("api/[controller]")]
     [ApiController]
     public class AssetRequestsController : ControllerBase
     {
@@ -72,6 +72,7 @@ namespace backend_app.Controllers
 
             return Ok(requests);
         }
+
         // ✅ POST: api/AssetRequests/approve/{id}
         [HttpPost("approve/{id}")]
         public async Task<IActionResult> ApproveRequest(int id)
@@ -100,7 +101,7 @@ namespace backend_app.Controllers
                     if (asset.Quantity < item.RequestedQuantity)
                         return BadRequest($"Not enough stock for {asset.Name}. Only {asset.Quantity} left.");
 
-                    // ✅ Deduct stock only once here
+                    // ✅ Deduct stock
                     asset.Quantity -= item.RequestedQuantity;
                     item.ApprovedQuantity = item.RequestedQuantity;
 
@@ -137,13 +138,59 @@ namespace backend_app.Controllers
             if (request.Status == "Rejected")
                 return BadRequest("Request already rejected.");
 
-            // ✅ Reject request but do NOT change stock
             request.Status = "Rejected";
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "🚫 Request rejected successfully. Quantity unchanged." });
         }
 
+        // ✅ POST: api/AssetRequests/assign/{itemId}
+        [HttpPost("assign/{itemId}")]
+        public async Task<IActionResult> AssignLaptops(int itemId, [FromBody] List<int> laptopIds)
+        {
+            if (laptopIds == null || !laptopIds.Any())
+                return BadRequest("No laptops selected for assignment.");
+
+            var item = await _context.AssetRequestItems
+                .Include(i => i.Asset)
+                .Include(i => i.AssetRequest)
+                .ThenInclude(r => r.User)
+                .FirstOrDefaultAsync(i => i.Id == itemId);
+
+            if (item == null)
+                return NotFound("Request item not found.");
+
+            if (item.Asset?.Name?.ToLower().Contains("laptop") != true)
+                return BadRequest("Assignment is only for laptops.");
+
+            // ✅ Ensure laptops exist
+            var laptops = await _context.Laptops
+                .Where(l => laptopIds.Contains(l.Id))
+                .ToListAsync();
+
+            // ✅ Check if already assigned
+            var alreadyAssigned = await _context.AssignedAssets
+                .Where(a => laptopIds.Contains(a.LaptopId) && a.Status == "Assigned")
+                .Select(a => a.LaptopId)
+                .ToListAsync();
+
+            if (alreadyAssigned.Any())
+                return BadRequest($"Some laptops are already assigned: {string.Join(", ", alreadyAssigned)}");
+
+            // ✅ Assign laptops
+            foreach (var laptop in laptops)
+            {
+                _context.AssignedAssets.Add(new AssignedAsset
+                {
+                    AssetRequestItemId = item.Id,
+                    LaptopId = laptop.Id,
+                    Status = "Assigned"
+                });
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "✅ Laptops assigned successfully!" });
+        }
 
         // ✅ DELETE: api/AssetRequests/{id}
         [HttpDelete("{id}")]
@@ -154,16 +201,13 @@ namespace backend_app.Controllers
             bool exists = await _context.AssetRequests.AnyAsync(r => r.Id == id);
             Console.WriteLine($"🧩 Exists in EF? {exists}");
 
-            // ✅ Simplified query (avoid Include() tracking issues)
             var request = await _context.AssetRequests.FindAsync(id);
-
             if (request == null)
             {
                 Console.WriteLine("🧩 Not found inside simplified query!");
                 return NotFound(new { Message = $"Request with ID {id} not found in EF." });
             }
 
-            // ✅ Load related items manually (EF-safe)
             await _context.Entry(request)
                 .Collection(r => r.AssetRequestItems)
                 .Query()
@@ -188,7 +232,13 @@ namespace backend_app.Controllers
                     }
                 }
 
-                // ✅ Remove related items and main request
+                // ✅ Remove linked AssignedAssets
+                var assignedAssets = await _context.AssignedAssets
+                    .Where(a => a.AssetRequestItem.AssetRequestId == request.Id)
+                    .ToListAsync();
+                _context.AssignedAssets.RemoveRange(assignedAssets);
+
+                // ✅ Remove related items and request
                 _context.AssetRequestItems.RemoveRange(request.AssetRequestItems);
                 _context.AssetRequests.Remove(request);
 

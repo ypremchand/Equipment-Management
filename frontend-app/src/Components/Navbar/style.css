@@ -1,6 +1,7 @@
 /* ===============================
    Navbar Dropdown Styling (Black-White Hover Effect)
 ===================================*/
+/* ✅ Ensure navbar stays sticky on top */
 
 .hover-dropdown {
   position: relative;
