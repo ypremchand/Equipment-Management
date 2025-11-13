@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "./style.css"
 
 function ReturnAssets() {
   const [requests, setRequests] = useState([]);
@@ -40,7 +41,7 @@ function ReturnAssets() {
   };
 
   return (
-    <div className="container mt-4">
+    <div className="return-asset-page container mt-4">
       <h3 className="text-center mb-4">Return My Assets</h3>
 
       {loading ? (

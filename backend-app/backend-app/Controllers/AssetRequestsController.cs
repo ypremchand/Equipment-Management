@@ -255,5 +255,85 @@ namespace backend_app.Controllers
                 return StatusCode(500, $"Error deleting request: {ex.Message}");
             }
         }
+        [HttpPost("confirm-approve/{requestId}")]
+        public async Task<IActionResult> ConfirmApprove(
+    int requestId,
+    [FromBody] ApproveRequestDto dto)
+        {
+            var request = await _context.AssetRequests
+                .Include(r => r.AssetRequestItems)
+                    .ThenInclude(i => i.Asset)
+                .FirstOrDefaultAsync(r => r.Id == requestId);
+
+            if (request == null)
+                return NotFound("Request not found.");
+
+            using var tx = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                foreach (var assign in dto.Assignments)
+                {
+                    var item = request.AssetRequestItems
+                        .FirstOrDefault(i => i.Id == assign.ItemId);
+
+                    if (item == null)
+                        return BadRequest($"Invalid item {assign.ItemId}");
+
+                    foreach (var laptopId in assign.LaptopIds)
+                    {
+                        _context.AssignedAssets.Add(new AssignedAsset
+                        {
+                            AssetRequestItemId = item.Id,
+                            LaptopId = laptopId,
+                            AssignedDate = DateTime.Now,
+                            Status = "Assigned"
+                        });
+
+                        // reduce asset quantity
+                        item.Asset.Quantity -= 1;
+                    }
+
+                    item.ApprovedQuantity = assign.LaptopIds.Count;
+                }
+
+                request.Status = "Approved";
+
+                await _context.SaveChangesAsync();
+                await tx.CommitAsync();
+
+                return Ok(new { message = "Approved & laptops assigned!" });
+            }
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync();
+                return StatusCode(500, ex.Message);
+            }
+        }
+        [HttpGet("available")]
+        public async Task<IActionResult> GetAvailableLaptops()
+        {
+            var assigned = await _context.AssignedAssets
+                .Where(a => a.Status == "Assigned")
+                .Select(a => a.LaptopId)
+                .ToListAsync();
+
+            var available = await _context.Laptops
+                .Where(l => !assigned.Contains(l.Id))
+                .ToListAsync();
+
+            return Ok(available);
+        }
+
+        public class ApproveRequestDto
+        {
+            public List<AssignmentDto> Assignments { get; set; } = new();
+        }
+
+        public class AssignmentDto
+        {
+            public int ItemId { get; set; }
+            public List<int> LaptopIds { get; set; } = new();
+        }
     }
 }

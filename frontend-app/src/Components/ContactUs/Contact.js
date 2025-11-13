@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useLocation, useNavigate } from "react-router-dom"; // ✅ Added useNavigate
 import "bootstrap/dist/css/bootstrap.min.css";
+import "./style.css"
 
 function Contact() {
   const [user, setUser] = useState({ name: "", email: "" });
@@ -202,7 +203,7 @@ const handleSubmit = async (e) => {
 
 
   return (
-    <div className="container mt-4">
+    <div className="contact-page container mt-4">
       <h3 className="text-center mb-4">Request Multiple Assets</h3>
 
       <div className="card shadow-sm p-4 mx-auto" style={{ maxWidth: "700px" }}>

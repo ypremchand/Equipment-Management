@@ -22,5 +22,6 @@ namespace backend_app.Models
         public int RequestedQuantity { get; set; }
 
         public int? ApprovedQuantity { get; set; } // When admin approves
+
     }
 }

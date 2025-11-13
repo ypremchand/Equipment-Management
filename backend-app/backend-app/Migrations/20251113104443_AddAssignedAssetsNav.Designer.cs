@@ -12,8 +12,8 @@ using backend_app.Data;
 namespace backend_app.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251110092836_RemoveWarrantyExpiryFromLaptop")]
-    partial class RemoveWarrantyExpiryFromLaptop
+    [Migration("20251113104443_AddAssignedAssetsNav")]
+    partial class AddAssignedAssetsNav
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -137,6 +137,39 @@ namespace backend_app.Migrations
                     b.ToTable("AssetRequestItems");
                 });
 
+            modelBuilder.Entity("backend_app.Models.AssignedAsset", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AssetRequestItemId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("AssignedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LaptopId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ReturnedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetRequestItemId");
+
+                    b.HasIndex("LaptopId");
+
+                    b.ToTable("AssignedAssets");
+                });
+
             modelBuilder.Entity("backend_app.Models.Laptop", b =>
                 {
                     b.Property<int>("Id")
@@ -150,9 +183,6 @@ namespace backend_app.Migrations
 
                     b.Property<string>("AssetTag")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("AssignedTo")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("BatteryCapacity")
@@ -178,6 +208,10 @@ namespace backend_app.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ModelNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("OperatingSystem")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -194,14 +228,6 @@ namespace backend_app.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Remarks")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SerialNumber")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Storage")
@@ -248,10 +274,6 @@ namespace backend_app.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("AssignedTo")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("BatteryCapacity")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -295,14 +317,9 @@ namespace backend_app.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Remarks")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SIMType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -332,10 +349,6 @@ namespace backend_app.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("AssignedTo")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("BatteryCapacity")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -346,6 +359,9 @@ namespace backend_app.Migrations
 
                     b.Property<string>("DisplaySize")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("IMEINumber")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("LastServicedDate")
@@ -363,10 +379,6 @@ namespace backend_app.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("OperatingSystem")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Processor")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -379,18 +391,9 @@ namespace backend_app.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Remarks")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SIMSupport")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SerialNumber")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -497,6 +500,25 @@ namespace backend_app.Migrations
                     b.Navigation("AssetRequest");
                 });
 
+            modelBuilder.Entity("backend_app.Models.AssignedAsset", b =>
+                {
+                    b.HasOne("backend_app.Models.AssetRequestItem", "AssetRequestItem")
+                        .WithMany("AssignedAssets")
+                        .HasForeignKey("AssetRequestItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend_app.Models.Laptop", "Laptop")
+                        .WithMany()
+                        .HasForeignKey("LaptopId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AssetRequestItem");
+
+                    b.Navigation("Laptop");
+                });
+
             modelBuilder.Entity("backend_app.Models.Laptop", b =>
                 {
                     b.HasOne("backend_app.Models.Asset", "Asset")
@@ -527,6 +549,11 @@ namespace backend_app.Migrations
             modelBuilder.Entity("backend_app.Models.AssetRequest", b =>
                 {
                     b.Navigation("AssetRequestItems");
+                });
+
+            modelBuilder.Entity("backend_app.Models.AssetRequestItem", b =>
+                {
+                    b.Navigation("AssignedAssets");
                 });
 #pragma warning restore 612, 618
         }

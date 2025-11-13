@@ -37,7 +37,7 @@ function Navbar({ user, onLogout }) {
                     to="/adminpanel"
                     onClick={() => setIsOpen(false)}
                   >
-                    Admin Panel
+                    AdminPanel
                   </Link>
                 </li>
 
@@ -57,7 +57,7 @@ function Navbar({ user, onLogout }) {
                 {/* 🗑️ Delete History Dropdown */}
                 <li className="nav-item hover-dropdown">
                   <span className="nav-link dropdown-toggle-link no-caret">
-                    Delete History
+                    DeleteHistory
                   </span>
                   <div className="dropdown-menu bg-black">
                     <button
@@ -67,7 +67,7 @@ function Navbar({ user, onLogout }) {
                         setIsOpen(false);
                       }}
                     >
-                      Admin Delete History
+                      AdminDeleteHistory
                     </button>
                     <button
                       className="dropdown-item"
@@ -76,7 +76,7 @@ function Navbar({ user, onLogout }) {
                         setIsOpen(false);
                       }}
                     >
-                      User Delete History
+                      UserDeleteHistory
                     </button>
                   </div>
                 </li>
@@ -108,7 +108,7 @@ function Navbar({ user, onLogout }) {
                     to="/contact"
                     onClick={() => setIsOpen(false)}
                   >
-                    Contact Us  
+                    ContactUs  
                   </Link>
                 </li>
                 <li className="nav-item">
@@ -117,7 +117,7 @@ function Navbar({ user, onLogout }) {
                     to="/returnassets"
                     onClick={() => setIsOpen(false)}
                   >
-                    Requested Assets
+                    RequestedAssets
                   </Link>
                 </li>
               </>

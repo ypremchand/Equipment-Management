@@ -83,6 +83,21 @@ namespace backend_app.Controllers
             return laptop;
         }
 
+        [HttpGet("available")]
+        public async Task<IActionResult> GetAvailableLaptops()
+        {
+            var assignedLaptopIds = await _context.AssignedAssets
+                .Where(a => a.Status == "Assigned")
+                .Select(a => a.LaptopId)
+                .ToListAsync();
+
+            var available = await _context.Laptops
+                .Where(l => !assignedLaptopIds.Contains(l.Id))
+                .ToListAsync();
+
+            return Ok(available);
+        }
+
         // ✅ POST (Add new laptop)
         [HttpPost]
         public async Task<ActionResult<Laptop>> PostLaptop([FromBody] Laptop laptop)

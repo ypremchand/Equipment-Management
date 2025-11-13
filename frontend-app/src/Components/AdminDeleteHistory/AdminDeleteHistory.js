@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "./style.css"
 
 function AdminDeleteHistory() {
   const [logs, setLogs] = useState([]);
@@ -15,7 +16,7 @@ function AdminDeleteHistory() {
   }, []);
 
   return (
-    <div className="container mt-4">
+    <div className="admin-delete-history-page container mt-4">
       <h3 className="text-center mb-4">🗑️ Admin Delete History</h3>
       {loading ? (
         <div className="text-center"><div className="spinner-border"></div></div>

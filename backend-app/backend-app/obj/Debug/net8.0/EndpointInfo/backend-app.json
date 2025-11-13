@@ -228,6 +228,60 @@
         }
       }
     },
+    "/api/AssetRequests/confirm-approve/{requestId}": {
+      "post": {
+        "tags": [
+          "AssetRequests"
+        ],
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/AssetRequests/available": {
+      "get": {
+        "tags": [
+          "AssetRequests"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Assets": {
       "get": {
         "tags": [
@@ -664,6 +718,18 @@
               "format": "int32"
             }
           }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Laptops/available": {
+      "get": {
+        "tags": [
+          "Laptops"
         ],
         "responses": {
           "200": {
@@ -1422,6 +1488,19 @@
         },
         "additionalProperties": false
       },
+      "ApproveRequestDto": {
+        "type": "object",
+        "properties": {
+          "assignments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssignmentDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "Asset": {
         "required": [
           "name"
@@ -1575,6 +1654,24 @@
           "availableQuantity": {
             "type": "integer",
             "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AssignmentDto": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "laptopIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false

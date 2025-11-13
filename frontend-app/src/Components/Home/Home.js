@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom"; // ✅ import navigation hook
 import "bootstrap/dist/css/bootstrap.min.css";
+import "./style.css"
 
 function Home() {
   const [assets, setAssets] = useState([]);
@@ -31,7 +32,7 @@ function Home() {
   };
 
   return (
-    <div className="container mt-4">
+    <div className="home-page container mt-4">
       <h2 className="text-center mb-4">Available Assets</h2>
 
       {loading ? (
@@ -62,7 +63,7 @@ function Home() {
                       className="btn btn-warning btn-sm me-2"
                       onClick={() => handleRequestAsset(asset.name)} // ✅ redirect to Contact
                     >
-                      Request for {asset.name}
+                      Request For {asset.name}
                     </button>
                   </td>
                 </tr>

@@ -500,7 +500,7 @@ namespace backend_app.Migrations
             modelBuilder.Entity("backend_app.Models.AssignedAsset", b =>
                 {
                     b.HasOne("backend_app.Models.AssetRequestItem", "AssetRequestItem")
-                        .WithMany()
+                        .WithMany("AssignedAssets")
                         .HasForeignKey("AssetRequestItemId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -546,6 +546,11 @@ namespace backend_app.Migrations
             modelBuilder.Entity("backend_app.Models.AssetRequest", b =>
                 {
                     b.Navigation("AssetRequestItems");
+                });
+
+            modelBuilder.Entity("backend_app.Models.AssetRequestItem", b =>
+                {
+                    b.Navigation("AssignedAssets");
                 });
 #pragma warning restore 612, 618
         }

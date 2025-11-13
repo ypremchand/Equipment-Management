@@ -12,8 +12,8 @@ using backend_app.Data;
 namespace backend_app.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251111110627_AddedAssignedAssetsTable")]
-    partial class AddedAssignedAssetsTable
+    [Migration("20251113082023_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

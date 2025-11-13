@@ -100,6 +100,16 @@
   },
   {
     "ContainingType": "backend_app.Controllers.AssetRequestsController",
+    "Method": "GetAvailableLaptops",
+    "RelativePath": "api/AssetRequests/available",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_app.Controllers.AssetRequestsController",
     "Method": "GetRequestsByEmail",
     "RelativePath": "api/AssetRequests/by-email",
     "HttpMethod": "GET",
@@ -110,6 +120,27 @@
         "Name": "email",
         "Type": "System.String",
         "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_app.Controllers.AssetRequestsController",
+    "Method": "ConfirmApprove",
+    "RelativePath": "api/AssetRequests/confirm-approve/{requestId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "dto",
+        "Type": "backend_app.Controllers.AssetRequestsController\u002BApproveRequestDto",
+        "IsRequired": true
       }
     ],
     "ReturnTypes": []
@@ -400,6 +431,16 @@
         "IsRequired": true
       }
     ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_app.Controllers.LaptopsController",
+    "Method": "GetAvailableLaptops",
+    "RelativePath": "api/Laptops/available",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
     "ReturnTypes": []
   },
   {

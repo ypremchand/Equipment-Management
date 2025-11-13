@@ -92,10 +92,9 @@ namespace backend_app.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Brand = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    SerialNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ModelNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     AssetTag = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PurchaseDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    WarrantyExpiry = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Processor = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Ram = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Storage = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -103,11 +102,9 @@ namespace backend_app.Migrations
                     DisplaySize = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     OperatingSystem = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     BatteryCapacity = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    AssignedTo = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Location = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Remarks = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LastServicedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Location = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     AssetId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
@@ -139,9 +136,7 @@ namespace backend_app.Migrations
                     SIMType = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     NetworkType = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Location = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    AssignedTo = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Remarks = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Remarks = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LastServicedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     AssetId = table.Column<int>(type: "int", nullable: true)
                 },
@@ -163,7 +158,6 @@ namespace backend_app.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Brand = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Model = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    SerialNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     AssetTag = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PurchaseDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Processor = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -171,13 +165,11 @@ namespace backend_app.Migrations
                     Storage = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     DisplaySize = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     BatteryCapacity = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    OperatingSystem = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IMEINumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     SIMSupport = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     NetworkType = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Location = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    AssignedTo = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Remarks = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Remarks = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LastServicedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     AssetId = table.Column<int>(type: "int", nullable: true)
                 },
@@ -248,6 +240,35 @@ namespace backend_app.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "AssignedAssets",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    AssetRequestItemId = table.Column<int>(type: "int", nullable: false),
+                    LaptopId = table.Column<int>(type: "int", nullable: false),
+                    AssignedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ReturnedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AssignedAssets", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AssignedAssets_AssetRequestItems_AssetRequestItemId",
+                        column: x => x.AssetRequestItemId,
+                        principalTable: "AssetRequestItems",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AssignedAssets_Laptops_LaptopId",
+                        column: x => x.LaptopId,
+                        principalTable: "Laptops",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_AssetRequestItems_AssetId",
                 table: "AssetRequestItems",
@@ -267,6 +288,16 @@ namespace backend_app.Migrations
                 name: "IX_AssetRequests_UserId",
                 table: "AssetRequests",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AssignedAssets_AssetRequestItemId",
+                table: "AssignedAssets",
+                column: "AssetRequestItemId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AssignedAssets_LaptopId",
+                table: "AssignedAssets",
+                column: "LaptopId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Laptops_AssetId",
@@ -291,10 +322,7 @@ namespace backend_app.Migrations
                 name: "AdminDeleteHistories");
 
             migrationBuilder.DropTable(
-                name: "AssetRequestItems");
-
-            migrationBuilder.DropTable(
-                name: "Laptops");
+                name: "AssignedAssets");
 
             migrationBuilder.DropTable(
                 name: "Mobiles");
@@ -304,6 +332,12 @@ namespace backend_app.Migrations
 
             migrationBuilder.DropTable(
                 name: "UserDeleteHistories");
+
+            migrationBuilder.DropTable(
+                name: "AssetRequestItems");
+
+            migrationBuilder.DropTable(
+                name: "Laptops");
 
             migrationBuilder.DropTable(
                 name: "AssetRequests");
