@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using backend_app.Data;
 
@@ -11,9 +12,11 @@ using backend_app.Data;
 namespace backend_app.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251114072558_UpdateDBContext")]
+    partial class UpdateDBContext
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -30,15 +33,15 @@ namespace backend_app.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("AssetItemId")
+                        .HasColumnType("int");
+
                     b.Property<int>("AssetRequestItemId")
                         .HasColumnType("int");
 
                     b.Property<string>("AssetType")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("AssetTypeItemId")
-                        .HasColumnType("int");
 
                     b.Property<DateTime>("AssignedDate")
                         .HasColumnType("datetime2");
@@ -461,7 +464,7 @@ namespace backend_app.Migrations
             modelBuilder.Entity("AssignedAsset", b =>
                 {
                     b.HasOne("backend_app.Models.AssetRequestItem", "AssetRequestItem")
-                        .WithMany("AssignedAssets")
+                        .WithMany()
                         .HasForeignKey("AssetRequestItemId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -537,11 +540,6 @@ namespace backend_app.Migrations
             modelBuilder.Entity("backend_app.Models.AssetRequest", b =>
                 {
                     b.Navigation("AssetRequestItems");
-                });
-
-            modelBuilder.Entity("backend_app.Models.AssetRequestItem", b =>
-                {
-                    b.Navigation("AssignedAssets");
                 });
 #pragma warning restore 612, 618
         }

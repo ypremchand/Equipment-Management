@@ -1,18 +1,18 @@
-﻿namespace backend_app.Models
+﻿using backend_app.Models;
+
+public class AssignedAsset
 {
-    public class AssignedAsset
-    {
-        public int Id { get; set; }
+    public int Id { get; set; }
 
-        public int AssetRequestItemId { get; set; }
-        public AssetRequestItem AssetRequestItem { get; set; }
+    public int AssetRequestItemId { get; set; }
+    public AssetRequestItem AssetRequestItem { get; set; }
 
-        public int LaptopId { get; set; }
-        public Laptop Laptop { get; set; }
+    // The asset type table: "laptop", "mobile", "tablet", "scanner"
+    public string AssetType { get; set; }
 
-        public DateTime AssignedDate { get; set; } = DateTime.Now;
-        public DateTime? ReturnedDate { get; set; }
+    // ID from corresponding table (Laptop.Id or Mobile.Id etc)
+    public int AssetTypeItemId { get; set; }
 
-        public string Status { get; set; } = "Assigned"; // Assigned / Returned
-    }
+    public string Status { get; set; } = "Assigned";
+    public DateTime AssignedDate { get; set; } = DateTime.Now;
 }

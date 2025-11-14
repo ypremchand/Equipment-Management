@@ -87,8 +87,9 @@ namespace backend_app.Controllers
         public async Task<IActionResult> GetAvailableLaptops()
         {
             var assignedLaptopIds = await _context.AssignedAssets
-                .Where(a => a.Status == "Assigned")
-                .Select(a => a.LaptopId)
+                .Where(a => a.AssetType == "laptop")
+.Select(a => a.AssetTypeItemId)
+
                 .ToListAsync();
 
             var available = await _context.Laptops

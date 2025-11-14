@@ -20,6 +20,22 @@
     ]
   },
   {
+    "ContainingType": "backend_app.Controllers.AssetItemsController",
+    "Method": "GetAvailable",
+    "RelativePath": "api/asset-items/available",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "type",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "backend_app.Controllers.AssetRequestsController",
     "Method": "CreateAssetRequest",
     "RelativePath": "api/AssetRequests",
@@ -37,7 +53,7 @@
   },
   {
     "ContainingType": "backend_app.Controllers.AssetRequestsController",
-    "Method": "GetAllRequests",
+    "Method": "GetAll",
     "RelativePath": "api/AssetRequests",
     "HttpMethod": "GET",
     "IsController": true,
@@ -59,53 +75,6 @@
         "IsRequired": true
       }
     ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "backend_app.Controllers.AssetRequestsController",
-    "Method": "ApproveRequest",
-    "RelativePath": "api/AssetRequests/approve/{id}",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Int32",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "backend_app.Controllers.AssetRequestsController",
-    "Method": "AssignLaptops",
-    "RelativePath": "api/AssetRequests/assign/{itemId}",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "itemId",
-        "Type": "System.Int32",
-        "IsRequired": true
-      },
-      {
-        "Name": "laptopIds",
-        "Type": "System.Collections.Generic.List\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "backend_app.Controllers.AssetRequestsController",
-    "Method": "GetAvailableLaptops",
-    "RelativePath": "api/AssetRequests/available",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
     "ReturnTypes": []
   },
   {
@@ -140,22 +109,6 @@
       {
         "Name": "dto",
         "Type": "backend_app.Controllers.AssetRequestsController\u002BApproveRequestDto",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "backend_app.Controllers.AssetRequestsController",
-    "Method": "RejectRequest",
-    "RelativePath": "api/AssetRequests/reject/{id}",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Int32",
         "IsRequired": true
       }
     ],

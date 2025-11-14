@@ -43,6 +43,27 @@
         }
       }
     },
+    "/api/asset-items/available": {
+      "get": {
+        "tags": [
+          "AssetItems"
+        ],
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/AssetRequests": {
       "post": {
         "tags": [
@@ -105,129 +126,6 @@
         }
       }
     },
-    "/api/AssetRequests/approve/{id}": {
-      "post": {
-        "tags": [
-          "AssetRequests"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/api/AssetRequests/reject/{id}": {
-      "post": {
-        "tags": [
-          "AssetRequests"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/api/AssetRequests/assign/{itemId}": {
-      "post": {
-        "tags": [
-          "AssetRequests"
-        ],
-        "parameters": [
-          {
-            "name": "itemId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "array",
-                "items": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              }
-            },
-            "text/json": {
-              "schema": {
-                "type": "array",
-                "items": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "type": "array",
-                "items": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/api/AssetRequests/{id}": {
-      "delete": {
-        "tags": [
-          "AssetRequests"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
     "/api/AssetRequests/confirm-approve/{requestId}": {
       "post": {
         "tags": [
@@ -270,10 +168,21 @@
         }
       }
     },
-    "/api/AssetRequests/available": {
-      "get": {
+    "/api/AssetRequests/{id}": {
+      "delete": {
         "tags": [
           "AssetRequests"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -1494,7 +1403,7 @@
           "assignments": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/AssignmentDto"
+              "$ref": "#/components/schemas/AssignForItemDto"
             },
             "nullable": true
           }
@@ -1636,6 +1545,13 @@
             "type": "integer",
             "format": "int32",
             "nullable": true
+          },
+          "assignedAssets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssignedAsset"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -1658,20 +1574,57 @@
         },
         "additionalProperties": false
       },
-      "AssignmentDto": {
+      "AssignForItemDto": {
         "type": "object",
         "properties": {
           "itemId": {
             "type": "integer",
             "format": "int32"
           },
-          "laptopIds": {
+          "assetType": {
+            "type": "string",
+            "nullable": true
+          },
+          "assetTypeItemIds": {
             "type": "array",
             "items": {
               "type": "integer",
               "format": "int32"
             },
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AssignedAsset": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "assetRequestItemId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "assetRequestItem": {
+            "$ref": "#/components/schemas/AssetRequestItem"
+          },
+          "assetType": {
+            "type": "string",
+            "nullable": true
+          },
+          "assetTypeItemId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "assignedDate": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "additionalProperties": false
