@@ -247,10 +247,11 @@ namespace backend_app.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     AssetRequestItemId = table.Column<int>(type: "int", nullable: false),
-                    LaptopId = table.Column<int>(type: "int", nullable: false),
+                    AssetType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    AssetTypeItemId = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     AssignedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ReturnedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    ReturnedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -259,12 +260,6 @@ namespace backend_app.Migrations
                         name: "FK_AssignedAssets_AssetRequestItems_AssetRequestItemId",
                         column: x => x.AssetRequestItemId,
                         principalTable: "AssetRequestItems",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_AssignedAssets_Laptops_LaptopId",
-                        column: x => x.LaptopId,
-                        principalTable: "Laptops",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -295,11 +290,6 @@ namespace backend_app.Migrations
                 column: "AssetRequestItemId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_AssignedAssets_LaptopId",
-                table: "AssignedAssets",
-                column: "LaptopId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Laptops_AssetId",
                 table: "Laptops",
                 column: "AssetId");
@@ -325,6 +315,9 @@ namespace backend_app.Migrations
                 name: "AssignedAssets");
 
             migrationBuilder.DropTable(
+                name: "Laptops");
+
+            migrationBuilder.DropTable(
                 name: "Mobiles");
 
             migrationBuilder.DropTable(
@@ -335,9 +328,6 @@ namespace backend_app.Migrations
 
             migrationBuilder.DropTable(
                 name: "AssetRequestItems");
-
-            migrationBuilder.DropTable(
-                name: "Laptops");
 
             migrationBuilder.DropTable(
                 name: "AssetRequests");

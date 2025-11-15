@@ -22,9 +22,9 @@ namespace backend_app.Controllers
         // ✅ GET all mobiles (with pagination + search)
         [HttpGet]
         public async Task<ActionResult<object>> GetMobiles(
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 5,
-            [FromQuery] string? search = null)
+     [FromQuery] int page = 1,
+     [FromQuery] int pageSize = 5,
+     [FromQuery] string? search = null)
         {
             if (page <= 0) page = 1;
             if (pageSize <= 0) pageSize = 5;
@@ -33,6 +33,15 @@ namespace backend_app.Controllers
                 .Include(m => m.Asset)
                 .AsQueryable();
 
+            // 🔥 Filter out assigned mobiles (ONLY show available mobiles)
+            var assignedMobileIds = await _context.AssignedAssets
+                .Where(a => a.AssetType.ToLower() == "mobile" && a.Status == "Assigned")
+                .Select(a => a.AssetTypeItemId)
+                .ToListAsync();
+
+            query = query.Where(m => !assignedMobileIds.Contains(m.Id));
+
+            // 🔍 Search
             if (!string.IsNullOrWhiteSpace(search))
             {
                 search = search.Trim().ToLower().Replace(" ", "");
@@ -66,6 +75,7 @@ namespace backend_app.Controllers
                 data = mobiles
             });
         }
+
 
         // ✅ GET single mobile
         [HttpGet("{id}")]

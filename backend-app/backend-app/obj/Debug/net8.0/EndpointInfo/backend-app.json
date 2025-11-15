@@ -1625,6 +1625,11 @@
           "assignedDate": {
             "type": "string",
             "format": "date-time"
+          },
+          "returnedDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false

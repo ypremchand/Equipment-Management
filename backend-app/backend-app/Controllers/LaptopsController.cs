@@ -22,18 +22,27 @@ namespace backend_app.Controllers
         // ✅ GET all laptops (with pagination + search)
         [HttpGet]
         public async Task<ActionResult<object>> GetLaptops(
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 5,
-            [FromQuery] string? search = null)
+     [FromQuery] int page = 1,
+     [FromQuery] int pageSize = 5,
+     [FromQuery] string? search = null)
         {
             if (page <= 0) page = 1;
             if (pageSize <= 0) pageSize = 5;
 
+            // Load laptop list
             var query = _context.Laptops
                 .Include(l => l.Asset)
                 .AsQueryable();
 
-            // ✅ Apply case-insensitive + space-insensitive search
+            // 🔥 Filter out assigned laptops (only AVAILABLE laptops)
+            var assignedLaptopIds = await _context.AssignedAssets
+                .Where(a => a.AssetType.ToLower() == "laptop" && a.Status == "Assigned")
+                .Select(a => a.AssetTypeItemId)
+                .ToListAsync();
+
+            query = query.Where(l => !assignedLaptopIds.Contains(l.Id));
+
+            // Search
             if (!string.IsNullOrWhiteSpace(search))
             {
                 search = search.Trim().ToLower().Replace(" ", "");
@@ -68,6 +77,7 @@ namespace backend_app.Controllers
                 data = laptops
             });
         }
+
 
         // ✅ GET single laptop
         [HttpGet("{id}")]

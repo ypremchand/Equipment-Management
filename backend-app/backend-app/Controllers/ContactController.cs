@@ -108,7 +108,7 @@ namespace backend_app.Controllers
         {
             var request = await _context.AssetRequests
                 .Include(r => r.AssetRequestItems)
-                .ThenInclude(i => i.Asset)
+                    .ThenInclude(i => i.AssignedAssets)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
             if (request == null)
@@ -118,26 +118,57 @@ namespace backend_app.Controllers
                 return BadRequest("Assets already returned.");
 
             using var transaction = await _context.Database.BeginTransactionAsync();
+
             try
             {
-                // ✅ Restore asset stock
                 foreach (var item in request.AssetRequestItems)
                 {
-                    if (item.Asset != null)
+                    foreach (var assigned in item.AssignedAssets)
                     {
-                        item.Asset.Quantity += item.RequestedQuantity;
-                        _context.Entry(item.Asset).State = EntityState.Modified;
+                        // Mark returned
+                        assigned.Status = "Returned";
+                        assigned.ReturnedDate = DateTime.Now;
+
+                        var type = assigned.AssetType.ToLower();
+
+                        if (type == "laptop")
+                        {
+                            var lap = await _context.Laptops.FindAsync(assigned.AssetTypeItemId);
+                            if (lap?.AssetId != null)
+                            {
+                                var asset = await _context.Assets.FindAsync(lap.AssetId.Value);
+                                if (asset != null)
+                                    asset.Quantity += 1;  // Restore ONLY 1
+                            }
+                        }
+                        else if (type == "mobile")
+                        {
+                            var mob = await _context.Mobiles.FindAsync(assigned.AssetTypeItemId);
+                            if (mob?.AssetId != null)
+                            {
+                                var asset = await _context.Assets.FindAsync(mob.AssetId.Value);
+                                if (asset != null)
+                                    asset.Quantity += 1;
+                            }
+                        }
+                        else if (type == "tablet")
+                        {
+                            var tab = await _context.Tablets.FindAsync(assigned.AssetTypeItemId);
+                            if (tab?.AssetId != null)
+                            {
+                                var asset = await _context.Assets.FindAsync(tab.AssetId.Value);
+                                if (asset != null)
+                                    asset.Quantity += 1;
+                            }
+                        }
                     }
                 }
 
-                // ✅ Update request status
                 request.Status = "Returned";
-                _context.Entry(request).State = EntityState.Modified;
-
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return Ok(new { message = "✅ Assets returned successfully." });
+                return Ok(new { message = "Assets returned successfully!" });
             }
             catch (Exception ex)
             {
@@ -145,23 +176,25 @@ namespace backend_app.Controllers
                 return StatusCode(500, $"Error returning assets: {ex.Message}");
             }
         }
-    }
 
-    // ✅ DTOs (Data Transfer Objects)
-    public class AssetRequestDto
-    {
-        public string Username { get; set; }
-        public string Email { get; set; }
-        public string PhoneNumber { get; set; }
-        public string Location { get; set; }
-        public string Message { get; set; }
-        public List<AssetRequestItemDto> AssetRequests { get; set; }
-    }
 
-    public class AssetRequestItemDto
-    {
-        public string Asset { get; set; }
-        public int RequestedQuantity { get; set; }
-        public int AvailableQuantity { get; set; }
+
+        // ✅ DTOs (Data Transfer Objects)
+        public class AssetRequestDto
+        {
+            public string Username { get; set; }
+            public string Email { get; set; }
+            public string PhoneNumber { get; set; }
+            public string Location { get; set; }
+            public string Message { get; set; }
+            public List<AssetRequestItemDto> AssetRequests { get; set; }
+        }
+
+        public class AssetRequestItemDto
+        {
+            public string Asset { get; set; }
+            public int RequestedQuantity { get; set; }
+            public int AvailableQuantity { get; set; }
+        }
     }
 }

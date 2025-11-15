@@ -350,8 +350,11 @@ namespace backend_app.Controllers
                     // Restore stock for each old assignment by finding the target item's AssetId
                     foreach (var old in oldAssigned)
                     {
-                        if (string.IsNullOrWhiteSpace(old.AssetType)) continue;
-                        var t = old.AssetType.ToLowerInvariant();
+                        // ❗ Only restore if it was still assigned
+                        if (old.Status != "Assigned")
+                            continue;
+
+                        var t = old.AssetType?.ToLowerInvariant();
 
                         if (t == "laptop")
                         {
@@ -359,7 +362,8 @@ namespace backend_app.Controllers
                             if (lap?.AssetId != null)
                             {
                                 var asset = await _context.Assets.FindAsync(lap.AssetId.Value);
-                                if (asset != null) asset.Quantity += 1;
+                                if (asset != null)
+                                    asset.Quantity += 1;
                             }
                         }
                         else if (t == "mobile")
@@ -368,7 +372,8 @@ namespace backend_app.Controllers
                             if (mob?.AssetId != null)
                             {
                                 var asset = await _context.Assets.FindAsync(mob.AssetId.Value);
-                                if (asset != null) asset.Quantity += 1;
+                                if (asset != null)
+                                    asset.Quantity += 1;
                             }
                         }
                         else if (t == "tablet")
@@ -377,10 +382,12 @@ namespace backend_app.Controllers
                             if (tab?.AssetId != null)
                             {
                                 var asset = await _context.Assets.FindAsync(tab.AssetId.Value);
-                                if (asset != null) asset.Quantity += 1;
+                                if (asset != null)
+                                    asset.Quantity += 1;
                             }
                         }
                     }
+
 
                     _context.AssignedAssets.RemoveRange(oldAssigned);
                     await _context.SaveChangesAsync();

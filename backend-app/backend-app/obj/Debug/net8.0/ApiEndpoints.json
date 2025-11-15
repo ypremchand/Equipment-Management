@@ -233,7 +233,7 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "backend_app.Controllers.AssetRequestDto",
+        "Type": "backend_app.Controllers.ContactController\u002BAssetRequestDto",
         "IsRequired": true
       }
     ],

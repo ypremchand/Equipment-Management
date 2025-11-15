@@ -22,16 +22,24 @@ namespace backend_app.Controllers
         // ✅ GET: api/tablets (Pagination + Search)
         [HttpGet]
         public async Task<ActionResult<object>> GetTablets(
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 5,
-            [FromQuery] string? search = null)
+     [FromQuery] int page = 1,
+     [FromQuery] int pageSize = 5,
+     [FromQuery] string? search = null)
         {
             if (page <= 0) page = 1;
             if (pageSize <= 0) pageSize = 5;
 
             var query = _context.Tablets.Include(t => t.Asset).AsQueryable();
 
-            // ✅ Case-insensitive + space-insensitive search
+            // 🔥 FILTER — Only show AVAILABLE tablets
+            var assignedTabletIds = await _context.AssignedAssets
+                .Where(a => a.AssetType.ToLower() == "tablet" && a.Status == "Assigned")
+                .Select(a => a.AssetTypeItemId)
+                .ToListAsync();
+
+            query = query.Where(t => !assignedTabletIds.Contains(t.Id));
+
+            // 🔍 Search
             if (!string.IsNullOrWhiteSpace(search))
             {
                 search = search.Trim().ToLower().Replace(" ", "");
@@ -42,7 +50,7 @@ namespace backend_app.Controllers
                     EF.Functions.Like(t.Processor.ToLower().Replace(" ", ""), $"%{search}%") ||
                     EF.Functions.Like(t.Ram.ToLower().Replace(" ", ""), $"%{search}%") ||
                     EF.Functions.Like(t.Storage.ToLower().Replace(" ", ""), $"%{search}%") ||
-                    EF.Functions.Like(t.Location.ToLower().Replace(" ", ""), $"%{search}%") 
+                    EF.Functions.Like(t.Location.ToLower().Replace(" ", ""), $"%{search}%")
                 );
             }
 
@@ -64,6 +72,7 @@ namespace backend_app.Controllers
                 data = tablets
             });
         }
+
 
         // ✅ GET: api/tablets/5
         [HttpGet("{id}")]
