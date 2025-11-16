@@ -62,7 +62,7 @@ function Requests() {
     req.assetRequestItems?.some((i) => (i.assignedAssets?.length || 0) > 0);
 
   return (
-    <div className="container mt-4">
+    <div className="requests-page container mt-4">
       <h2 className="text-center mb-4">📦 Asset Requests</h2>
 
       {loading ? (
