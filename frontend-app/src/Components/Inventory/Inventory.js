@@ -64,9 +64,7 @@ function Inventory({ closeMenu }) {
               type="button"
             >
               {a.name}
-              {typeof a.quantity !== "undefined" && (
-                <small className="ms-2 text-muted">({a.quantity})</small>
-              )}
+              
             </button>
           ))
         )}

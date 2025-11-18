@@ -23,33 +23,41 @@ namespace backend_app.Controllers
             if (request == null)
                 return BadRequest("Invalid request data.");
 
-            // ✅ Check if user exists
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+            // GET USER
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == request.Email.ToLower());
+
             if (user == null)
                 return NotFound("User not found.");
 
-            // ✅ Check if location exists
-            var location = await _context.Locations.FirstOrDefaultAsync(l => l.Name == request.Location);
+            // GET LOCATION
+            var location = await _context.Locations
+                .FirstOrDefaultAsync(l => l.Name.ToLower() == request.Location.ToLower());
+
             if (location == null)
                 return NotFound("Location not found.");
 
-            // ✅ Create asset request with Pending status (not auto-approved)
+
+            // ✅ Create asset request (Pending status)
             var assetRequest = new AssetRequest
             {
                 UserId = user.Id,
                 LocationId = location.Id,
                 RequestDate = DateTime.Now,
-                Status = "Pending", // 🟩 Corrected — do not auto-approve
+                Status = "Pending",
                 Message = request.Message
             };
 
             _context.AssetRequests.Add(assetRequest);
             await _context.SaveChangesAsync();
 
-            // ✅ Add requested items (without modifying stock yet)
+            // ✅ Add request items
             foreach (var item in request.AssetRequests)
             {
-                var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Name == item.Asset);
+                var asset = await _context.Assets
+    .FirstOrDefaultAsync(a => a.Name.ToLower() == item.Asset.ToLower());
+
+
                 if (asset != null)
                 {
                     _context.AssetRequestItems.Add(new AssetRequestItem
@@ -58,7 +66,6 @@ namespace backend_app.Controllers
                         AssetId = asset.Id,
                         RequestedQuantity = item.RequestedQuantity
                     });
-                    // ❌ DO NOT modify asset.Quantity here
                 }
             }
 
@@ -67,7 +74,7 @@ namespace backend_app.Controllers
             return Ok(new { message = "✅ Request submitted successfully. Waiting for admin approval." });
         }
 
-        // ✅ GET: api/contact?email=user@example.com (Get user’s requests)
+        // ✅ GET: api/contact?email=user@mail.com (Get user's asset requests)
         [HttpGet]
         public async Task<IActionResult> GetRequests([FromQuery] string? email)
         {
@@ -78,9 +85,10 @@ namespace backend_app.Controllers
                 .Include(r => r.User)
                 .AsQueryable();
 
-            if (!string.IsNullOrEmpty(email))
+            if (!string.IsNullOrWhiteSpace(email))
             {
-                query = query.Where(r => r.User.Email.ToLower() == email.ToLower());
+                query = query.Where(r =>
+                    string.Equals(r.User.Email, email, StringComparison.OrdinalIgnoreCase));
             }
 
             var result = await query
@@ -102,7 +110,7 @@ namespace backend_app.Controllers
             return Ok(result);
         }
 
-        // ✅ PUT: api/contact/return/{id} (User returns assets)
+        // ✅ PUT: api/contact/return/{id}
         [HttpPut("return/{id}")]
         public async Task<IActionResult> ReturnAssets(int id)
         {
@@ -114,7 +122,7 @@ namespace backend_app.Controllers
             if (request == null)
                 return NotFound("Request not found.");
 
-            if (request.Status == "Returned")
+            if (string.Equals(request.Status, "Returned", StringComparison.OrdinalIgnoreCase))
                 return BadRequest("Assets already returned.");
 
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -125,23 +133,23 @@ namespace backend_app.Controllers
                 {
                     foreach (var assigned in item.AssignedAssets)
                     {
-                        // Mark returned
+                        // Mark return
                         assigned.Status = "Returned";
                         assigned.ReturnedDate = DateTime.Now;
 
                         var type = assigned.AssetType.ToLower();
 
-                        if (type == "laptop")
+                        if (string.Equals(type, "laptop", StringComparison.OrdinalIgnoreCase))
                         {
                             var lap = await _context.Laptops.FindAsync(assigned.AssetTypeItemId);
                             if (lap?.AssetId != null)
                             {
                                 var asset = await _context.Assets.FindAsync(lap.AssetId.Value);
                                 if (asset != null)
-                                    asset.Quantity += 1;  // Restore ONLY 1
+                                    asset.Quantity += 1;
                             }
                         }
-                        else if (type == "mobile")
+                        else if (string.Equals(type, "mobile", StringComparison.OrdinalIgnoreCase))
                         {
                             var mob = await _context.Mobiles.FindAsync(assigned.AssetTypeItemId);
                             if (mob?.AssetId != null)
@@ -151,7 +159,7 @@ namespace backend_app.Controllers
                                     asset.Quantity += 1;
                             }
                         }
-                        else if (type == "tablet")
+                        else if (string.Equals(type, "tablet", StringComparison.OrdinalIgnoreCase))
                         {
                             var tab = await _context.Tablets.FindAsync(assigned.AssetTypeItemId);
                             if (tab?.AssetId != null)
@@ -177,24 +185,38 @@ namespace backend_app.Controllers
             }
         }
 
+        // ===============================
+        // ✅ DTOs (Warning-Free)
+        // ===============================
 
-
-        // ✅ DTOs (Data Transfer Objects)
-        public class AssetRequestDto
+        public class AssetRequestDto(
+     string Username,
+     string Email,
+     string PhoneNumber,
+     string Location,
+     string Message,
+     List<AssetRequestItemDto> AssetRequests)
         {
-            public string Username { get; set; }
-            public string Email { get; set; }
-            public string PhoneNumber { get; set; }
-            public string Location { get; set; }
-            public string Message { get; set; }
-            public List<AssetRequestItemDto> AssetRequests { get; set; }
+            public string Username { get; set; } = Username;
+            public string Email { get; set; } = Email;
+            public string PhoneNumber { get; set; } = PhoneNumber;
+            public string Location { get; set; } = Location;
+            public string Message { get; set; } = Message;
+
+            // Collection initialization simplified
+            public List<AssetRequestItemDto> AssetRequests { get; set; } = AssetRequests ?? new();
         }
 
-        public class AssetRequestItemDto
+
+        public class AssetRequestItemDto(
+    string Asset,
+    int RequestedQuantity,
+    int AvailableQuantity)
         {
-            public string Asset { get; set; }
-            public int RequestedQuantity { get; set; }
-            public int AvailableQuantity { get; set; }
+            public string Asset { get; set; } = Asset;
+            public int RequestedQuantity { get; set; } = RequestedQuantity;
+            public int AvailableQuantity { get; set; } = AvailableQuantity;
         }
+
     }
 }

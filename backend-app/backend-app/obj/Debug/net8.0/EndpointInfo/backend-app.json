@@ -1238,17 +1238,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/User"
+                "$ref": "#/components/schemas/RegisterDto"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/User"
+                "$ref": "#/components/schemas/RegisterDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/User"
+                "$ref": "#/components/schemas/RegisterDto"
               }
             }
           }
@@ -1854,6 +1854,32 @@
         },
         "additionalProperties": false
       },
+      "RegisterDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "phoneNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "password": {
+            "type": "string",
+            "nullable": true
+          },
+          "confirmPassword": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "Tablet": {
         "required": [
           "assetTag",
@@ -1951,7 +1977,8 @@
         "required": [
           "email",
           "name",
-          "password"
+          "password",
+          "phoneNumber"
         ],
         "type": "object",
         "properties": {
@@ -1969,8 +1996,14 @@
             "type": "string",
             "format": "email"
           },
+          "phoneNumber": {
+            "maxLength": 10,
+            "minLength": 0,
+            "type": "string",
+            "format": "tel"
+          },
           "password": {
-            "minLength": 1,
+            "minLength": 8,
             "type": "string"
           }
         },

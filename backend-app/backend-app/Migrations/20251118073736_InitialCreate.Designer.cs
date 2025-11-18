@@ -12,7 +12,7 @@ using backend_app.Data;
 namespace backend_app.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251116033709_InitialCreate")]
+    [Migration("20251118073736_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -430,6 +430,11 @@ namespace backend_app.Migrations
                     b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.HasKey("Id");
 

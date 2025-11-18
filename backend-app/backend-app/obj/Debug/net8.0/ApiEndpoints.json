@@ -782,8 +782,8 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "user",
-        "Type": "backend_app.Models.User",
+        "Name": "model",
+        "Type": "backend_app.Controllers.UserController\u002BRegisterDto",
         "IsRequired": true
       }
     ],

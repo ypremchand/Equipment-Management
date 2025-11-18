@@ -2,3 +2,12 @@
 .return-asset-page {
   padding-top: 50px;
 }
+.asset-flex-box {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.asset-card {
+  width: 350px;
+}

@@ -64,7 +64,6 @@ function Requests() {
   return (
     <div className="requests-page container mt-4">
       <h2 className="text-center mb-4">📦 Asset Requests</h2>
-
       {loading ? (
         <div className="text-center">
           <Spinner animation="border" /> <p>Loading...</p>
@@ -430,6 +429,7 @@ function ViewAssignedModal({ show, onHide, request }) {
                     <th>Brand</th>
                     <th>Model</th>
                     <th>Assigned Date</th>
+                    <th>Returned Date</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -451,6 +451,11 @@ function ViewAssignedModal({ show, onHide, request }) {
                       <td>
                         {a.assignedDate
                           ? new Date(a.assignedDate).toLocaleString()
+                          : "—"}
+                      </td>
+                      <td>
+                        {a.returnedDate
+                          ? new Date(a.returnedDate).toLocaleString()
                           : "—"}
                       </td>
                     </tr>

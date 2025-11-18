@@ -1,41 +1,74 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
-import "./style.css"
+import "./style.css";
 
 function ReturnAssets() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const user = JSON.parse(localStorage.getItem("user"));
-  const CONTACT_API = "http://localhost:5083/api/contact";
+  
+const navigate = useNavigate();
 
-  // ✅ Define fetchRequests outside, but memoized with useCallback
+  const saved = localStorage.getItem("user");
+  const user = saved ? JSON.parse(saved) : null;
+
+  const API = "http://localhost:5083/api/assetrequests";
+  const RETURN_API = "http://localhost:5083/api/contact/return";
+
+  // Safe object getter (handles both PascalCase & camelCase)
+  const get = (obj, ...keys) => {
+    if (!obj) return undefined;
+    for (const k of keys) {
+      if (obj[k] !== undefined) return obj[k];
+    }
+    return undefined;
+  };
+
+  const fmtDate = (d) => {
+    if (!d) return "—";
+    const dt = new Date(d);
+    return isNaN(dt.getTime()) ? "—" : dt.toLocaleString();
+  };
+
   const fetchRequests = useCallback(async () => {
+    if (!user?.email) {
+      setRequests([]);
+      setLoading(false);
+      return;
+    }
+
     try {
-      const res = await axios.get(`${CONTACT_API}?email=${user.email}`);
-      setRequests(res.data || []);
-    } catch (error) {
-      console.error("Error fetching requests:", error);
+      const res = await axios.get(
+        `${API}/by-email?email=${encodeURIComponent(user.email)}`
+      );
+
+      const data = Array.isArray(res.data)
+        ? res.data
+        : res.data?.requests ?? [];
+
+      setRequests(data || []);
+    } catch (err) {
+      console.error("Error fetching requests:", err);
+      setRequests([]);
     } finally {
       setLoading(false);
     }
-  }, [user.email, CONTACT_API]);
+  }, [user?.email]);
 
-  // ✅ Fetch once when user loads or email changes
   useEffect(() => {
     fetchRequests();
   }, [fetchRequests]);
 
-  // ✅ Handle Return
   const handleReturn = async (id) => {
     if (!window.confirm("Are you sure you want to return these assets?")) return;
 
     try {
-      await axios.put(`${CONTACT_API}/return/${id}`);
+      await axios.put(`${RETURN_API}/${id}`);
       alert("Assets returned successfully!");
-      fetchRequests(); // ✅ Works now (in scope)
-    } catch (error) {
-      console.error("Error returning assets:", error);
+      fetchRequests();
+    } catch (err) {
+      console.error("Error returning assets:", err);
       alert("Failed to return assets.");
     }
   };
@@ -46,7 +79,7 @@ function ReturnAssets() {
 
       {loading ? (
         <div className="text-center">
-          <div className="spinner-border text-primary" role="status"></div>
+          <div className="spinner-border text-primary" role="status" />
         </div>
       ) : requests.length === 0 ? (
         <div className="alert alert-info text-center">No requests found.</div>
@@ -63,47 +96,67 @@ function ReturnAssets() {
                 <th>Action</th>
               </tr>
             </thead>
+
             <tbody>
-              {requests.map((r, i) => (
-                <tr key={r.id}>
-                  <td>{i + 1}</td>
-                  <td>{new Date(r.requestDate).toLocaleString()}</td>
-                  <td>{r.location}</td>
-                  <td>
-                    <span
-                      className={`badge ${
-                        r.status === "Returned"
-                          ? "bg-success"
-                          : r.status === "Pending"
-                          ? "bg-warning text-dark"
-                          : "bg-primary"
-                      }`}
-                    >
-                      {r.status}
-                    </span>
-                  </td>
-                  <td>
-                    <ul className="mb-0">
-                      {r.assetRequestItems.map((a, idx) => (
-                        <li key={idx}>
-                          {a.assetName} – {a.requestedQuantity} unit(s)
-                        </li>
-                      ))}
-                    </ul>
-                  </td>
-                  <td>
-                    {r.status === "Approved" && (
-                      <button
-                        className="btn btn-sm btn-danger"
-                        onClick={() => handleReturn(r.id)}
+              {requests.map((r, i) => {
+                const id = get(r, "id", "Id");
+                const requestDate = get(r, "requestDate", "RequestDate");
+                const status = get(r, "status", "Status");
+                const location = get(r, "location", "Location") || {};
+                const assetItems =
+                  get(r, "assetRequestItems", "AssetRequestItems") || [];
+
+                return (
+                  <tr key={id ?? i}>
+                    <td>{i + 1}</td>
+
+                    <td>{fmtDate(requestDate)}</td>
+
+                    <td>{get(location, "name", "Name") ?? "—"}</td>
+
+                    <td>
+                      <span
+                        className={`badge ${
+                          status === "Returned"
+                            ? "bg-success"
+                            : status === "Pending"
+                            ? "bg-warning text-dark"
+                            : status === "Approved"
+                            ? "bg-primary"
+                            : "bg-secondary"
+                        }`}
                       >
-                        Return
-                      </button>
-                    )}
-                    {r.status === "Returned" && <em>Returned</em>}
-                  </td>
-                </tr>
-              ))}
+                        {status}
+                      </span>
+                    </td>
+
+        <td>
+  <button
+    className="btn btn-sm btn-primary"
+    onClick={() => navigate(`/assigned-items/${id}`)}
+  >
+    View Assigned Items
+  </button>
+</td>
+
+
+
+                    <td>
+                      {status === "Approved" && (
+                        <button
+                          className="btn btn-sm btn-danger"
+                          onClick={() => handleReturn(id)}
+                        >
+                          Return
+                        </button>
+                      )}
+
+                      {status === "Returned" && <em>Returned</em>}
+                      {status === "Pending" && <em>Pending</em>}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

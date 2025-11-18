@@ -200,8 +200,10 @@ namespace backend_app.Controllers
                             a.AssetTypeItemId,
                             a.Status,
                             a.AssignedDate,
+                            a.ReturnedDate,   
                             Detail = detail
                         };
+
                     })
                 })
             });
@@ -307,6 +309,7 @@ namespace backend_app.Controllers
                             a.AssetTypeItemId,
                             a.Status,
                             a.AssignedDate,
+                            a.ReturnedDate,
                             Detail = detail
                         };
                     })

@@ -7,6 +7,7 @@ import Home from "./Components/Home/Home";
 import About from "./Components/About/About";
 import Contact from "./Components/ContactUs/Contact";
 import ReturnAssets from "./Components/ReturnAssets/ReturnAssets";
+import AssignedItems from "./Components/AssignedItems/AssignedItems";
 import Requests from "./Components/Requests/Requests";
 import AdminPanel from "./Components/AdminPanel/AdminPanel";
 import Inventory from "./Components/Inventory/Inventory";
@@ -53,6 +54,9 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/returnassets" element={<ReturnAssets />} />
+            <Route>
+  <Route path="/assigned-items/:requestId" element={<AssignedItems />} />
+</Route>
             
 
             {/* Admin-only routes */}
