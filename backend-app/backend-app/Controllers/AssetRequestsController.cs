@@ -504,6 +504,7 @@ namespace backend_app.Controllers
                     foreach (var assigned in item.AssignedAssets ?? Enumerable.Empty<AssignedAsset>())
                     {
                         var t = assigned.AssetType?.ToLowerInvariant();
+
                         if (t == "laptop")
                         {
                             var lap = await _context.Laptops.FindAsync(assigned.AssetTypeItemId);
@@ -533,16 +534,9 @@ namespace backend_app.Controllers
                         }
                     }
 
-                    // restore by ApprovedQuantity as fallback (if AssignedAssets list is empty)
-                    if (item.ApprovedQuantity.HasValue && item.ApprovedQuantity.Value > 0)
-                    {
-                        var asset = item.Asset;
-                        if (asset != null)
-                        {
-                            asset.Quantity += item.ApprovedQuantity.Value;
-                        }
-                    }
+                    
                 }
+
 
                 // Delete assigned assets, items and the request
                 _context.AssignedAssets.RemoveRange(request.AssetRequestItems.SelectMany(i => i.AssignedAssets));
@@ -560,5 +554,35 @@ namespace backend_app.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var r = await _context.AssetRequests
+                .Include(x => x.AssetRequestItems)
+                    .ThenInclude(i => i.Asset)
+                .Include(x => x.Location)
+                .Include(x => x.User)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (r == null)
+                return NotFound("Request not found.");
+
+            return Ok(new
+            {
+                r.Id,
+                r.RequestDate,
+                r.Status,
+                r.Message,
+                PhoneNumber = r.User.PhoneNumber,
+                Location = new { r.Location.Id, r.Location.Name },
+                AssetRequestItems = r.AssetRequestItems.Select(i => new
+                {
+                    i.Id,
+                    RequestedQuantity = i.RequestedQuantity,
+                    Asset = new { i.Asset.Id, i.Asset.Name }
+                })
+            });
+        }
+
     }
 }

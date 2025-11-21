@@ -103,8 +103,6 @@ const navigate = useNavigate();
                 const requestDate = get(r, "requestDate", "RequestDate");
                 const status = get(r, "status", "Status");
                 const location = get(r, "location", "Location") || {};
-                const assetItems =
-                  get(r, "assetRequestItems", "AssetRequestItems") || [];
 
                 return (
                   <tr key={id ?? i}>
@@ -141,19 +139,29 @@ const navigate = useNavigate();
 
 
 
-                    <td>
-                      {status === "Approved" && (
-                        <button
-                          className="btn btn-sm btn-danger"
-                          onClick={() => handleReturn(id)}
-                        >
-                          Return
-                        </button>
-                      )}
+                   <td>
+  {/* Edit button visible ONLY when Pending */}
+  {status === "Pending" && (
+    <button
+      className="btn btn-sm btn-warning me-2"
+      onClick={() => navigate(`/contact/${id}`)}
+    >
+      Edit
+    </button>
+  )}
 
-                      {status === "Returned" && <em>Returned</em>}
-                      {status === "Pending" && <em>Pending</em>}
-                    </td>
+  {status === "Approved" && (
+    <button
+      className="btn btn-sm btn-danger"
+      onClick={() => handleReturn(id)}
+    >
+      Return
+    </button>
+  )}
+
+  {status === "Returned" && <em>Returned</em>}
+</td>
+
                   </tr>
                 );
               })}

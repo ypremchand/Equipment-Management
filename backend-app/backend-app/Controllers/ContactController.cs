@@ -184,6 +184,65 @@ namespace backend_app.Controllers
                 return StatusCode(500, $"Error returning assets: {ex.Message}");
             }
         }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateRequest(int id, [FromBody] AssetRequestDto request)
+        {
+            if (request == null)
+                return BadRequest("Invalid request.");
+
+            var existing = await _context.AssetRequests
+                .Include(r => r.AssetRequestItems)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (existing == null)
+                return NotFound("Request not found.");
+
+            if (!string.Equals(existing.Status, "Pending", StringComparison.OrdinalIgnoreCase))
+                return BadRequest("Only pending requests can be edited.");
+
+            // Update location
+            var location = await _context.Locations
+                .FirstOrDefaultAsync(l => l.Name.ToLower() == request.Location.ToLower());
+
+            if (location == null)
+                return BadRequest("Location not found.");
+
+            existing.LocationId = location.Id;
+
+            // Update message
+            existing.Message = request.Message;
+
+            // Update phone
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+            if (user != null)
+            {
+                user.PhoneNumber = request.PhoneNumber;
+            }
+
+            // Remove old asset items
+            _context.AssetRequestItems.RemoveRange(existing.AssetRequestItems);
+
+            // Add new items
+            foreach (var item in request.AssetRequests)
+            {
+                var asset = await _context.Assets
+                    .FirstOrDefaultAsync(a => a.Name.ToLower() == item.Asset.ToLower());
+
+                if (asset == null) continue;
+
+                _context.AssetRequestItems.Add(new AssetRequestItem
+                {
+                    AssetRequestId = existing.Id,
+                    AssetId = asset.Id,
+                    RequestedQuantity = item.RequestedQuantity
+                });
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Request updated successfully." });
+        }
+
 
         // ===============================
         // ✅ DTOs (Warning-Free)

@@ -92,7 +92,7 @@ namespace backend_app.Controllers
             return Ok(new
             {
                 message = "Login successful",
-                user = new { user.Id, user.Name, user.Email }
+                user = new { user.Id, user.Name, user.Email,user.PhoneNumber }
             });
         }
 

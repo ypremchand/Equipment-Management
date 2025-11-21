@@ -1,146 +1,52 @@
-import React, { useState, useEffect } from "react";
+// src/Components/Mobiles/Mobiles.js
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
-import { Modal, Button } from "react-bootstrap";
+import { Modal, Button, Spinner } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./style.css";
 
-function Mobiles() {
-  const [mobiles, setMobiles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState(null);
-  const [showForm, setShowForm] = useState(false);
-  const [assetError, setAssetError] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [selectedMobile, setSelectedMobile] = useState(null);
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
-  const [form, setForm] = useState({
-    brand: "",
-    model: "",
-    imeiNumber: "",
-    assetTag: "",
-    purchaseDate: "",
-    processor: "",
-    ram: "",
-    storage: "",
-    batteryCapacity: "",
-    displaySize: "",
-    simType: "",
-    networkType: "",
-    location: "",
-    remarks: "",
-    lastServicedDate: "",
-  });
-
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const pageSize = 5;
-  const [searchInput, setSearchInput] = useState("");
-
+export default function Mobiles() {
   const API_URL = "http://localhost:5083/api/mobiles";
 
-  // ✅ Fetch mobiles (pagination + search)
-  const fetchMobiles = async (currentPage = 1, searchText = "") => {
-    setLoading(true);
-    try {
-      const res = await axios.get(
-        `${API_URL}?page=${currentPage}&pageSize=${pageSize}&search=${encodeURIComponent(
-          searchText.trim()
-        )}`
-      );
+  // Data
+  const [mobiles, setMobiles] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-      if (res.data && Array.isArray(res.data.data)) {
-        setMobiles(res.data.data);
-        setTotalPages(res.data.totalPages);
-        setPage(res.data.currentPage);
-      } else setMobiles([]);
-    } catch (error) {
-      console.error("Error fetching Mobiles:", error);
-      setMobiles([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const pageSize = 10;
 
-  useEffect(() => {
-    const delayDebounce = setTimeout(() => fetchMobiles(1, searchInput), 400);
-    return () => clearTimeout(delayDebounce);
-  }, [searchInput]);
+  // UI states
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [selectedMobile, setSelectedMobile] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [assetError, setAssetError] = useState("");
 
-  useEffect(() => {
-    fetchMobiles(page, searchInput);
-  }, [page, searchInput]);
+  // Filters / Search / Sort
+  const [searchInput, setSearchInput] = useState("");
+  const [filters, setFilters] = useState({ brand: "", ram: "", storage: "", location: "" });
+  const [sort, setSort] = useState({ by: "id", dir: "asc" });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
-    if (name === "assetTag") handleAssetTagChange(value);
-  };
+  // Global dropdown options
+  const [allOptions, setAllOptions] = useState({ brands: [], rams: [], storages: [], locations: [] });
 
-  const handleAssetTagChange = async (value) => {
-    if (!value.trim()) {
-      setAssetError("");
-      return;
-    }
-    try {
-      const res = await axios.get(`${API_URL}/check-duplicate?assetTag=${value}`);
-      setAssetError(res.data.exists ? "Asset number already exists" : "");
-    } catch (error) {
-      console.error("Error checking asset tag:", error);
-    }
-  };
+  // Debounce ref
+  const searchDebounceRef = useRef(null);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (assetError) {
-      alert("Please fix the asset tag issue before saving.");
-      return;
-    }
-    try {
-      if (editingId) {
-        await axios.put(`${API_URL}/${editingId}`, form);
-        alert("Mobile updated successfully!");
-      } else {
-        await axios.post(API_URL, form);
-        alert("Mobile added successfully!");
-      }
-      resetForm();
-      fetchMobiles(page, searchInput);
-    } catch (error) {
-      console.error("Error saving mobile:", error);
-      alert(error.response?.data?.message || "Failed to save mobile");
-    }
-  };
+  // Form State
+  const [form, setForm] = useState(getEmptyForm());
 
-  const handleEdit = (mobile) => {
-    setEditingId(mobile.id);
-    setForm({
-      ...mobile,
-      purchaseDate: mobile.purchaseDate?.split("T")[0] || "",
-      lastServicedDate: mobile.lastServicedDate?.split("T")[0] || "",
-    });
-    setAssetError("");
-    setShowForm(true);
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this mobile?")) return;
-    try {
-      await axios.delete(`${API_URL}/${id}`);
-      alert("Mobile deleted successfully!");
-      fetchMobiles(page, searchInput);
-    } catch (error) {
-      console.error("Error deleting mobile:", error);
-      alert("Failed to delete mobile");
-    }
-  };
-
-  const resetForm = () => {
-    setEditingId(null);
-    setForm({
+  function getEmptyForm() {
+    return {
       brand: "",
       model: "",
-      imeiNumber: "",
+      IMEINumber: "",
       assetTag: "",
       purchaseDate: "",
       processor: "",
@@ -148,76 +54,307 @@ function Mobiles() {
       storage: "",
       batteryCapacity: "",
       displaySize: "",
-      simType: "",
+      SIMType: "",
       networkType: "",
       location: "",
       remarks: "",
       lastServicedDate: "",
+    };
+  }
+
+  // ======================================================
+  // 🔥 Fetch Mobiles with Server-side Filters + Search
+  // ======================================================
+  const fetchMobiles = useCallback(
+    async (currentPage = 1) => {
+      setLoading(true);
+      try {
+        const params = {
+          page: currentPage,
+          pageSize,
+          search: searchInput || undefined,
+          sortBy: sort.by,
+          sortDir: sort.dir,
+          brand: filters.brand || undefined,
+          ram: filters.ram || undefined,
+          storage: filters.storage || undefined,
+          location: filters.location || undefined,
+        };
+
+        const res = await axios.get(API_URL, { params });
+        const data = res.data;
+
+        setMobiles(data.data || []);
+        setTotalPages(data.totalPages ?? 1);
+        setPage(data.currentPage ?? currentPage);
+      } catch (err) {
+        console.error("Fetch mobiles error", err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [searchInput, filters, sort]
+  );
+
+  // Debounced fetching
+  useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+
+    searchDebounceRef.current = setTimeout(() => {
+      fetchMobiles(1);
+    }, 300);
+
+    return () => clearTimeout(searchDebounceRef.current);
+  }, [searchInput, filters, sort, fetchMobiles]);
+
+  // Fetch page change
+  useEffect(() => {
+    fetchMobiles(page);
+  }, [page, fetchMobiles]);
+
+  // Fetch dropdown options (/options)
+  useEffect(() => {
+    axios
+      .get(API_URL + "/options")
+      .then((res) => setAllOptions(res.data))
+      .catch((err) => console.error("Options load error", err));
+  }, []);
+
+  // Form handlers
+  const handleChange = async (e) => {
+    const { name, value } = e.target;
+    setForm((p) => ({ ...p, [name]: value }));
+
+    if (name === "assetTag") {
+      if (!value.trim()) return setAssetError("");
+      try {
+        const res = await axios.get(`${API_URL}/check-duplicate`, { params: { assetTag: value } });
+        setAssetError(res.data.exists ? "Asset number already exists" : "");
+      } catch (err) {
+        console.error("Asset check error", err);
+      }
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (assetError) return alert("Please fix asset tag issue.");
+
+    const required = ["brand", "model", "assetTag", "purchaseDate", "processor", "ram", "storage", "location"];
+    if (required.some((f) => !form[f]?.toString()?.trim())) return alert("Fill all required fields");
+
+    try {
+      if (editingId) {
+        await axios.put(`${API_URL}/${editingId}`, form);
+        alert("Updated successfully");
+      } else {
+        await axios.post(API_URL, form);
+        alert("Added successfully");
+      }
+      resetForm();
+      fetchMobiles(page);
+    } catch (err) {
+      console.error("Save error", err);
+      alert(err.response?.data?.message || "Failed to save");
+    }
+  };
+
+  const handleEdit = (m) => {
+    setEditingId(m.id);
+    setForm({
+      brand: m.brand || "",
+      model: m.model || "",
+      IMEINumber: m.imeiNumber || m.IMEINumber || "",
+      assetTag: m.assetTag || "",
+      purchaseDate: m.purchaseDate?.split("T")[0] || "",
+      processor: m.processor || "",
+      ram: m.ram || "",
+      storage: m.storage || "",
+      batteryCapacity: m.batteryCapacity || "",
+      displaySize: m.displaySize || "",
+      SIMType: m.simType || m.SIMType || "",
+      networkType: m.networkType || "",
+      location: m.location || "",
+      remarks: m.remarks || "",
+      lastServicedDate: m.lastServicedDate?.split("T")[0] || "",
     });
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure?")) return;
+    try {
+      await axios.delete(`${API_URL}/${id}`);
+      alert("Deleted");
+      fetchMobiles(page);
+    } catch (err) {
+      console.error("Delete error", err);
+      alert("Failed to delete");
+    }
+  };
+
+  const resetForm = () => {
+    setEditingId(null);
+    setForm(getEmptyForm());
     setAssetError("");
     setShowForm(false);
   };
 
+  const toggleSort = (field) => {
+    setSort((s) =>
+      s.by === field ? { by: field, dir: s.dir === "asc" ? "desc" : "asc" } : { by: field, dir: "asc" }
+    );
+  };
+
+  // Export Helpers
+ 
+
+  const exportToPDF = () => {
+    if (!mobiles.length) return alert("No data");
+
+    const doc = new jsPDF({ orientation: "landscape" });
+    autoTable(doc, {
+      head: [["Brand", "Model", "IMEI", "AssetTag", "Processor", "RAM", "Storage", "Location"]],
+      body: mobiles.map((m) => [
+        m.brand,
+        m.model,
+        m.imeiNumber || m.IMEINumber,
+        m.assetTag,
+        m.processor,
+        m.ram,
+        m.storage,
+        m.location,
+      ]),
+      startY: 18,
+      styles: { fontSize: 8 },
+    });
+
+    doc.save(`mobiles_${Date.now()}.pdf`);
+  };
+
   return (
-    <div
-      className="mobiles-page container-fluid mt-4 mb-5 px-2"
-      style={{
-        maxWidth: "100vw",
-        overflowX: "hidden",
-        paddingLeft: "10px",
-        paddingRight: "10px",
-      }}
-    >
+    <div className="mobiles-page container-fluid mt-4 mb-5 px-2">
       <h3 className="text-center mb-4">📱 Mobiles</h3>
 
-      {/* ✅ Search */}
-      <div className="row justify-content-center mb-3 mx-0">
-        <div className="col-12 col-sm-10 col-md-6 px-2">
-          <input
-            type="text"
-            placeholder="🔍 Search Mobiles..."
-            className="form-control w-100"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-          />
+      {/* Filters/Search */}
+      <div className="card p-3 mb-3">
+        <div className="row g-2">
+          <div className="col-md-3">
+            <input
+              className="form-control"
+              placeholder="🔍 Search..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+          </div>
+
+          {/* Brand */}
+          <div className="col-auto">
+            <select
+              className="form-select"
+              value={filters.brand}
+              onChange={(e) => setFilters((p) => ({ ...p, brand: e.target.value }))}
+            >
+              <option value="">All Brands</option>
+              {allOptions.brands.map((b) => (
+                <option key={b}>{b}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* RAM */}
+          <div className="col-auto">
+            <select
+              className="form-select"
+              value={filters.ram}
+              onChange={(e) => setFilters((p) => ({ ...p, ram: e.target.value }))}
+            >
+              <option value="">All RAM</option>
+              {allOptions.rams.map((r) => (
+                <option key={r}>{r}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Storage */}
+          <div className="col-auto">
+            <select
+              className="form-select"
+              value={filters.storage}
+              onChange={(e) => setFilters((p) => ({ ...p, storage: e.target.value }))}
+            >
+              <option value="">All Storage</option>
+              {allOptions.storages.map((s) => (
+                <option key={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Location */}
+          <div className="col-auto">
+            <select
+              className="form-select"
+              value={filters.location}
+              onChange={(e) => setFilters((p) => ({ ...p, location: e.target.value }))}
+            >
+              <option value="">All Locations</option>
+              {allOptions.locations.map((loc) => (
+                <option key={loc}>{loc}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Reset + Export */}
+          <div className="col ms-auto d-flex gap-2 justify-content-end">
+            <button
+              className="btn btn-outline-secondary"
+              onClick={() => {
+                setFilters({ brand: "", ram: "", storage: "", location: "" });
+                setSearchInput("");
+              }}
+            >
+              Reset
+            </button>
+
+           
+            <button className="btn btn-outline-danger" onClick={exportToPDF}>
+              PDF
+            </button>
+          </div>
         </div>
       </div>
 
       {!showForm && (
         <div className="text-center mb-3">
           <button className="btn btn-success" onClick={() => setShowForm(true)}>
-            ➕ Add New Mobile
+            ➕ Add Mobile
           </button>
         </div>
       )}
 
+      {/* Form */}
       {showForm && (
-        <form className="card p-4 shadow-sm mb-4" onSubmit={handleSubmit}>
-          <h5 className="mb-3 text-center fw-bold">
-            {editingId ? "✏️ Edit Mobile" : "🆕 Add Mobile"}
-          </h5>
+        <form className="card p-3 mb-3" onSubmit={handleSubmit}>
+          <h5 className="text-center mb-3">{editingId ? "Edit Mobile" : "Add Mobile"}</h5>
           <div className="row">
             {Object.keys(form).map((key) => (
-              <div className="col-md-4 mb-3" key={key}>
-                <label className="form-label text-capitalize">
-                  {key.replace(/([A-Z])/g, " $1")}
-                </label>
+              <div className="col-md-4 mb-2" key={key}>
+                <label className="form-label small text-capitalize">{key}</label>
                 <input
                   type={key.toLowerCase().includes("date") ? "date" : "text"}
                   name={key}
-                  value={form[key] || ""}
+                  value={form[key]}
                   onChange={handleChange}
                   className={`form-control ${key === "assetTag" && assetError ? "is-invalid" : ""}`}
                 />
-                {key === "assetTag" && assetError && (
-                  <div className="invalid-feedback">{assetError}</div>
-                )}
+                {key === "assetTag" && assetError && <div className="invalid-feedback">{assetError}</div>}
               </div>
             ))}
           </div>
-          <div className="text-center">
-            <button type="submit" className="btn btn-primary me-2" disabled={!!assetError}>
-              {editingId ? "Update Mobile" : "Save Mobile"}
+
+          <div className="text-center mt-3">
+            <button type="submit" disabled={!!assetError} className="btn btn-primary me-2">
+              {editingId ? "Update" : "Save"}
             </button>
             <button type="button" className="btn btn-secondary" onClick={resetForm}>
               Cancel
@@ -226,53 +363,69 @@ function Mobiles() {
         </form>
       )}
 
-      {/* ✅ Table */}
-      {loading ? (
-        <div className="text-center my-3">
-          <div className="spinner-border" role="status"></div>
-        </div>
-      ) : mobiles.length > 0 ? (
-        <>
+      {/* Table */}
+      <div className="card p-2">
+        {loading ? (
+          <div className="text-center py-4">
+            <Spinner animation="border" />
+          </div>
+        ) : mobiles.length === 0 ? (
+          <p className="text-center my-3">No mobiles found.</p>
+        ) : (
           <div className="table-responsive">
-            <table className="table table-bordered text-center align-middle table-striped table-hover">
+            <table className="table table-bordered table-striped text-center align-middle">
               <thead className="table-dark">
                 <tr>
-                  <th>#</th>
-                  <th>Brand</th>
-                  <th>Model</th>
+                  <th onClick={() => toggleSort("id")} style={{ cursor: "pointer" }}>
+                    #
+                  </th>
+                  <th onClick={() => toggleSort("brand")} style={{ cursor: "pointer" }}>
+                    Brand
+                  </th>
+                  <th onClick={() => toggleSort("model")} style={{ cursor: "pointer" }}>
+                    Model
+                  </th>
                   <th>IMEI</th>
-                  <th>Processor</th>
-                  <th>RAM</th>
-                  <th>Storage</th>
-                  <th>Location</th>
+                  <th onClick={() => toggleSort("processor")} style={{ cursor: "pointer" }}>
+                    Processor
+                  </th>
+                  <th onClick={() => toggleSort("ram")} style={{ cursor: "pointer" }}>
+                    RAM
+                  </th>
+                  <th onClick={() => toggleSort("storage")} style={{ cursor: "pointer" }}>
+                    Storage
+                  </th>
+                  <th onClick={() => toggleSort("location")} style={{ cursor: "pointer" }}>
+                    Location
+                  </th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {mobiles.map((mobile, idx) => (
-                  <tr key={mobile.id}>
+                {mobiles.map((m, idx) => (
+                  <tr key={m.id}>
                     <td>{(page - 1) * pageSize + idx + 1}</td>
-                    <td>{mobile.brand}</td>
-                    <td>{mobile.model}</td>
-                    <td>{mobile.imeiNumber}</td>
-                    <td>{mobile.processor}</td>
-                    <td>{mobile.ram}</td>
-                    <td>{mobile.storage}</td>
-                    <td>{mobile.location}</td>
-                    <td>
+                    <td>{m.brand}</td>
+                    <td>{m.model}</td>
+                    <td>{m.imeiNumber || m.IMEINumber}</td>
+                    <td>{m.processor}</td>
+                    <td>{m.ram}</td>
+                    <td>{m.storage}</td>
+                    <td>{m.location}</td>
+                    <td className="d-flex justify-content-center gap-2">
                       <button
-                        className="btn btn-info btn-sm me-2"
+                        className="btn btn-info btn-sm"
                         onClick={() => {
-                          setSelectedMobile(mobile);
+                          setSelectedMobile(m);
                           setShowModal(true);
                         }}
                       >
                         View
                       </button>
-                      <button className="btn btn-warning btn-sm me-2" onClick={() => handleEdit(mobile)}>
+                      <button className="btn btn-warning btn-sm" onClick={() => handleEdit(m)}>
                         Edit
                       </button>
-                      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(mobile.id)}>
+                      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(m.id)}>
                         Delete
                       </button>
                     </td>
@@ -281,42 +434,43 @@ function Mobiles() {
               </tbody>
             </table>
           </div>
+        )}
+      </div>
 
-          {/* ✅ Unified Pagination */}
-          <div className="d-flex justify-content-center align-items-center mt-4 gap-3 flex-wrap">
-            <Button variant="dark" className="px-3 py-1" disabled={page === 1} onClick={() => setPage(page - 1)}>
-              ◀ Previous
-            </Button>
-            <span className="fw-semibold text-dark">
-              Page {page} of {totalPages}
-            </span>
-            <Button variant="dark" className="px-3 py-1" disabled={page === totalPages} onClick={() => setPage(page + 1)}>
-              Next ▶
-            </Button>
-          </div>
-        </>
-      ) : (
-        <p className="text-center">No mobiles found.</p>
-      )}
+      {/* Pagination */}
+      <div className="d-flex justify-content-center align-items-center mt-3 gap-3">
+        <Button
+          variant="dark"
+          disabled={page === 1}
+          onClick={() => setPage((p) => Math.max(1, p - 1))}
+        >
+          ◀ Prev
+        </Button>
+        <span>
+          Page {page} of {totalPages}
+        </span>
+        <Button
+          variant="dark"
+          disabled={page === totalPages}
+          onClick={() => setPage((p) => p + 1)}
+        >
+          Next ▶
+        </Button>
+      </div>
 
-      {/* ✅ Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
+      {/* View Modal */}
+      <Modal show={showModal} onHide={() => setShowModal(false)} centered scrollable>
         <Modal.Header closeButton>
           <Modal.Title>Mobile Details</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {selectedMobile && (
-            <div>
-              {Object.entries(selectedMobile).map(([key, value]) => (
-                <p key={key}>
-                  <strong>{key.replace(/([A-Z])/g, " $1")}: </strong>
-                  {typeof value === "object" && value !== null
-                    ? value.name || JSON.stringify(value)
-                    : value?.toString() || "-"}
-                </p>
-              ))}
-            </div>
-          )}
+          {selectedMobile &&
+            Object.entries(selectedMobile).map(([k, v]) => (
+              <p key={k}>
+                <strong className="text-capitalize">{k}: </strong>
+                {typeof v === "object" ? JSON.stringify(v) : v || "-"}
+              </p>
+            ))}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowModal(false)}>
@@ -326,12 +480,10 @@ function Mobiles() {
       </Modal>
 
       <div className="text-center mt-4">
-        <Link to="/adminpanel" className="btn btn-outline-dark px-3 px-sm-4 py-2 w-sm-auto">
+        <Link to="/adminpanel" className="btn btn-outline-dark">
           ⬅ Back to Admin Panel
         </Link>
       </div>
     </div>
   );
 }
-
-export default Mobiles;

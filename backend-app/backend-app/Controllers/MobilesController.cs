@@ -22,18 +22,26 @@ namespace backend_app.Controllers
         // ✅ GET all mobiles (with pagination + search)
         [HttpGet]
         public async Task<ActionResult<object>> GetMobiles(
-     [FromQuery] int page = 1,
-     [FromQuery] int pageSize = 5,
-     [FromQuery] string? search = null)
+       [FromQuery] int page = 1,
+       [FromQuery] int pageSize = 10,
+       [FromQuery] string? search = null,
+       [FromQuery] string? sortBy = "id",
+       [FromQuery] string? sortDir = "asc",
+       [FromQuery] string? brand = null,
+       [FromQuery] string? ram = null,
+       [FromQuery] string? storage = null,
+       [FromQuery] string? location = null,
+       [FromQuery] string? networkType = null
+   )
         {
             if (page <= 0) page = 1;
-            if (pageSize <= 0) pageSize = 5;
+            if (pageSize <= 0) pageSize = 10;
 
             var query = _context.Mobiles
                 .Include(m => m.Asset)
                 .AsQueryable();
 
-            // 🔥 Filter out assigned mobiles (ONLY show available mobiles)
+            // 🔥 Exclude assigned mobiles
             var assignedMobileIds = await _context.AssignedAssets
                 .Where(a => a.AssetType.ToLower() == "mobile" && a.Status == "Assigned")
                 .Select(a => a.AssetTypeItemId)
@@ -41,40 +49,138 @@ namespace backend_app.Controllers
 
             query = query.Where(m => !assignedMobileIds.Contains(m.Id));
 
-            // 🔍 Search
+            // 🔎 SEARCH
             if (!string.IsNullOrWhiteSpace(search))
             {
                 search = search.Trim().ToLower().Replace(" ", "");
 
                 query = query.Where(m =>
-                    EF.Functions.Like(m.Brand.ToLower().Replace(" ", ""), $"%{search}%") ||
-                    EF.Functions.Like(m.Model.ToLower().Replace(" ", ""), $"%{search}%") ||
-                    EF.Functions.Like(m.AssetTag.ToLower().Replace(" ", ""), $"%{search}%") ||
-                    EF.Functions.Like(m.Processor.ToLower().Replace(" ", ""), $"%{search}%") ||
-                    EF.Functions.Like(m.Ram.ToLower().Replace(" ", ""), $"%{search}%") ||
-                    EF.Functions.Like(m.Storage.ToLower().Replace(" ", ""), $"%{search}%") ||
-                    EF.Functions.Like(m.Location.ToLower().Replace(" ", ""), $"%{search}%")
+                    (m.Brand ?? "").ToLower().Replace(" ", "").Contains(search) ||
+                    (m.Model ?? "").ToLower().Replace(" ", "").Contains(search) ||
+                    (m.AssetTag ?? "").ToLower().Replace(" ", "").Contains(search) ||
+                    (m.Ram ?? "").ToLower().Replace(" ", "").Contains(search) ||
+                    (m.Storage ?? "").ToLower().Replace(" ", "").Contains(search) ||
+                    (m.Processor ?? "").ToLower().Replace(" ", "").Contains(search) ||
+                    (m.Location ?? "").ToLower().Replace(" ", "").Contains(search)
                 );
             }
 
-            var totalItems = await query.CountAsync();
-            var mobiles = await query
-                .OrderBy(m => m.Id)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
+            // 🎯 FILTERS — PARTIAL MATCH (same as laptops)
+            if (!string.IsNullOrWhiteSpace(brand))
+            {
+                string b = brand.Trim().ToLower().Replace(" ", "");
+                query = query.Where(m =>
+                    (m.Brand ?? "").ToLower().Replace(" ", "").Contains(b)
+                );
+            }
 
-            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+            if (!string.IsNullOrWhiteSpace(ram))
+            {
+                string r = ram.Trim().ToLower().Replace(" ", "");
+                query = query.Where(m =>
+                    (m.Ram ?? "").ToLower().Replace(" ", "").Contains(r)
+                );
+            }
+
+            if (!string.IsNullOrWhiteSpace(storage))
+            {
+                string st = storage.Trim().ToLower().Replace(" ", "");
+                query = query.Where(m =>
+                    (m.Storage ?? "").ToLower().Replace(" ", "").Contains(st)
+                );
+            }
+
+            if (!string.IsNullOrWhiteSpace(location))
+            {
+                string loc = location.Trim().ToLower().Replace(" ", "");
+
+                // Support multiple locations like "Bangalore, Chennai"
+                query = query.Where(m =>
+                    ("," + ((m.Location ?? "").ToLower().Replace(" ", "")) + ",")
+                        .Contains("," + loc + ",")
+                );
+            }
+
+            if (!string.IsNullOrWhiteSpace(networkType))
+            {
+                string nt = networkType.Trim().ToLower().Replace(" ", "");
+                query = query.Where(m =>
+                    (m.NetworkType ?? "").ToLower().Replace(" ", "").Contains(nt)
+                );
+            }
+
+            // 🌀 SORT
+            bool desc = sortDir?.ToLower() == "desc";
+
+            query = sortBy?.ToLower() switch
+            {
+                "brand" => desc ? query.OrderByDescending(m => m.Brand) : query.OrderBy(m => m.Brand),
+                "model" => desc ? query.OrderByDescending(m => m.Model) : query.OrderBy(m => m.Model),
+                "ram" => desc ? query.OrderByDescending(m => m.Ram) : query.OrderBy(m => m.Ram),
+                "storage" => desc ? query.OrderByDescending(m => m.Storage) : query.OrderBy(m => m.Storage),
+                "location" => desc ? query.OrderByDescending(m => m.Location) : query.OrderBy(m => m.Location),
+                "processor" => desc ? query.OrderByDescending(m => m.Processor) : query.OrderBy(m => m.Processor),
+                _ => desc ? query.OrderByDescending(m => m.Id) : query.OrderBy(m => m.Id),
+            };
+
+            // 📄 PAGINATION
+            var totalItems = await query.CountAsync();
+            var mobiles = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
             return Ok(new
             {
                 currentPage = page,
                 pageSize,
                 totalItems,
-                totalPages,
+                totalPages = (int)Math.Ceiling(totalItems / (double)pageSize),
                 data = mobiles
             });
         }
+
+
+        [HttpGet("options")]
+        public async Task<IActionResult> GetOptions()
+        {
+            var brands = await _context.Mobiles
+                .Select(m => m.Brand)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .OrderBy(x => x)
+                .ToListAsync();
+
+            var rams = await _context.Mobiles
+                .Select(m => m.Ram)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .OrderBy(x => x)
+                .ToListAsync();
+
+            var storages = await _context.Mobiles
+                .Select(m => m.Storage)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .OrderBy(x => x)
+                .ToListAsync();
+
+            // raw locations
+            var rawLocations = await _context.Mobiles
+                .Select(m => m.Location)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToListAsync();
+
+            // split + distinct
+            var locations = rawLocations
+                .SelectMany(l => l.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                .Select(l => l.Trim())
+                .Where(l => l != "")
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(l => l)
+                .ToList();
+
+            return Ok(new { brands, rams, storages, locations });
+        }
+
+
 
 
         // ✅ GET single mobile

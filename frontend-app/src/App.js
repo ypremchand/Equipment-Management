@@ -52,7 +52,8 @@ function App() {
               element={user?.email?.includes("@admin") ? <Navigate to="/adminpanel" /> : <Home />}
             />
             <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
+            <Route path="/contact" element={<Contact />} />         
+<Route path="/contact/:id" element={<Contact />} />     
             <Route path="/returnassets" element={<ReturnAssets />} />
             <Route>
   <Route path="/assigned-items/:requestId" element={<AssignedItems />} />

@@ -170,3 +170,5 @@ C:\Users\ADMIN\Desktop\EqipmentDispatch Management\backend-app\backend-app\obj\D
 C:\Users\ADMIN\Desktop\EqipmentDispatch Management\backend-app\backend-app\obj\Debug\net8.0\backend-app.pdb
 C:\Users\ADMIN\Desktop\EqipmentDispatch Management\backend-app\backend-app\obj\Debug\net8.0\backend-app.genruntimeconfig.cache
 C:\Users\ADMIN\Desktop\EqipmentDispatch Management\backend-app\backend-app\obj\Debug\net8.0\ref\backend-app.dll
+C:\Users\ADMIN\Desktop\EqipmentDispatch Management\backend-app\backend-app\bin\Debug\net8.0\ExcelDataReader.dll
+C:\Users\ADMIN\Desktop\EqipmentDispatch Management\backend-app\backend-app\bin\Debug\net8.0\ExcelDataReader.DataSet.dll

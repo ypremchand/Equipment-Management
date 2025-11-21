@@ -1,137 +1,156 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import { Modal, Button } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./style.css";
 
-function Laptops() {
+// Export libs (ensure these are installed in your project)
+
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
+export default function Laptops() {
+  const API_URL = "http://localhost:5083/api/laptops";
+
+  // Data
   const [laptops, setLaptops] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const pageSize = 10; // server page size param
+
+  // UI states
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [formData, setFormData] = useState(getEmptyForm());
   const [assetError, setAssetError] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [selectedLaptop, setSelectedLaptop] = useState(null);
 
-  // Pagination
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const pageSize = 5;
-
-  // Search
+  // Filters / search / sort (these are sent to backend as query params)
   const [searchInput, setSearchInput] = useState("");
+  const [filters, setFilters] = useState({ brand: "", ram: "", storage: "", location: ""});
+  const [sort, setSort] = useState({ by: "id", dir: "asc" });
+const [allOptions, setAllOptions] = useState({ brands: [], rams: [], storages: [], locations: [] });
 
-  const API_URL = "http://localhost:5083/api/laptops";
+  // debounce ref
+  const searchDebounceRef = useRef(null);
 
-  // Form fields
-  const [formData, setFormData] = useState({
-    brand: "",
-    modelNumber: "",
-    assetTag: "",
-    purchaseDate: "",
-    processor: "",
-    ram: "",
-    storage: "",
-    graphicsCard: "",
-    displaySize: "",
-    operatingSystem: "",
-    batteryCapacity: "",
-    location: "",
-    remarks: "",
-    lastServicedDate: "",
-  });
+  // Fetch data from backend with server-side filtering/sorting/pagination
+  const fetchLaptops = useCallback(async (currentPage = 1) => {
+  setLoading(true);
+  try {
+    const params = {
+      page: currentPage,
+      pageSize,
+      search: searchInput || undefined,
+      sortBy: sort.by,
+      sortDir: sort.dir,
+      brand: filters.brand || undefined,
+      ram: filters.ram || undefined,
+      storage: filters.storage || undefined,
+      location: filters.location || undefined,
+    };
 
-  // Handle form change
+    const res = await axios.get(API_URL, { params });
+    const data = res.data;
+
+    setLaptops(data.data || []);
+    setTotalPages(data.totalPages ?? 1);
+    setPage(data.currentPage ?? currentPage);
+  } catch (err) {
+    console.error("fetchLaptops error", err);
+  } finally {
+    setLoading(false);
+  }
+}, [searchInput, filters, sort]);
+
+
+  // initial + page + when filters/search/sort change
+useEffect(() => {
+  if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+
+  searchDebounceRef.current = setTimeout(() => {
+    fetchLaptops(1);
+  }, 300);
+
+  return () => clearTimeout(searchDebounceRef.current);
+}, [searchInput, filters, sort, fetchLaptops]);
+
+
+
+  useEffect(() => {
+  fetchLaptops(page);
+}, [page, fetchLaptops]);
+
+useEffect(() => {
+  axios.get(API_URL + "/options")
+    .then(res => setAllOptions(res.data))
+    .catch(err => console.error("options load error", err));
+}, []);
+
+  // Helpers
+  function getEmptyForm() {
+    return {
+      brand: "",
+      modelNumber: "",
+      assetTag: "",
+      purchaseDate: "",
+      processor: "",
+      ram: "",
+      storage: "",
+      graphicsCard: "",
+      displaySize: "",
+      operatingSystem: "",
+      batteryCapacity: "",
+      location: "",
+      remarks: "",
+      lastServicedDate: "",
+    };
+  }
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((p) => ({ ...p, [name]: value }));
   };
 
-  // ✅ Fetch laptops (with search)
-  const fetchLaptops = async (currentPage = 1, searchText = "") => {
-    setLoading(true);
+  const handleAssetTagChange = async (v) => {
+    setFormData((p) => ({ ...p, assetTag: v }));
+    if (!v?.trim()) return setAssetError("");
     try {
-      const res = await axios.get(
-        `${API_URL}?page=${currentPage}&pageSize=${pageSize}&search=${encodeURIComponent(
-          searchText.trim()
-        )}`
-      );
-      if (res.data?.data) {
-        setLaptops(res.data.data);
-        setTotalPages(res.data.totalPages);
-        setPage(res.data.currentPage);
-      } else setLaptops([]);
-    } catch (error) {
-      console.error("Error fetching laptops:", error);
-      setLaptops([]);
-    } finally {
-      setLoading(false);
+      const res = await axios.get(`${API_URL}/check-duplicate`, { params: { assetTag: v } });
+      setAssetError(res.data?.exists ? "Asset number already exists" : "");
+    } catch (err) {
+      console.error("asset check", err);
     }
   };
 
-  // ✅ Debounced dynamic search
-  useEffect(() => {
-    const delayDebounce = setTimeout(() => fetchLaptops(1, searchInput), 400);
-    return () => clearTimeout(delayDebounce);
-  }, [searchInput]);
-
-  // ✅ Fetch laptops when page changes
-  useEffect(() => {
-    fetchLaptops(page, searchInput);
-  }, [page, searchInput]);
-
-  // ✅ Check duplicate Asset Tag
-  const handleAssetTagChange = async (value) => {
-    setFormData((prev) => ({ ...prev, assetTag: value }));
-    if (!value.trim()) return setAssetError("");
-    try {
-      const res = await axios.get(`${API_URL}/check-duplicate?assetTag=${value}`);
-      setAssetError(res.data.exists ? "Asset number already exists" : "");
-    } catch (error) {
-      console.error("Error checking asset tag:", error);
-    }
-  };
-
-  // ✅ Submit (Add/Update)
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (assetError) return alert("Please fix errors before saving.");
 
-    const required = [
-      "brand",
-      "modelNumber",
-      "assetTag",
-      "purchaseDate",
-      "processor",
-      "ram",
-      "storage",
-      "operatingSystem",
-      "location",
-    ];
-    if (required.some((f) => !formData[f]?.trim())) {
-      alert("Please fill all required fields.");
-      return;
-    }
+    const required = ["brand", "modelNumber", "assetTag", "purchaseDate", "processor", "ram", "storage", "operatingSystem", "location"];
+    if (required.some((f) => !formData[f]?.toString()?.trim())) return alert("Please fill all required fields.");
 
     try {
       if (editingId) {
         await axios.put(`${API_URL}/${editingId}`, { id: editingId, ...formData });
-        alert("✅ Laptop updated successfully!");
+        alert("✅ Laptop updated");
       } else {
         await axios.post(API_URL, formData);
-        alert("✅ Laptop added successfully!");
+        alert("✅ Laptop added");
       }
-      resetForm();
       setShowForm(false);
-      fetchLaptops(page, searchInput);
-    } catch (error) {
-      console.error("Error saving laptop:", error);
-      alert(error.response?.data?.message || "❌ Failed to save laptop");
+      setEditingId(null);
+      setFormData(getEmptyForm());
+      fetchLaptops(page);
+    } catch (err) {
+      console.error("save error", err);
+      alert(err.response?.data?.message || "Failed to save laptop");
     }
   };
 
-  // ✅ Edit
   const handleEdit = (l) => {
     setEditingId(l.id);
     setFormData({
@@ -153,67 +172,116 @@ function Laptops() {
     setShowForm(true);
   };
 
-  // ✅ Delete
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this laptop?")) return;
     try {
       await axios.delete(`${API_URL}/${id}`);
-      alert("🗑️ Laptop deleted successfully!");
-      fetchLaptops(page, searchInput);
-    } catch (error) {
-      console.error("Error deleting laptop:", error);
-      alert("❌ Failed to delete laptop");
+      alert("Deleted");
+      fetchLaptops(page);
+    } catch (err) {
+      console.error("delete", err);
+      alert("Failed to delete");
     }
   };
 
-  // ✅ Reset form
   const resetForm = () => {
     setEditingId(null);
-    setFormData({
-      brand: "",
-      modelNumber: "",
-      assetTag: "",
-      purchaseDate: "",
-      processor: "",
-      ram: "",
-      storage: "",
-      graphicsCard: "",
-      displaySize: "",
-      operatingSystem: "",
-      batteryCapacity: "",
-      location: "",
-      remarks: "",
-      lastServicedDate: "",
-    });
+    setFormData(getEmptyForm());
     setAssetError("");
+    setShowForm(false);
   };
 
-  // ✅ Pagination controls
+  const toggleSort = (field) => {
+    setSort((s) => (s.by === field ? { by: field, dir: s.dir === "asc" ? "desc" : "asc" } : { by: field, dir: "asc" }));
+  };
+
   const nextPage = () => page < totalPages && setPage((p) => p + 1);
   const prevPage = () => page > 1 && setPage((p) => p - 1);
 
+  // Export helpers
+
+  const exportToPDF = () => {
+    if (!laptops || laptops.length === 0) return alert("No data to export");
+    const doc = new jsPDF({ orientation: "landscape" });
+    const cols = ["Brand", "Model", "AssetTag", "Processor", "RAM", "Storage", "Location"];
+    const rows = laptops.map((l) => [l.brand, l.modelNumber, l.assetTag, l.processor, l.ram, l.storage, l.location]);
+    doc.text("Laptops Export", 14, 12);
+    autoTable(doc, { head: [cols], body: rows, startY: 18, styles: { fontSize: 8 } });
+    doc.save(`laptops_${Date.now()}.pdf`);
+  };
+
+
   return (
-    <div
-      className="laptops-page container-fluid mt-4 mb-5 px-2"
-      style={{
-        maxWidth: "100vw",
-        overflowX: "hidden",
-        paddingLeft: "10px",
-        paddingRight: "10px",
-      }}
-    >
+    <div className="laptops-page container-fluid mt-4 mb-5 px-2" style={{ maxWidth: "100vw", overflowX: "hidden", paddingLeft: "10px", paddingRight: "10px" }}>
       <h3 className="text-center mb-4">💻 Laptops</h3>
 
-      {/* ✅ Live Search */}
-      <div className="row justify-content-center mb-3 mx-0">
-        <div className="col-12 col-sm-10 col-md-6 px-2">
-          <input
-            type="text"
-            placeholder="🔍 Search laptops..."
-            className="form-control w-100"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-          />
+      {/* Filters/Search/Export */}
+      <div className="card p-3 mb-3">
+        <div className="row g-2 align-items-center">
+          <div className="col-md-3">
+            <input className="form-control" placeholder="🔍 Search (brand/model/assetTag...)" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
+          </div>
+
+          <div className="col-auto">
+            <select className="form-select" value={filters.brand} onChange={(e) => setFilters((p) => ({ ...p, brand: e.target.value }))}>
+              <option value="">All Brands</option>
+              {allOptions.brands.map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="col-auto">
+            <select className="form-select" value={filters.ram} onChange={(e) => setFilters((p) => ({ ...p, ram: e.target.value }))}>
+              <option value="">All RAM</option>
+              {allOptions.rams.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="col-auto">
+            <select className="form-select" value={filters.storage} onChange={(e) => setFilters((p) => ({ ...p, storage: e.target.value }))}>
+              <option value="">All Storage</option>
+              {allOptions.storages.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="col-auto">
+            <select className="form-select" value={filters.location} onChange={(e) => setFilters((p) => ({ ...p, location: e.target.value }))}>
+              <option value="">All Locations</option>
+              {allOptions.locations.map((loc) => (
+                <option key={loc} value={loc}>
+                  {loc}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          
+
+          <div className="col ms-auto d-flex gap-2 justify-content-end">
+            <button
+              className="btn btn-outline-secondary"
+              onClick={() => {
+                setFilters({ brand: "", ram: "", storage: "", location: ""});
+                setSearchInput("");
+              }}
+            >
+              Reset
+            </button>
+            <button className="btn btn-outline-danger" onClick={exportToPDF}>
+              Export PDF
+            </button>
+          </div>
         </div>
       </div>
 
@@ -225,12 +293,10 @@ function Laptops() {
         </div>
       )}
 
-      {/* ✅ Laptop Form */}
+      {/* Form */}
       {showForm && (
         <form className="card p-3 p-sm-4 shadow-sm mb-4" onSubmit={handleSubmit}>
-          <h5 className="mb-3 text-center fw-bold">
-            {editingId ? "✏️ Edit Laptop" : "🆕 Add Laptop"}
-          </h5>
+          <h5 className="mb-3 text-center fw-bold">{editingId ? "✏️ Edit Laptop" : "🆕 Add Laptop"}</h5>
 
           <div className="row g-3 mx-0">
             {[
@@ -255,60 +321,39 @@ function Laptops() {
                   type={type}
                   name={name}
                   value={formData[name]}
-                  onChange={
-                    name === "assetTag"
-                      ? (e) => handleAssetTagChange(e.target.value)
-                      : handleChange
-                  }
-                  className={`form-control ${name === "assetTag" && assetError ? "is-invalid" : ""
-                    }`}
+                  onChange={name === "assetTag" ? (e) => handleAssetTagChange(e.target.value) : handleChange}
+                  className={`form-control ${name === "assetTag" && assetError ? "is-invalid" : ""}`}
                   required={label.includes("*")}
                 />
-                {name === "assetTag" && assetError && (
-                  <div className="invalid-feedback">{assetError}</div>
-                )}
+                {name === "assetTag" && assetError && <div className="invalid-feedback">{assetError}</div>}
               </div>
             ))}
           </div>
 
           <div className="text-center mt-4">
-            <button
-              type="submit"
-              className="btn btn-primary me-2 px-3 px-sm-4 py-2 mb-2 mb-sm-0 w-sm-auto"
-              disabled={!!assetError}
-            >
+            <button type="submit" className="btn btn-primary me-2 px-3 px-sm-4 py-2 mb-2 mb-sm-0 w-sm-auto" disabled={!!assetError}>
               {editingId ? "Update Laptop" : "Save Laptop"}
             </button>
-            <button
-              type="button"
-              className="btn btn-secondary px-3 px-sm-4 py-2  w-sm-auto"
-              onClick={() => {
-                setShowForm(false);
-                resetForm();
-              }}
-            >
+            <button type="button" className="btn btn-secondary px-3 px-sm-4 py-2  w-sm-auto" onClick={() => { setShowForm(false); resetForm(); }}>
               Cancel
             </button>
           </div>
         </form>
       )}
 
-      {/* ✅ Responsive Table */}
+      {/* Table */}
       {loading ? (
         <div className="text-center my-3">
           <div className="spinner-border" role="status"></div>
         </div>
       ) : laptops.length > 0 ? (
         <>
-          <div
-            className="table-responsive"
-            style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}
-          >
+          <div className="table-responsive" style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
             <table className="table table-bordered text-center align-middle table-striped table-hover">
               <thead className="table-dark">
                 <tr>
-                  <th>#</th>
-                  <th>Brand</th>
+                  <th onClick={() => toggleSort("id")} style={{ cursor: "pointer" }}># {sort.by === "id" ? (sort.dir === "asc" ? "▲" : "▼") : ""}</th>
+                  <th onClick={() => toggleSort("brand")} style={{ cursor: "pointer" }}>Brand {sort.by === "brand" ? (sort.dir === "asc" ? "▲" : "▼") : ""}</th>
                   <th>Model</th>
                   <th>Asset Tag</th>
                   <th>Processor</th>
@@ -326,27 +371,9 @@ function Laptops() {
                     <td className="text-break">{l.processor}</td>
                     <td className="text-break">{l.ram}</td>
                     <td className="d-flex flex-wrap justify-content-center gap-2">
-                      <button
-                        className="btn btn-info btn-sm"
-                        onClick={() => {
-                          setSelectedLaptop(l);
-                          setShowModal(true);
-                        }}
-                      >
-                        View
-                      </button>
-                      <button
-                        className="btn btn-warning btn-sm"
-                        onClick={() => handleEdit(l)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleDelete(l.id)}
-                      >
-                        Delete
-                      </button>
+                      <button className="btn btn-info btn-sm" onClick={() => { setSelectedLaptop(l); setShowModal(true); }}>View</button>
+                      <button className="btn btn-warning btn-sm" onClick={() => handleEdit(l)}>Edit</button>
+                      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(l.id)}>Delete</button>
                     </td>
                   </tr>
                 ))}
@@ -354,58 +381,35 @@ function Laptops() {
             </table>
           </div>
 
-          {/* ✅ Pagination */}
+          {/* Pagination */}
           <div className="d-flex justify-content-center mt-3">
-            <button
-              className="btn btn-outline-primary me-2"
-              disabled={page === 1}
-              onClick={prevPage}
-            >
-              ◀ Prev
-            </button>
-            <span className="align-self-center">
-              Page {page} of {totalPages}
-            </span>
-            <button
-              className="btn btn-outline-primary ms-2"
-              disabled={page === totalPages}
-              onClick={nextPage}
-            >
-              Next ▶
-            </button>
+            <button className="btn btn-outline-primary me-2" disabled={page === 1} onClick={prevPage}>◀ Prev</button>
+            <span className="align-self-center">Page {page} of {totalPages}</span>
+            <button className="btn btn-outline-primary ms-2" disabled={page === totalPages} onClick={nextPage}>Next ▶</button>
           </div>
         </>
       ) : (
         <p className="text-center">No laptops found.</p>
       )}
 
-      {/* ✅ Scrollable Modal */}
+      {/* Modal */}
       <Modal show={showModal} onHide={() => setShowModal(false)} scrollable centered>
         <Modal.Header closeButton>
           <Modal.Title>Laptop Details</Modal.Title>
         </Modal.Header>
         <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
-          {selectedLaptop &&
-            Object.entries(selectedLaptop).map(([k, v]) => (
-              <p key={k} className="mb-1">
-                <strong className="text-capitalize">{k}:</strong>{" "}
-                {typeof v === "object" ? JSON.stringify(v) : v?.toString() || "-"}
-              </p>
-            ))}
+          {selectedLaptop && Object.entries(selectedLaptop).map(([k, v]) => (
+            <p key={k} className="mb-1"><strong className="text-capitalize">{k}:</strong> {typeof v === "object" ? JSON.stringify(v) : v?.toString() || "-"}</p>
+          ))}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Close
-          </Button>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>Close</Button>
         </Modal.Footer>
       </Modal>
 
       <div className="text-center mt-4">
-        <Link to="/adminpanel" className="btn btn-outline-dark px-3 px-sm-4 py-2 w-sm-auto">
-          ⬅ Back to Admin Panel
-        </Link>
+        <Link to="/adminpanel" className="btn btn-outline-dark px-3 px-sm-4 py-2 w-sm-auto">⬅ Back to Admin Panel</Link>
       </div>
     </div>
-  )
+  );
 }
-export default Laptops;

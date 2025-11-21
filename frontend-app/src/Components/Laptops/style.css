@@ -19,6 +19,9 @@ body {
   overflow-x: auto !important;
   -webkit-overflow-scrolling: touch;
 }
+.modal-backdrop {
+  display: none !important;
+}
 
 /* ✅ Reduce Bootstrap's column padding on phones */
 @media (max-width: 576px) {

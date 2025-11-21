@@ -15,7 +15,8 @@ function AssignedItems() {
         const res = await axios.get(API);
         const allRequests = res.data;
 
-        const req = allRequests.find(x => x.id == requestId);
+        const req = allRequests.find(x => x.id === Number(requestId));
+
 
         if (!req) {
           console.warn("Request not found for ID", requestId);
@@ -109,7 +110,7 @@ function AssignedItems() {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </table> 
               </div>
             ))}
           </div>
