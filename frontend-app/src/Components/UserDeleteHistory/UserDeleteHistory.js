@@ -21,7 +21,7 @@ function UserDeleteHistory() {
       {loading ? (
         <div className="text-center"><div className="spinner-border"></div></div>
       ) : logs.length === 0 ? (
-        <p className="text-center">No user deletions recorded.</p>
+        <p className="alert alert-info text-center fw-bold">No user deletions recorded.</p>
       ) : (
         <table className="table table-striped table-bordered text-center">
           <thead className="table-dark">

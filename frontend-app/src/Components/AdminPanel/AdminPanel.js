@@ -179,14 +179,14 @@ function AdminPanel() {
                 {assets.map((item, i) => (
                   <tr key={item.id}>
                     <td>{i + 1}</td>
-                   <td>
-  <Link
-    to={`/${item.name.toLowerCase().replace(/\s+/g, "")}`} // ✅ Dynamic path
-    className="text-decoration-none"
-  >
-    {item.name}
-  </Link>
-</td>
+                    <td>
+                      <Link
+                        to={`/${item.name.toLowerCase().replace(/\s+/g, "")}`} // ✅ Dynamic path
+                        className="text-decoration-none"
+                      >
+                        {item.name}
+                      </Link>
+                    </td>
 
                     <td>{item.quantity}</td>
                     <td>
@@ -297,3 +297,5 @@ function AdminPanel() {
 }
 
 export default AdminPanel;
+
+

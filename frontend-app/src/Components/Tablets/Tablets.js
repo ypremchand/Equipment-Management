@@ -114,11 +114,11 @@ export default function Tablets() {
     }, 300);
 
     return () => clearTimeout(searchDebounceRef.current);
-  }, [searchInput, filters, sort,fetchTablets]);
+  }, [searchInput, filters, sort, fetchTablets]);
 
   useEffect(() => {
     fetchTablets(page);
-  }, [page,fetchTablets]);
+  }, [page, fetchTablets]);
 
   // form change
   const handleChange = async (e) => {
@@ -146,10 +146,10 @@ export default function Tablets() {
     try {
       if (editingId) {
         await axios.put(`${API_URL}/${editingId}`, { id: editingId, ...form });
-        alert("Tablet updated!");
+        alert("✅Updated successfully");
       } else {
         await axios.post(API_URL, form);
-        alert("Tablet added!");
+        alert("✅Added successfully");
       }
       resetForm();
       fetchTablets(page);
@@ -199,41 +199,32 @@ export default function Tablets() {
   };
 
   const toggleSort = (field) => {
-    setSort((s) =>
-      s.by === field
-        ? { by: field, dir: s.dir === "asc" ? "desc" : "asc" }
-        : { by: field, dir: "asc" }
-    );
+    setSort((s) => (s.by === field ? { by: field, dir: s.dir === "asc" ? "desc" : "asc" } : { by: field, dir: "asc" }));
   };
 
+  //export to PDF
+  const exportToPDF = () => {
+    if (!tablets || tablets.length === 0) return alert("No data to export");
 
-  
+    const doc = new jsPDF({ orientation: "landscape" });
 
-//export to PDF
+    autoTable(doc, {
+      head: [["Brand", "Model", "AssetTag", "Processor", "RAM", "Storage", "Location"]],
+      body: tablets.map((t) => [
+        t.brand,
+        t.model,
+        t.assetTag,
+        t.processor,
+        t.ram,
+        t.storage,
+        t.location
+      ]),
+      startY: 18,
+      styles: { fontSize: 8 }
+    });
 
-
-const exportToPDF = () => {
-  if (!tablets || tablets.length === 0) return alert("No data to export");
-
-  const doc = new jsPDF({ orientation: "landscape" });
-
-  autoTable(doc, {
-    head: [["Brand", "Model", "AssetTag", "Processor", "RAM", "Storage", "Location"]],
-    body: tablets.map((t) => [
-      t.brand,
-      t.model,
-      t.assetTag,
-      t.processor,
-      t.ram,
-      t.storage,
-      t.location
-    ]),
-    startY: 18,
-    styles: { fontSize: 8 }
-  });
-
-  doc.save(`tablets_${Date.now()}.pdf`);
-};
+    doc.save(`tablets_${Date.now()}.pdf`);
+  };
 
 
   return (
@@ -310,22 +301,19 @@ const exportToPDF = () => {
           </div>
 
           <div className="col ms-auto d-flex gap-2 justify-content-end">
-  <button
-    className="btn btn-outline-secondary"
-    onClick={() => {
-      setFilters({ brand: "", ram: "", storage: "", location: "" });
-      setSearchInput("");
-    }}
-  >
-    Reset
-  </button>
-
-
-
-  <button className="btn btn-outline-danger" onClick={exportToPDF}>
-    PDF
-  </button>
-</div>
+            <button
+              className="btn btn-outline-secondary"
+              onClick={() => {
+                setFilters({ brand: "", ram: "", storage: "", location: "" });
+                setSearchInput("");
+              }}
+            >
+              Reset
+            </button>
+            <button className="btn btn-outline-danger" onClick={exportToPDF}>
+              Export PDF
+            </button>
+          </div>
 
         </div>
       </div>
@@ -341,7 +329,7 @@ const exportToPDF = () => {
       {/* FORM */}
       {showForm && (
         <form className="card p-3 mb-3" onSubmit={handleSubmit}>
-          <h5 className="text-center">{editingId ? "Edit Tablet" : "Add Tablet"}</h5>
+          <h5 className="text-center">{editingId ? "✏️Edit Tablet" : "🆕Add Tablet"}</h5>
 
           <div className="row">
             {Object.keys(form).map((k) => (
@@ -363,7 +351,7 @@ const exportToPDF = () => {
 
           <div className="text-center">
             <button className="btn btn-primary me-2" disabled={!!assetError}>
-              {editingId ? "Update" : "Save"}
+              {editingId ? "Update Tablet" : "Save Tablet"}
             </button>
             <button className="btn btn-secondary" type="button" onClick={resetForm}>
               Cancel
@@ -385,23 +373,16 @@ const exportToPDF = () => {
             <table className="table table-bordered table-striped text-center">
               <thead className="table-dark">
                 <tr>
-                  <th onClick={() => toggleSort("id")} style={{ cursor: "pointer" }}>
-                    # {sort.by === "id" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
-                  </th>
+                   <th onClick={() => toggleSort("id")} style={{ cursor: "pointer" }}># {sort.by === "id" ? (sort.dir === "asc" ? "▲" : "▼") : ""}</th>
+                  <th onClick={() => toggleSort("brand")} style={{ cursor: "pointer" }}>Brand {sort.by === "brand" ? (sort.dir === "asc" ? "▲" : "▼") : ""}</th>
                   <th onClick={() => toggleSort("brand")} style={{ cursor: "pointer" }}>
-                    Brand {sort.by === "brand" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                    Brand
                   </th>
                   <th>Model</th>
                   <th>Processor</th>
-                  <th onClick={() => toggleSort("ram")} style={{ cursor: "pointer" }}>
-                    RAM {sort.by === "ram" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
-                  </th>
-                  <th onClick={() => toggleSort("storage")} style={{ cursor: "pointer" }}>
-                    Storage {sort.by === "storage" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
-                  </th>
-                  <th onClick={() => toggleSort("location")} style={{ cursor: "pointer" }}>
-                    Location {sort.by === "location" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
-                  </th>
+                  <th>RAM</th>                   
+                  <th>Storage</th>                 
+                  <th>Location</th>                  
                   <th>Actions</th>
                 </tr>
               </thead>

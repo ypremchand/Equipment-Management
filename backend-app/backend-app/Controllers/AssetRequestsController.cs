@@ -40,70 +40,6 @@ namespace backend_app.Controllers
         }
 
         // --------------------------
-        // Helper: Load assigned item details in bulk
-        // --------------------------
-        private async Task AttachAssignedItemDetailsAsync(List<AssetRequest> requests)
-        {
-            // collect ids by type
-            var laptopIds = new HashSet<int>();
-            var mobileIds = new HashSet<int>();
-            var tabletIds = new HashSet<int>();
-
-            foreach (var r in requests)
-            {
-                foreach (var item in r.AssetRequestItems ?? Enumerable.Empty<AssetRequestItem>())
-                {
-                    foreach (var a in item.AssignedAssets ?? Enumerable.Empty<AssignedAsset>())
-                    {
-                        if (string.IsNullOrWhiteSpace(a.AssetType)) continue;
-                        var t = a.AssetType.Trim().ToLowerInvariant();
-                        if (t == "laptop") laptopIds.Add(a.AssetTypeItemId);
-                        else if (t == "mobile") mobileIds.Add(a.AssetTypeItemId);
-                        else if (t == "tablet") tabletIds.Add(a.AssetTypeItemId);
-                    }
-                }
-            }
-
-            // load in batches
-            var laptops = await _context.Laptops
-                .Where(x => laptopIds.Contains(x.Id))
-                .ToDictionaryAsync(x => x.Id);
-
-            var mobiles = await _context.Mobiles
-                .Where(x => mobileIds.Contains(x.Id))
-                .ToDictionaryAsync(x => x.Id);
-
-            var tablets = await _context.Tablets
-                .Where(x => tabletIds.Contains(x.Id))
-                .ToDictionaryAsync(x => x.Id);
-
-            // attach objects to AssignedAsset wrapper property (we will use a lightweight dynamic holder)
-            // since your AssignedAsset model doesn't have navigation to Laptop/Mobile/Tablet,
-            // we will use a dictionary in-memory to map details to the assigned instance using an expando-like approach:
-            foreach (var r in requests)
-            {
-                foreach (var item in r.AssetRequestItems ?? Enumerable.Empty<AssetRequestItem>())
-                {
-                    foreach (var a in item.AssignedAssets ?? Enumerable.Empty<AssignedAsset>())
-                    {
-                        a.AssetType = a.AssetType?.Trim().ToLowerInvariant();
-
-                        if (a.AssetType == "laptop" && laptops.TryGetValue(a.AssetTypeItemId, out var lap))
-                        {
-                            // embed minimal detail into the Remarks field (or create a DTO in future)
-                            // For now: set Status or Remarks? We can't change model shape; better return raw objects from controller actions.
-                            // So we leave the model intact and controllers that return data will project DTOs (see GetAll / GetRequestsByEmail).
-                        }
-                        // similarly for mobile/tablet - all data is already loaded in dictionaries above for projection usage
-                    }
-                }
-            }
-
-            // Note: this helper just loads data into local variables for the controller method to use in projection.
-            // See GetAll and GetRequestsByEmail for actual projection that returns combined details.
-        }
-
-        // --------------------------
         // 2) GET ALL (with assigned item details)
         // --------------------------
         [HttpGet]
@@ -143,6 +79,7 @@ namespace backend_app.Controllers
                 .Select(a => a.AssetTypeItemId)
                 .Distinct()
                 .ToList();
+
 
             var laptops = await _context.Laptops.Where(l => allLaptopIds.Contains(l.Id)).ToDictionaryAsync(l => l.Id);
             var mobiles = await _context.Mobiles.Where(m => allMobileIds.Contains(m.Id)).ToDictionaryAsync(m => m.Id);

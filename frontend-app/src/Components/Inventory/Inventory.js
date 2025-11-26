@@ -39,8 +39,9 @@ function Inventory({ closeMenu }) {
     if (slug.includes("laptop")) route = "/laptops";
     else if (slug.includes("mobile")) route = "/mobiles";
     else if (slug.includes("tablet")) route = "/tablets";
-    
     else if (slug.includes("desktop")) route = "/desktops";
+    else if (slug.includes("scanner")) route = "/scanners";
+    else if (slug.includes("printer")) route = "/printers";
 
     navigate(route);
     if (typeof closeMenu === "function") closeMenu();

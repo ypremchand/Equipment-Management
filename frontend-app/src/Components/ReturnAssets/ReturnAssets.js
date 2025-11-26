@@ -82,7 +82,7 @@ const navigate = useNavigate();
           <div className="spinner-border text-primary" role="status" />
         </div>
       ) : requests.length === 0 ? (
-        <div className="alert alert-info text-center">No requests found.</div>
+        <div className="alert alert-info text-center fw-bold">No requests found.</div>
       ) : (
         <div className="table-responsive">
           <table className="table table-bordered table-striped shadow-sm">

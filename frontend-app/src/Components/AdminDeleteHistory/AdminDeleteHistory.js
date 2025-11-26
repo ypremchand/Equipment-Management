@@ -21,7 +21,7 @@ function AdminDeleteHistory() {
       {loading ? (
         <div className="text-center"><div className="spinner-border"></div></div>
       ) : logs.length === 0 ? (
-        <p className="text-center">No deletion records found.</p>
+        <p className="alert alert-info text-center fw-bold">No deletion records found.</p>
       ) : (
         <table className="table table-striped table-bordered text-center">
           <thead className="table-dark">

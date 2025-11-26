@@ -146,10 +146,10 @@ export default function Mobiles() {
     try {
       if (editingId) {
         await axios.put(`${API_URL}/${editingId}`, form);
-        alert("Updated successfully");
+        alert("✅Updated successfully");
       } else {
         await axios.post(API_URL, form);
-        alert("Added successfully");
+        alert("✅Added successfully");
       }
       resetForm();
       fetchMobiles(page);
@@ -200,10 +200,8 @@ export default function Mobiles() {
     setShowForm(false);
   };
 
-  const toggleSort = (field) => {
-    setSort((s) =>
-      s.by === field ? { by: field, dir: s.dir === "asc" ? "desc" : "asc" } : { by: field, dir: "asc" }
-    );
+   const toggleSort = (field) => {
+    setSort((s) => (s.by === field ? { by: field, dir: s.dir === "asc" ? "desc" : "asc" } : { by: field, dir: "asc" }));
   };
 
   // Export Helpers
@@ -247,7 +245,6 @@ export default function Mobiles() {
               onChange={(e) => setSearchInput(e.target.value)}
             />
           </div>
-
           {/* Brand */}
           <div className="col-auto">
             <select
@@ -318,7 +315,7 @@ export default function Mobiles() {
 
            
             <button className="btn btn-outline-danger" onClick={exportToPDF}>
-              PDF
+              Export PDF
             </button>
           </div>
         </div>
@@ -335,7 +332,7 @@ export default function Mobiles() {
       {/* Form */}
       {showForm && (
         <form className="card p-3 mb-3" onSubmit={handleSubmit}>
-          <h5 className="text-center mb-3">{editingId ? "Edit Mobile" : "Add Mobile"}</h5>
+          <h5 className="text-center mb-3">{editingId ? "✏️ Edit Mobile" : "🆕 Add Mobile"}</h5>
           <div className="row">
             {Object.keys(form).map((key) => (
               <div className="col-md-4 mb-2" key={key}>
@@ -354,7 +351,7 @@ export default function Mobiles() {
 
           <div className="text-center mt-3">
             <button type="submit" disabled={!!assetError} className="btn btn-primary me-2">
-              {editingId ? "Update" : "Save"}
+              {editingId ? "Update Mobile" : "Save Mobile"}
             </button>
             <button type="button" className="btn btn-secondary" onClick={resetForm}>
               Cancel
@@ -376,28 +373,14 @@ export default function Mobiles() {
             <table className="table table-bordered table-striped text-center align-middle">
               <thead className="table-dark">
                 <tr>
-                  <th onClick={() => toggleSort("id")} style={{ cursor: "pointer" }}>
-                    #
-                  </th>
-                  <th onClick={() => toggleSort("brand")} style={{ cursor: "pointer" }}>
-                    Brand
-                  </th>
-                  <th onClick={() => toggleSort("model")} style={{ cursor: "pointer" }}>
-                    Model
-                  </th>
+                  <th onClick={() => toggleSort("id")} style={{ cursor: "pointer" }}># {sort.by === "id" ? (sort.dir === "asc" ? "▲" : "▼") : ""}</th>
+                  <th onClick={() => toggleSort("brand")} style={{ cursor: "pointer" }}>Brand {sort.by === "brand" ? (sort.dir === "asc" ? "▲" : "▼") : ""}</th>
+                  <th>Model</th>                    
                   <th>IMEI</th>
-                  <th onClick={() => toggleSort("processor")} style={{ cursor: "pointer" }}>
-                    Processor
-                  </th>
-                  <th onClick={() => toggleSort("ram")} style={{ cursor: "pointer" }}>
-                    RAM
-                  </th>
-                  <th onClick={() => toggleSort("storage")} style={{ cursor: "pointer" }}>
-                    Storage
-                  </th>
-                  <th onClick={() => toggleSort("location")} style={{ cursor: "pointer" }}>
-                    Location
-                  </th>
+                  <th>Processor</th>                   
+                  <th>RAM</th>                 
+                  <th>Storage</th>                   
+                  <th>Location</th>                  
                   <th>Actions</th>
                 </tr>
               </thead>

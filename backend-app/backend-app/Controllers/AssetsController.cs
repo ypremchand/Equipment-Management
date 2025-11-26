@@ -20,19 +20,65 @@ namespace backend_app.Controllers
             _context = context;
         }
 
-        // ✅ GET: api/assets
-        // Returns all assets from the database
+        // ---------------------------------------------
+        // ✅ GET ALL ASSETS WITH AVAILABLE COUNT
+        // ---------------------------------------------
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Asset>>> GetAssets()
+        public async Task<IActionResult> GetAssets()
         {
             var assets = await _context.Assets.ToListAsync();
-            return Ok(assets);
+
+            // Fetch all assigned assets
+            var assigned = await _context.AssignedAssets
+                .Where(a => a.Status == "Assigned")
+                .ToListAsync();
+
+            // Fetch concrete items (laptops, mobiles, tablets, etc.)
+            var laptops = await _context.Laptops.ToListAsync();
+            var mobiles = await _context.Mobiles.ToListAsync();
+            var tablets = await _context.Tablets.ToListAsync();
+
+            var result = assets.Select(a =>
+            {
+                int total = a.Quantity;
+                int assignedCount = 0;
+
+                string key = a.Name.ToLower();
+
+                if (key == "laptops")
+                {
+                    assignedCount = assigned.Count(x => x.AssetType == "laptop");
+                }
+                else if (key == "mobiles")
+                {
+                    assignedCount = assigned.Count(x => x.AssetType == "mobile");
+                }
+                else if (key == "tablets")
+                {
+                    assignedCount = assigned.Count(x => x.AssetType == "tablet");
+                }
+                // You can extend this for Desktops, Printers etc.
+
+                int available = Math.Max(0, total - assignedCount);
+
+                return new
+                {
+                    id = a.Id,
+                    name = a.Name,
+                    totalQuantity = total,
+                    assignedQuantity = assignedCount,
+                    quantity = available  // 👈 Use this in Home component
+                };
+            });
+
+            return Ok(result);
         }
 
-        // ✅ GET: api/assets/{id}
-        // Returns a specific asset by ID
+        // ---------------------------------------------
+        // GET BY ID
+        // ---------------------------------------------
         [HttpGet("{id}")]
-        public async Task<ActionResult<Asset>> GetAsset(int id)
+        public async Task<IActionResult> GetAsset(int id)
         {
             var asset = await _context.Assets.FindAsync(id);
             if (asset == null)
@@ -41,8 +87,9 @@ namespace backend_app.Controllers
             return Ok(asset);
         }
 
-        // ✅ POST: api/assets
-        // Adds a new asset entry
+        // ---------------------------------------------
+        // CREATE
+        // ---------------------------------------------
         [HttpPost]
         public async Task<ActionResult<Asset>> CreateAsset(Asset asset)
         {
@@ -52,8 +99,9 @@ namespace backend_app.Controllers
             return CreatedAtAction(nameof(GetAsset), new { id = asset.Id }, asset);
         }
 
-        // ✅ PUT: api/assets/{id}
-        // Updates an existing asset
+        // ---------------------------------------------
+        // UPDATE
+        // ---------------------------------------------
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateAsset(int id, Asset updatedAsset)
         {
@@ -64,21 +112,16 @@ namespace backend_app.Controllers
             if (existingAsset == null)
                 return NotFound();
 
-            // ✅ Update only the fields that are actually editable
             existingAsset.Name = updatedAsset.Name;
-
-            // Keep the existing quantity intact
-            // (or update quantity only if it's explicitly provided)
-            // existingAsset.Quantity = updatedAsset.Quantity != 0 ? updatedAsset.Quantity : existingAsset.Quantity;
 
             await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-
-        // ✅ DELETE: api/assets/{id}
-        // Deletes an asset and logs delete history
+        // ---------------------------------------------
+        // DELETE
+        // ---------------------------------------------
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAsset(int id)
         {
@@ -86,18 +129,6 @@ namespace backend_app.Controllers
             if (asset == null)
                 return NotFound();
 
-            // ✅ Save Delete History
-            var history = new AdminDeleteHistory
-            {
-                DeletedItemName = asset.Name,
-                ItemType = "Asset",
-                AdminName = "AdminUser", // 🔧 Replace with actual logged-in admin name if available
-                DeletedAt = DateTime.Now
-            };
-
-            _context.AdminDeleteHistories.Add(history);
-
-            // ✅ Remove the asset from database
             _context.Assets.Remove(asset);
             await _context.SaveChangesAsync();
 

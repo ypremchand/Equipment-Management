@@ -93,22 +93,14 @@ function Navbar({ user, onLogout }) {
                     Home
                   </Link>
                 </li>
-                <li className="nav-item">
-                  <Link
-                    className="nav-link"
-                    to="/about"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    About
-                  </Link>
-                </li>
+                
                 <li className="nav-item">
                   <Link
                     className="nav-link"
                     to="/contact"
                     onClick={() => setIsOpen(false)}
                   >
-                    ContactUs  
+                    RequestUs  
                   </Link>
                 </li>
                 <li className="nav-item">

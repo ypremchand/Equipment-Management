@@ -4,7 +4,6 @@ import Login from "./Components/Login/Login";
 import Register from "./Components/Register/Register";
 import Navbar from "./Components/Navbar/Navbar";
 import Home from "./Components/Home/Home";
-import About from "./Components/About/About";
 import Contact from "./Components/ContactUs/Contact";
 import ReturnAssets from "./Components/ReturnAssets/ReturnAssets";
 import AssignedItems from "./Components/AssignedItems/AssignedItems";
@@ -15,6 +14,8 @@ import Laptops from "./Components/Laptops/Laptops";
 import Mobiles from "./Components/Mobiles/Mobiles";
 import Tablets from "./Components/Tablets/Tablets";
 import Desktops from "./Components/Desktops/Desktops";
+import Scanners from "./Components/Scanners/Scanners";
+import Printers from "./Components/Printers/Printers";
 import ContactedUs from "./Components/ContactedUs/ContactedUs";
 import AdminDeleteHistory from "./Components/AdminDeleteHistory/AdminDeleteHistory";
 import UserDeleteHistory from "./Components/UserDeleteHistory/UserDeleteHistory";
@@ -51,14 +52,13 @@ function App() {
               path="/"
               element={user?.email?.includes("@admin") ? <Navigate to="/adminpanel" /> : <Home />}
             />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />         
-<Route path="/contact/:id" element={<Contact />} />     
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/contact/:id" element={<Contact />} />
             <Route path="/returnassets" element={<ReturnAssets />} />
             <Route>
-  <Route path="/assigned-items/:requestId" element={<AssignedItems />} />
-</Route>
-            
+              <Route path="/assigned-items/:requestId" element={<AssignedItems />} />
+            </Route>
+
 
             {/* Admin-only routes */}
             <Route
@@ -88,6 +88,14 @@ function App() {
             <Route
               path="/desktops"
               element={user?.email?.includes("@admin") ? <Desktops /> : <Navigate to="/" />}
+            />
+            <Route
+              path="/scanners"
+              element={user?.email?.includes("@admin") ? <Scanners /> : <Navigate to="/" />}
+            />
+            <Route
+              path="/printers"
+              element={user?.email?.includes("@admin") ? <Printers /> : <Navigate to="/" />}
             />
             <Route
               path="/requests"

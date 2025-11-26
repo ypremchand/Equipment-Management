@@ -68,7 +68,11 @@ function Requests() {
         <div className="text-center">
           <Spinner animation="border" /> <p>Loading...</p>
         </div>
+      ) : requests.length === 0 ? (
+        <p className="text-center fw-bold">No requests found</p>
       ) : (
+
+
         <Table bordered hover responsive>
           <thead className="table-dark text-center">
             <tr>
@@ -97,13 +101,12 @@ function Requests() {
 
                 <td>
                   <span
-                    className={`badge ${
-                      (req.status || "").toLowerCase() === "pending"
-                        ? "bg-warning text-dark"
-                        : (req.status || "").toLowerCase() === "approved"
+                    className={`badge ${(req.status || "").toLowerCase() === "pending"
+                      ? "bg-warning text-dark"
+                      : (req.status || "").toLowerCase() === "approved"
                         ? "bg-success"
                         : "bg-danger"
-                    }`}
+                      }`}
                   >
                     {req.status}
                   </span>
@@ -136,15 +139,18 @@ function Requests() {
                       Approve
                     </Button>
                   )}
+                {/* Once the status is approved, disable Reject Button */}
+                  {(req.status || "").toLowerCase() === "pending" && (
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      className="me-2"
+                      onClick={() => handleReject(req.id)}
+                    >
+                      Reject
+                    </Button>
+                  )}
 
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    className="me-2"
-                    onClick={() => handleReject(req.id)}
-                  >
-                    Reject
-                  </Button>
 
                   <Button
                     variant="outline-danger"

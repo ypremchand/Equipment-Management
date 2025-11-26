@@ -136,10 +136,10 @@ useEffect(() => {
     try {
       if (editingId) {
         await axios.put(`${API_URL}/${editingId}`, { id: editingId, ...formData });
-        alert("✅ Laptop updated");
+        alert("✅Updated successfully");
       } else {
         await axios.post(API_URL, formData);
-        alert("✅ Laptop added");
+        alert("✅Added successfully");
       }
       setShowForm(false);
       setEditingId(null);
