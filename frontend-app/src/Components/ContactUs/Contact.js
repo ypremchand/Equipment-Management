@@ -1,3 +1,6 @@
+// --- FULL CONTACT.JS ---
+// (Dynamic fields for Laptops, Mobiles, Tablets, Scanners, Printers)
+
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
@@ -6,12 +9,38 @@ import "./style.css";
 
 function Contact() {
   const [user, setUser] = useState({ name: "", email: "", phone: "" });
-  const [assets, setAssets] = useState([]);              // from /api/assets
-  const [locations, setLocations] = useState([]);        // from /api/locations
+
+  const [assets, setAssets] = useState([]);
+  const [locations, setLocations] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState("");
+
   const [assetRequests, setAssetRequests] = useState([
-    { assetName: "", processor: "", storage: "", ram: "", quantity: 0, requestedQuantity: "" }
+    {
+      assetName: "",
+      quantity: 0,
+      requestedQuantity: "",
+
+      // Laptops/Mobiles/Tablets
+      brand: "",
+      processor: "",
+      storage: "",
+      ram: "",
+      operatingSystem: "", // laptops only
+      networkType: "", // mobiles/tablets
+      simType: "", // mobiles
+      simSupport: "", // tablets
+
+      // Scanners
+      scannerType: "",
+      scanSpeed: "",
+
+      // Printers
+      printerType: "",
+      paperSize: "",
+      dpi: ""
+    }
   ]);
+
   const [message, setMessage] = useState("");
   const [editData, setEditData] = useState(null);
 
@@ -24,46 +53,74 @@ function Contact() {
   const LOCATIONS_API = "http://localhost:5083/api/locations";
   const REQUEST_API = "http://localhost:5083/api/AssetRequests";
 
-  const categoryItemsCache = useRef({}); // { laptops: [...], mobiles: [...], ... }
+  // Cache category items
+  const categoryItemsCache = useRef({});
 
-  const totalRequested = assetRequests.reduce(
-    (sum, req) => sum + Number(req.requestedQuantity || 0),
-    0
-  );
+  // ============================================================
+  // CATEGORY FIELD MAP (dropdown visibility)
+  // ============================================================
 
-  // -------------------- Helpers for category items --------------------
+  const categoryFields = {
+    Laptops: ["brand", "processor", "storage", "ram", "operatingSystem"],
+    Mobiles: ["brand", "processor", "storage", "ram", "networkType", "simType"],
+    Tablets: ["brand", "processor", "storage", "ram", "networkType", "simSupport"],
+    Scanners: ["scannerType", "scanSpeed"],
+    Printers: ["printerType", "paperSize", "dpi"],
+    default: []
+  };
+
+  const shouldShowField = (assetName, field) =>
+    categoryFields[assetName]?.includes(field);
+
+  // ============================================================
+  // API ENDPOINT MAPPER
+  // ============================================================
 
   const categoryEndpoint = (assetName) => {
     if (!assetName) return null;
-    return `http://localhost:5083/api/${assetName.toLowerCase().replace(/\s+/g, "")}`;
+    return `http://localhost:5083/api/${assetName.toLowerCase()}`;
   };
 
+  // Load category items for dropdowns
   const loadCategoryItems = useCallback(async (assetName) => {
     if (!assetName) return [];
+    const key = assetName.toLowerCase();
 
-    const key = assetName.toLowerCase().replace(/\s+/g, "");
-
-    if (categoryItemsCache.current[key]) return categoryItemsCache.current[key];
+    if (categoryItemsCache.current[key])
+      return categoryItemsCache.current[key];
 
     const url = categoryEndpoint(assetName);
     if (!url) return [];
 
     try {
       const res = await axios.get(url);
-      // paginated endpoints: { data: [...] }
       const items = res.data?.data ?? res.data ?? [];
       categoryItemsCache.current[key] = items;
       return items;
     } catch (err) {
-      console.error("Load category items error:", err);
-      categoryItemsCache.current[key] = [];
+      console.error("Error loading category items:", err);
       return [];
     }
   }, []);
 
-  // -------------------- Effects --------------------
+  // Extract dropdown values for a field
+  const getOptionsFor = (assetName, field) => {
+    if (!assetName) return [];
+    const items = categoryItemsCache.current[assetName.toLowerCase()] ?? [];
+    const vals = items.map((i) => i[field]).filter((v) => v);
+    return [...new Set(vals)];
+  };
 
-  // 1) Prefill when redirected from Home with selectedAsset
+  const totalRequested = assetRequests.reduce(
+    (sum, req) => sum + Number(req.requestedQuantity || 0),
+    0
+  );
+
+  // ============================================================
+  // EFFECTS
+  // ============================================================
+
+  // Prefill From Home
   useEffect(() => {
     if (location.state?.selectedAsset) {
       const assetName = location.state.selectedAsset;
@@ -71,11 +128,22 @@ function Contact() {
       setAssetRequests([
         {
           assetName,
+          quantity: 0,
+          requestedQuantity: "",
+
+          brand: "",
           processor: "",
           storage: "",
           ram: "",
-          quantity: 0,           // will be synced from /api/assets below
-          requestedQuantity: ""
+          operatingSystem: "",
+          networkType: "",
+          simType: "",
+          simSupport: "",
+          scannerType: "",
+          scanSpeed: "",
+          printerType: "",
+          paperSize: "",
+          dpi: ""
         }
       ]);
 
@@ -83,34 +151,29 @@ function Contact() {
     }
   }, [location.state, loadCategoryItems]);
 
-  // 2) Load logged-in user
+  // Load Logged-in User
   useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) {
-      const parsed = JSON.parse(savedUser);
+    const saved = localStorage.getItem("user");
+    if (saved) {
+      const u = JSON.parse(saved);
       setUser({
-        name: parsed.username || parsed.name || "",
-        email: parsed.email || "",
-        phone: parsed.phoneNumber || ""
+        name: u.username || u.name || "",
+        email: u.email,
+        phone: u.phoneNumber
       });
     }
   }, []);
 
-  // 3) Load assets (Laptops/Mobiles/Tablets with quantity)
+  // Load Assets
   useEffect(() => {
-    axios
-      .get(ASSETS_API)
+    axios.get(ASSETS_API)
       .then((res) => setAssets(res.data || []))
-      .catch((e) => {
-        console.error("Assets load error", e);
-        setAssets([]);
-      });
+      .catch(() => setAssets([]));
   }, []);
 
-  // 4) Whenever assets change, sync quantities for selected asset rows
+  // Sync Available Quantity
   useEffect(() => {
-    if (!assets || assets.length === 0) return;
-
+    if (!assets.length) return;
     setAssetRequests((prev) =>
       prev.map((row) => {
         if (!row.assetName) return row;
@@ -120,18 +183,14 @@ function Contact() {
     );
   }, [assets]);
 
-  // 5) Load locations
+  // Load Locations
   useEffect(() => {
-    axios
-      .get(LOCATIONS_API)
+    axios.get(LOCATIONS_API)
       .then((res) => setLocations(res.data || []))
-      .catch((e) => {
-        console.error("Locations load error", e);
-        setLocations([]);
-      });
+      .catch(() => setLocations([]));
   }, []);
 
-  // 6) Load request for edit
+  // Load Request Edit
   useEffect(() => {
     if (!id) return;
     (async () => {
@@ -139,72 +198,93 @@ function Contact() {
         const res = await axios.get(`${REQUEST_API}/${id}`);
         setEditData(res.data);
       } catch (err) {
-        console.error("Error loading request for edit", err);
+        console.error("Error loading edit data:", err);
       }
     })();
   }, [id]);
 
-  // 7) Build initial rows when editing (and assets loaded)
+  // Build Rows When Editing
   useEffect(() => {
     if (!editData || assets.length === 0) return;
 
     setSelectedLocation(editData.location?.name || "");
     setMessage(editData.message || "");
 
-    setUser((u) => ({ ...u, phone: editData.phoneNumber || u.phone }));
-
-    const mapped = (editData.assetRequestItems || []).map((item) => {
+    const mapped = editData.assetRequestItems.map((item) => {
       const assetObj = assets.find((a) => a.name === item.asset?.name);
+
       return {
         assetName: item.asset?.name || "",
+        quantity: assetObj ? assetObj.quantity : 0,
+        requestedQuantity: item.requestedQuantity || "",
+
+        brand: item.brand || "",
         processor: item.processor || "",
         storage: item.storage || "",
         ram: item.ram || "",
-        quantity: assetObj ? assetObj.quantity : 0,
-        requestedQuantity: item.requestedQuantity ?? ""
+        operatingSystem: item.operatingSystem || "",
+        networkType: item.networkType || "",
+        simType: item.simType || "",
+        simSupport: item.simSupport || "",
+
+        scannerType: item.scannerType || "",
+        scanSpeed: item.scanSpeed || "",
+        printerType: item.printerType || "",
+        paperSize: item.paperSize || "",
+        dpi: item.dpi || ""
       };
     });
 
-    setAssetRequests((prev) => (mapped.length ? mapped : prev));
+    setAssetRequests(mapped);
   }, [editData, assets]);
 
-  // -------------------- Handlers --------------------
+  // ============================================================
+  // HANDLERS
+  // ============================================================
 
   const handleAssetChange = async (index, assetName) => {
+    const assetObj = assets.find((a) => a.name === assetName);
+
     setAssetRequests((prev) => {
       const updated = [...prev];
-      const assetObj = assets.find((a) => a.name === assetName);
-
       updated[index] = {
         assetName,
+        quantity: assetObj ? assetObj.quantity : 0,
+        requestedQuantity: "",
+
+        brand: "",
         processor: "",
         storage: "",
         ram: "",
-        quantity: assetObj ? assetObj.quantity : 0, // always from /api/assets
-        requestedQuantity: ""
+        operatingSystem: "",
+        networkType: "",
+        simType: "",
+        simSupport: "",
+        scannerType: "",
+        scanSpeed: "",
+        printerType: "",
+        paperSize: "",
+        dpi: ""
       };
-
       return updated;
     });
 
-    // Load category items for dropdowns
     await loadCategoryItems(assetName);
   };
 
   const handleSpecChange = (index, field, value) => {
     setAssetRequests((prev) => {
       const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
+      updated[index][field] = value;
       return updated;
     });
-    // We DO NOT change quantity based on specs anymore (quantity is stock).
   };
 
   const handleQuantityChange = (index, value) => {
     const val = value === "" ? "" : Number(value);
     setAssetRequests((prev) => {
       const updated = [...prev];
-      updated[index] = { ...updated[index], requestedQuantity: val };
+      updated[index].requestedQuantity = val;
       return updated;
     });
   };
@@ -212,7 +292,25 @@ function Contact() {
   const handleAddRow = () => {
     setAssetRequests((prev) => [
       ...prev,
-      { assetName: "", processor: "", storage: "", ram: "", quantity: 0, requestedQuantity: "" }
+      {
+        assetName: "",
+        quantity: 0,
+        requestedQuantity: "",
+
+        brand: "",
+        processor: "",
+        storage: "",
+        ram: "",
+        operatingSystem: "",
+        networkType: "",
+        simType: "",
+        simSupport: "",
+        scannerType: "",
+        scanSpeed: "",
+        printerType: "",
+        paperSize: "",
+        dpi: ""
+      }
     ]);
   };
 
@@ -220,6 +318,7 @@ function Contact() {
     setAssetRequests((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // SUBMIT
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -230,16 +329,26 @@ function Contact() {
       location: selectedLocation,
       assetRequests: assetRequests.map((r) => ({
         asset: r.assetName,
-        processor: r.processor || null,
-        storage: r.storage || null,
-        ram: r.ram || null,
+        brand: r.brand,
+        processor: r.processor,
+        storage: r.storage,
+        ram: r.ram,
+        operatingSystem: r.operatingSystem,
+        networkType: r.networkType,
+        simType: r.simType,
+        simSupport: r.simSupport,
+        scannerType: r.scannerType,
+        scanSpeed: r.scanSpeed,
+        printerType: r.printerType,
+        paperSize: r.paperSize,
+        dpi: r.dpi,
         requestedQuantity: Number(r.requestedQuantity || 0),
         availableQuantity: Number(r.quantity || 0)
       })),
       message:
         message ||
         assetRequests
-          .map((r) => `Requesting ${r.requestedQuantity || 0} of ${r.assetName}`)
+          .map((r) => `Requesting ${r.requestedQuantity} of ${r.assetName}`)
           .join(", ")
     };
 
@@ -249,49 +358,41 @@ function Contact() {
         alert("Request updated successfully!");
       } else {
         await axios.post(CONTACT_API, payload);
-        alert("Request created successfully!");
+        alert("Request submitted successfully!");
       }
       navigate("/returnassets");
     } catch (err) {
-      console.error("Submit error", err);
+      console.error("Submit error:", err);
       alert("Failed to submit request");
     }
   };
 
-  // Build processor/storage/ram dropdown options from cached category items
-  const getOptionsFor = (assetName, key) => {
-    if (!assetName) return [];
-    const k = assetName.toLowerCase().replace(/\s+/g, "");
-    const items = categoryItemsCache.current[k] ?? [];
-    const vals = items
-      .map((it) => (it[key] ?? it[key?.toLowerCase?.()] ?? "").toString())
-      .filter((v) => v);
-    return [...new Set(vals)];
-  };
-
-  // -------------------- JSX --------------------
+  // ============================================================
+  // UI
+  // ============================================================
 
   return (
     <div className="contact-page container mt-4">
-      <h3 className="text-center mb-4">{id ? "Edit Asset Request" : "Request Multiple Assets"}</h3>
+      <h3 className="text-center mb-4">
+        {id ? "Edit Asset Request" : "Request Multiple Assets"}
+      </h3>
 
-      <div className="card shadow-sm p-4 mx-auto" style={{ maxWidth: 900 }}>
+      <div className="card shadow p-4 mx-auto" style={{ maxWidth: 900 }}>
         <form onSubmit={handleSubmit}>
+
           {/* USER INFO */}
-          <div className="row gx-3">
-            <div className="col-md-4 mb-3">
+          <div className="row gx-3 mb-3">
+            <div className="col-md-4">
               <label className="form-label">Username</label>
-              <input type="text" className="form-control" value={user.name} readOnly />
+              <input className="form-control" value={user.name} readOnly />
             </div>
-
-            <div className="col-md-4 mb-3">
+            <div className="col-md-4">
               <label className="form-label">Email</label>
-              <input type="email" className="form-control" value={user.email} readOnly />
+              <input className="form-control" value={user.email} readOnly />
             </div>
-
-            <div className="col-md-4 mb-3">
+            <div className="col-md-4">
               <label className="form-label">Phone</label>
-              <input type="tel" className="form-control" value={user.phone} readOnly />
+              <input className="form-control" value={user.phone} readOnly />
             </div>
           </div>
 
@@ -314,13 +415,19 @@ function Contact() {
 
           {/* ROWS */}
           {assetRequests.map((req, index) => {
+            const brandOptions = getOptionsFor(req.assetName, "brand");
             const processorOptions = getOptionsFor(req.assetName, "processor");
             const storageOptions = getOptionsFor(req.assetName, "storage");
             const ramOptions = getOptionsFor(req.assetName, "ram");
+            const osOptions = getOptionsFor(req.assetName, "operatingSystem");
+            const networkOptions = getOptionsFor(req.assetName, "networkType");
+            const simTypeOptions = getOptionsFor(req.assetName, "simType");
+            const simSupportOptions = getOptionsFor(req.assetName, "simSupport");
 
             return (
               <div key={index} className="border rounded p-3 mb-3 bg-light">
-                <div className="row g-2 align-items-center">
+                <div className="row g-3">
+
                   {/* ASSET */}
                   <div className="col-md-4">
                     <label className="form-label">Asset</label>
@@ -342,18 +449,15 @@ function Contact() {
                             {a.name}
                           </option>
                         ))}
+
+
                     </select>
                   </div>
 
                   {/* AVAILABLE */}
                   <div className="col-md-2">
                     <label className="form-label">Available</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={req.quantity ?? 0}
-                      readOnly
-                    />
+                    <input className="form-control" value={req.quantity} readOnly />
                   </div>
 
                   {/* REQUEST QTY */}
@@ -362,74 +466,264 @@ function Contact() {
                     <input
                       type="number"
                       className="form-control"
-                      min="1"
                       value={req.requestedQuantity}
+                      min="1"
                       onChange={(e) => handleQuantityChange(index, e.target.value)}
                     />
                   </div>
 
-                  {/* SPECS */}
+                  {/* DYNAMIC FIELDS */}
                   <div className="col-md-4">
                     <div className="row g-2">
-                      <div className="col-4">
-                        <label className="form-label small">Processor</label>
-                        <select
-                          className="form-select"
-                          value={req.processor}
-                          onChange={(e) => handleSpecChange(index, "processor", e.target.value)}
-                        >
-                          <option value="">Any</option>
-                          {processorOptions.map((p, i) => (
-                            <option key={i} value={p}>
-                              {p}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
 
-                      <div className="col-4">
-                        <label className="form-label small">Storage</label>
-                        <select
-                          className="form-select"
-                          value={req.storage}
-                          onChange={(e) => handleSpecChange(index, "storage", e.target.value)}
-                        >
-                          <option value="">Any</option>
-                          {storageOptions.map((s, i) => (
-                            <option key={i} value={s}>
-                              {s}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                      {/* Brand */}
+                      {shouldShowField(req.assetName, "brand") && (
+                        <div className="col-6">
+                          <label className="form-label small">Brand</label>
+                          <select
+                            className="form-select"
+                            value={req.brand}
+                            onChange={(e) =>
+                              handleSpecChange(index, "brand", e.target.value)
+                            }
+                          >
+                            <option value="">Any</option>
+                            {brandOptions.map((b, i) => (
+                              <option key={i} value={b}>
+                                {b}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
 
-                      <div className="col-4">
-                        <label className="form-label small">RAM</label>
-                        <select
-                          className="form-select"
-                          value={req.ram}
-                          onChange={(e) => handleSpecChange(index, "ram", e.target.value)}
-                        >
-                          <option value="">Any</option>
-                          {ramOptions.map((r, i) => (
-                            <option key={i} value={r}>
-                              {r}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                      {/* Processor */}
+                      {shouldShowField(req.assetName, "processor") && (
+                        <div className="col-6">
+                          <label className="form-label small">Processor</label>
+                          <select
+                            className="form-select"
+                            value={req.processor}
+                            onChange={(e) =>
+                              handleSpecChange(index, "processor", e.target.value)
+                            }
+                          >
+                            <option value="">Any</option>
+                            {processorOptions.map((p, i) => (
+                              <option key={i} value={p}>
+                                {p}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Storage */}
+                      {shouldShowField(req.assetName, "storage") && (
+                        <div className="col-6">
+                          <label className="form-label small">Storage</label>
+                          <select
+                            className="form-select"
+                            value={req.storage}
+                            onChange={(e) =>
+                              handleSpecChange(index, "storage", e.target.value)
+                            }
+                          >
+                            <option value="">Any</option>
+                            {storageOptions.map((s, i) => (
+                              <option key={i} value={s}>
+                                {s}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* RAM */}
+                      {shouldShowField(req.assetName, "ram") && (
+                        <div className="col-6">
+                          <label className="form-label small">RAM</label>
+                          <select
+                            className="form-select"
+                            value={req.ram}
+                            onChange={(e) =>
+                              handleSpecChange(index, "ram", e.target.value)
+                            }
+                          >
+                            <option value="">Any</option>
+                            {ramOptions.map((r, i) => (
+                              <option key={i} value={r}>
+                                {r}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* OS (Laptops Only) */}
+                      {shouldShowField(req.assetName, "operatingSystem") && (
+                        <div className="col-6">
+                          <label className="form-label small">Operating System</label>
+                          <select
+                            className="form-select"
+                            value={req.operatingSystem}
+                            onChange={(e) =>
+                              handleSpecChange(index, "operatingSystem", e.target.value)
+                            }
+                          >
+                            <option value="">Any</option>
+                            {osOptions.map((o, i) => (
+                              <option key={i} value={o}>
+                                {o}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Network Type */}
+                      {shouldShowField(req.assetName, "networkType") && (
+                        <div className="col-6">
+                          <label className="form-label small">Network Type</label>
+                          <select
+                            className="form-select"
+                            value={req.networkType}
+                            onChange={(e) =>
+                              handleSpecChange(index, "networkType", e.target.value)
+                            }
+                          >
+                            <option value="">Any</option>
+                            {networkOptions.map((n, i) => (
+                              <option key={i} value={n}>
+                                {n}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* SIM TYPE (Mobiles) */}
+                      {shouldShowField(req.assetName, "simType") && (
+                        <div className="col-6">
+                          <label className="form-label small">SIM Type</label>
+                          <select
+                            className="form-select"
+                            value={req.simType}
+                            onChange={(e) =>
+                              handleSpecChange(index, "simType", e.target.value)
+                            }
+                          >
+                            <option value="">Any</option>
+                            {simTypeOptions.map((s, i) => (
+                              <option key={i} value={s}>
+                                {s}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* SIM SUPPORT (Tablets) */}
+                      {shouldShowField(req.assetName, "simSupport") && (
+                        <div className="col-6">
+                          <label className="form-label small">SIM Support</label>
+                          <select
+                            className="form-select"
+                            value={req.simSupport}
+                            onChange={(e) =>
+                              handleSpecChange(index, "simSupport", e.target.value)
+                            }
+                          >
+                            <option value="">Any</option>
+                            {simSupportOptions.map((s, i) => (
+                              <option key={i} value={s}>
+                                {s}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Scanner fields */}
+                      {shouldShowField(req.assetName, "scannerType") && (
+                        <div className="col-6">
+                          <label className="form-label small">Scanner Type</label>
+                          <input
+                            className="form-control"
+                            value={req.scannerType}
+                            onChange={(e) =>
+                              handleSpecChange(index, "scannerType", e.target.value)
+                            }
+                          />
+                        </div>
+                      )}
+
+                      {shouldShowField(req.assetName, "scanSpeed") && (
+                        <div className="col-6">
+                          <label className="form-label small">Scan Speed</label>
+                          <input
+                            type="number"
+                            className="form-control"
+                            value={req.scanSpeed}
+                            onChange={(e) =>
+                              handleSpecChange(index, "scanSpeed", e.target.value)
+                            }
+                          />
+                        </div>
+                      )}
+
+                      {/* Printer fields */}
+                      {shouldShowField(req.assetName, "printerType") && (
+                        <div className="col-6">
+                          <label className="form-label small">Printer Type</label>
+                          <input
+                            className="form-control"
+                            value={req.printerType}
+                            onChange={(e) =>
+                              handleSpecChange(index, "printerType", e.target.value)
+                            }
+                          />
+                        </div>
+                      )}
+
+                      {shouldShowField(req.assetName, "paperSize") && (
+                        <div className="col-6">
+                          <label className="form-label small">Paper Size</label>
+                          <input
+                            className="form-control"
+                            value={req.paperSize}
+                            onChange={(e) =>
+                              handleSpecChange(index, "paperSize", e.target.value)
+                            }
+                          />
+                        </div>
+                      )}
+
+                      {shouldShowField(req.assetName, "dpi") && (
+                        <div className="col-6">
+                          <label className="form-label small">DPI</label>
+                          <input
+                            type="number"
+                            className="form-control"
+                            value={req.dpi}
+                            onChange={(e) =>
+                              handleSpecChange(index, "dpi", e.target.value)
+                            }
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   {/* REMOVE ROW */}
                   {assetRequests.length > 1 && (
-                    <div className="col-md-1 text-end">
+                    <div className="col-12 text-end">
                       <button
                         type="button"
-                        className="btn btn-outline-danger btn-sm mt-4"
+                        className="btn btn-outline-danger btn-sm"
                         onClick={() => handleRemoveRow(index)}
                       >
-                        ✖
+                        ✖ Remove
                       </button>
                     </div>
                   )}
@@ -438,19 +732,19 @@ function Contact() {
             );
           })}
 
-          {/* ADD ROW & TOTAL */}
-          <div className="d-flex gap-2 mb-3">
+          {/* ADD ROW */}
+          <div className="d-flex mb-3">
             <button
               type="button"
               className="btn btn-outline-success"
               onClick={handleAddRow}
             >
-              + Add Another Asset
+              + Add Asset
             </button>
 
             <div className="ms-auto align-self-center">
               <strong>Total Requested:</strong>{" "}
-              <span className="text-primary ms-2">{totalRequested}</span>
+              <span className="text-primary">{totalRequested}</span>
             </div>
           </div>
 
@@ -467,12 +761,14 @@ function Contact() {
 
           {/* SUBMIT */}
           <div className="text-center">
-            <button type="submit" className="btn btn-primary w-50">
+            <button className="btn btn-primary w-50" type="submit">
               {id ? "Update Request" : "Submit Request"}
             </button>
           </div>
+
         </form>
       </div>
+
     </div>
   );
 }

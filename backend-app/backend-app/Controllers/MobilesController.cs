@@ -19,20 +19,22 @@ namespace backend_app.Controllers
             _context = context;
         }
 
-        // ✅ GET all mobiles (with pagination + search)
+        // ============================================================
+        // GET ALL MOBILES (same logic as laptops)
+        // ============================================================
         [HttpGet]
         public async Task<ActionResult<object>> GetMobiles(
-       [FromQuery] int page = 1,
-       [FromQuery] int pageSize = 10,
-       [FromQuery] string? search = null,
-       [FromQuery] string? sortBy = "id",
-       [FromQuery] string? sortDir = "asc",
-       [FromQuery] string? brand = null,
-       [FromQuery] string? ram = null,
-       [FromQuery] string? storage = null,
-       [FromQuery] string? location = null,
-       [FromQuery] string? networkType = null
-   )
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? search = null,
+            [FromQuery] string? sortBy = "id",
+            [FromQuery] string? sortDir = "asc",
+            [FromQuery] string? brand = null,
+            [FromQuery] string? ram = null,
+            [FromQuery] string? storage = null,
+            [FromQuery] string? location = null,
+            [FromQuery] string? networkType = null
+        )
         {
             if (page <= 0) page = 1;
             if (pageSize <= 0) pageSize = 10;
@@ -41,75 +43,66 @@ namespace backend_app.Controllers
                 .Include(m => m.Asset)
                 .AsQueryable();
 
-            // 🔥 Exclude assigned mobiles
-            var assignedMobileIds = await _context.AssignedAssets
-                .Where(a => a.AssetType.ToLower() == "mobile" && a.Status == "Assigned")
-                .Select(a => a.AssetTypeItemId)
-                .ToListAsync();
-
-            query = query.Where(m => !assignedMobileIds.Contains(m.Id));
-
-            // 🔎 SEARCH
+            // 1️⃣ SEARCH (same as laptops)
             if (!string.IsNullOrWhiteSpace(search))
             {
-                search = search.Trim().ToLower().Replace(" ", "");
+                var s = search.Trim().ToLower().Replace(" ", "");
 
                 query = query.Where(m =>
-                    (m.Brand ?? "").ToLower().Replace(" ", "").Contains(search) ||
-                    (m.Model ?? "").ToLower().Replace(" ", "").Contains(search) ||
-                    (m.AssetTag ?? "").ToLower().Replace(" ", "").Contains(search) ||
-                    (m.Ram ?? "").ToLower().Replace(" ", "").Contains(search) ||
-                    (m.Storage ?? "").ToLower().Replace(" ", "").Contains(search) ||
-                    (m.Processor ?? "").ToLower().Replace(" ", "").Contains(search) ||
-                    (m.Location ?? "").ToLower().Replace(" ", "").Contains(search)
+                    ((m.Brand ?? "").ToLower().Replace(" ", "")).Contains(s) ||
+                    ((m.Model ?? "").ToLower().Replace(" ", "")).Contains(s) ||
+                    ((m.AssetTag ?? "").ToLower().Replace(" ", "")).Contains(s) ||
+                    ((m.Ram ?? "").ToLower().Replace(" ", "")).Contains(s) ||
+                    ((m.Storage ?? "").ToLower().Replace(" ", "")).Contains(s) ||
+                    ((m.Processor ?? "").ToLower().Replace(" ", "")).Contains(s) ||
+                    ((m.Location ?? "").ToLower().Replace(" ", "")).Contains(s)
                 );
             }
 
-            // 🎯 FILTERS — PARTIAL MATCH (same as laptops)
+            // 2️⃣ FILTERS (same as laptop)
             if (!string.IsNullOrWhiteSpace(brand))
             {
-                string b = brand.Trim().ToLower().Replace(" ", "");
-                query = query.Where(m =>
-                    (m.Brand ?? "").ToLower().Replace(" ", "").Contains(b)
-                );
+                var b = brand.Trim().ToLower().Replace(" ", "");
+                query = query.Where(m => ((m.Brand ?? "").ToLower().Replace(" ", "")).Contains(b));
             }
 
             if (!string.IsNullOrWhiteSpace(ram))
             {
-                string r = ram.Trim().ToLower().Replace(" ", "");
-                query = query.Where(m =>
-                    (m.Ram ?? "").ToLower().Replace(" ", "").Contains(r)
-                );
+                var r = ram.Trim().ToLower().Replace(" ", "");
+                query = query.Where(m => ((m.Ram ?? "").ToLower().Replace(" ", "")).Contains(r));
             }
 
             if (!string.IsNullOrWhiteSpace(storage))
             {
-                string st = storage.Trim().ToLower().Replace(" ", "");
-                query = query.Where(m =>
-                    (m.Storage ?? "").ToLower().Replace(" ", "").Contains(st)
-                );
+                var st = storage.Trim().ToLower().Replace(" ", "");
+                query = query.Where(m => ((m.Storage ?? "").ToLower().Replace(" ", "")).Contains(st));
             }
 
             if (!string.IsNullOrWhiteSpace(location))
             {
-                string loc = location.Trim().ToLower().Replace(" ", "");
-
-                // Support multiple locations like "Bangalore, Chennai"
+                var loc = location.Trim().ToLower().Replace(" ", "");
                 query = query.Where(m =>
                     ("," + ((m.Location ?? "").ToLower().Replace(" ", "")) + ",")
-                        .Contains("," + loc + ",")
-                );
+                        .Contains("," + loc + ","));
             }
 
             if (!string.IsNullOrWhiteSpace(networkType))
             {
-                string nt = networkType.Trim().ToLower().Replace(" ", "");
-                query = query.Where(m =>
-                    (m.NetworkType ?? "").ToLower().Replace(" ", "").Contains(nt)
-                );
+                var nt = networkType.Trim().ToLower().Replace(" ", "");
+                query = query.Where(m => ((m.NetworkType ?? "").ToLower().Replace(" ", "")).Contains(nt));
             }
 
-            // 🌀 SORT
+            // 3️⃣ EXCLUDE ASSIGNED MOBILES (same logic as laptop)
+            var assignedIds = await _context.AssignedAssets
+                .Where(a => a.AssetType != null &&
+                            a.Status == "Assigned" &&
+                            a.AssetType.ToLower() == "mobile")
+                .Select(a => a.AssetTypeItemId)
+                .ToListAsync();
+
+            query = query.Where(m => !assignedIds.Contains(m.Id));
+
+            // 4️⃣ SORTING (identical to laptop sort pattern)
             bool desc = sortDir?.ToLower() == "desc";
 
             query = sortBy?.ToLower() switch
@@ -120,12 +113,13 @@ namespace backend_app.Controllers
                 "storage" => desc ? query.OrderByDescending(m => m.Storage) : query.OrderBy(m => m.Storage),
                 "location" => desc ? query.OrderByDescending(m => m.Location) : query.OrderBy(m => m.Location),
                 "processor" => desc ? query.OrderByDescending(m => m.Processor) : query.OrderBy(m => m.Processor),
+                "networktype" => desc ? query.OrderByDescending(m => m.NetworkType) : query.OrderBy(m => m.NetworkType),
                 _ => desc ? query.OrderByDescending(m => m.Id) : query.OrderBy(m => m.Id),
             };
 
-            // 📄 PAGINATION
+            // 5️⃣ PAGINATION
             var totalItems = await query.CountAsync();
-            var mobiles = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+            var data = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
             return Ok(new
             {
@@ -133,11 +127,13 @@ namespace backend_app.Controllers
                 pageSize,
                 totalItems,
                 totalPages = (int)Math.Ceiling(totalItems / (double)pageSize),
-                data = mobiles
+                data
             });
         }
 
-
+        // ============================================================
+        // OPTIONS (same style as Laptop options)
+        // ============================================================
         [HttpGet("options")]
         public async Task<IActionResult> GetOptions()
         {
@@ -162,28 +158,25 @@ namespace backend_app.Controllers
                 .OrderBy(x => x)
                 .ToListAsync();
 
-            // raw locations
             var rawLocations = await _context.Mobiles
                 .Select(m => m.Location)
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .ToListAsync();
 
-            // split + distinct
             var locations = rawLocations
-                .SelectMany(l => l.Split(',', StringSplitOptions.RemoveEmptyEntries))
-                .Select(l => l.Trim())
-                .Where(l => l != "")
+                .SelectMany(x => x.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                .Select(x => x.Trim())
                 .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(l => l)
+                .OrderBy(x => x)
                 .ToList();
 
             return Ok(new { brands, rams, storages, locations });
         }
 
+        // ============================================================
+        // REMAINING CRUD (unchanged)
+        // ============================================================
 
-
-
-        // ✅ GET single mobile
         [HttpGet("{id}")]
         public async Task<ActionResult<Mobile>> GetMobile(int id)
         {
@@ -191,89 +184,70 @@ namespace backend_app.Controllers
                 .Include(m => m.Asset)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
-            if (mobile == null)
-                return NotFound();
-
-            return mobile;
+            return mobile == null ? NotFound() : mobile;
         }
 
-        // ✅ POST new mobile
         [HttpPost]
         public async Task<ActionResult<Mobile>> PostMobile([FromBody] Mobile mobile)
         {
+            if (mobile.AssetTag == null)
+                return BadRequest(new { message = "AssetTag is required" });
+
             bool exists = await _context.Mobiles
-                .AnyAsync(m => m.AssetTag.ToLower() == mobile.AssetTag.ToLower());
+                .AnyAsync(m => (m.AssetTag ?? "").ToLower() == mobile.AssetTag.ToLower());
 
             if (exists)
-                return BadRequest(new { message = "Asset number already exists" });
+                return BadRequest(new { message = "AssetTag already exists" });
 
-            var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Name.ToLower().Contains("mobile"));
+            var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Name.ToLower() == "mobiles")
+                        ?? new Asset { Name = "Mobiles", Quantity = 0 };
 
-            if (asset == null)
+            if (asset.Id == 0)
             {
-                asset = new Asset { Name = "Mobiles", Quantity = 0 };
                 _context.Assets.Add(asset);
                 await _context.SaveChangesAsync();
             }
 
             mobile.AssetId = asset.Id;
+
             _context.Mobiles.Add(mobile);
             await _context.SaveChangesAsync();
 
             asset.Quantity = await _context.Mobiles.CountAsync(m => m.AssetId == asset.Id);
-            _context.Entry(asset).State = EntityState.Modified;
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetMobile), new { id = mobile.Id }, mobile);
         }
 
-        // ✅ PUT existing mobile
         [HttpPut("{id}")]
         public async Task<IActionResult> PutMobile(int id, [FromBody] Mobile mobile)
         {
             mobile.Id = id;
 
             bool exists = await _context.Mobiles
-                .AnyAsync(m => m.Id != id && m.AssetTag.ToLower() == mobile.AssetTag.ToLower());
+                .AnyAsync(m => m.Id != id && (m.AssetTag ?? "").ToLower() == mobile.AssetTag.ToLower());
 
             if (exists)
-                return BadRequest(new { message = "Another mobile with the same AssetTag exists" });
+                return BadRequest(new { message = "AssetTag already exists" });
 
             _context.Entry(mobile).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!_context.Mobiles.Any(e => e.Id == id))
-                    return NotFound();
-                else
-                    throw;
-            }
+            await _context.SaveChangesAsync();
 
             if (mobile.AssetId.HasValue)
             {
                 var asset = await _context.Assets.FindAsync(mobile.AssetId.Value);
-                if (asset != null)
-                {
-                    asset.Quantity = await _context.Mobiles.CountAsync(m => m.AssetId == asset.Id);
-                    _context.Entry(asset).State = EntityState.Modified;
-                    await _context.SaveChangesAsync();
-                }
+                asset.Quantity = await _context.Mobiles.CountAsync(m => m.AssetId == asset.Id);
+                await _context.SaveChangesAsync();
             }
 
             return NoContent();
         }
 
-        // ✅ DELETE + Log delete
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteMobile(int id)
         {
             var mobile = await _context.Mobiles.FindAsync(id);
-            if (mobile == null)
-                return NotFound();
+            if (mobile == null) return NotFound();
 
             var history = new AdminDeleteHistory
             {
@@ -282,9 +256,10 @@ namespace backend_app.Controllers
                 AdminName = "AdminUser",
                 DeletedAt = DateTime.Now
             };
+
             _context.AdminDeleteHistories.Add(history);
 
-            int? assetId = mobile.AssetId;
+            var assetId = mobile.AssetId;
 
             _context.Mobiles.Remove(mobile);
             await _context.SaveChangesAsync();
@@ -292,26 +267,18 @@ namespace backend_app.Controllers
             if (assetId.HasValue)
             {
                 var asset = await _context.Assets.FindAsync(assetId.Value);
-                if (asset != null)
-                {
-                    asset.Quantity = await _context.Mobiles.CountAsync(m => m.AssetId == asset.Id);
-                    _context.Entry(asset).State = EntityState.Modified;
-                    await _context.SaveChangesAsync();
-                }
+                asset.Quantity = await _context.Mobiles.CountAsync(m => m.AssetId == asset.Id);
+                await _context.SaveChangesAsync();
             }
 
             return NoContent();
         }
 
-        // ✅ Duplicate assetTag check
         [HttpGet("check-duplicate")]
         public async Task<IActionResult> CheckDuplicate([FromQuery] string assetTag)
         {
-            if (string.IsNullOrWhiteSpace(assetTag))
-                return BadRequest(new { message = "AssetTag is required" });
-
             bool exists = await _context.Mobiles
-                .AnyAsync(m => m.AssetTag.ToLower() == assetTag.ToLower());
+                .AnyAsync(m => (m.AssetTag ?? "").ToLower() == assetTag.ToLower());
 
             return Ok(new { exists });
         }

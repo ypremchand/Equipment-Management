@@ -1909,6 +1909,19 @@
             "format": "date-time",
             "nullable": true
           },
+          "isAssigned": {
+            "type": "boolean"
+          },
+          "assignedDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "returnedDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
           "assetId": {
             "type": "integer",
             "format": "int32",
@@ -2040,6 +2053,19 @@
             "format": "date-time",
             "nullable": true
           },
+          "isAssigned": {
+            "type": "boolean"
+          },
+          "assignedDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "returnedDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
           "assetId": {
             "type": "integer",
             "format": "int32",
@@ -2155,6 +2181,19 @@
             "nullable": true
           },
           "lastServicedDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "isAssigned": {
+            "type": "boolean"
+          },
+          "assignedDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "returnedDate": {
             "type": "string",
             "format": "date-time",
             "nullable": true

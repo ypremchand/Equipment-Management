@@ -65,7 +65,7 @@ function Inventory({ closeMenu }) {
               type="button"
             >
               {a.name}
-              
+
             </button>
           ))
         )}

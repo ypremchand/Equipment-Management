@@ -184,6 +184,9 @@ namespace backend_app.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("AssignedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("BatteryCapacity")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -199,6 +202,9 @@ namespace backend_app.Migrations
                     b.Property<string>("GraphicsCard")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsAssigned")
+                        .HasColumnType("bit");
 
                     b.Property<DateTime?>("LastServicedDate")
                         .HasColumnType("datetime2");
@@ -228,6 +234,9 @@ namespace backend_app.Migrations
 
                     b.Property<string>("Remarks")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ReturnedDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Storage")
                         .IsRequired()
@@ -273,6 +282,9 @@ namespace backend_app.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("AssignedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("BatteryCapacity")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -288,6 +300,9 @@ namespace backend_app.Migrations
                     b.Property<string>("IMEINumber")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsAssigned")
+                        .HasColumnType("bit");
 
                     b.Property<DateTime?>("LastServicedDate")
                         .HasColumnType("datetime2");
@@ -317,6 +332,9 @@ namespace backend_app.Migrations
 
                     b.Property<string>("Remarks")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ReturnedDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("SIMType")
                         .IsRequired()
@@ -348,6 +366,9 @@ namespace backend_app.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("AssignedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("BatteryCapacity")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -362,6 +383,9 @@ namespace backend_app.Migrations
 
                     b.Property<string>("IMEINumber")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsAssigned")
+                        .HasColumnType("bit");
 
                     b.Property<DateTime?>("LastServicedDate")
                         .HasColumnType("datetime2");
@@ -391,6 +415,9 @@ namespace backend_app.Migrations
 
                     b.Property<string>("Remarks")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ReturnedDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("SIMSupport")
                         .IsRequired()

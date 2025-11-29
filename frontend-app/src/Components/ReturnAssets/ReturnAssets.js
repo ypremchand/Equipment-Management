@@ -7,8 +7,8 @@ import "./style.css";
 function ReturnAssets() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-const navigate = useNavigate();
+
+  const navigate = useNavigate();
 
   const saved = localStorage.getItem("user");
   const user = saved ? JSON.parse(saved) : null;
@@ -114,53 +114,52 @@ const navigate = useNavigate();
 
                     <td>
                       <span
-                        className={`badge ${
-                          status === "Returned"
+                        className={`badge ${status === "Returned"
                             ? "bg-success"
                             : status === "Pending"
-                            ? "bg-warning text-dark"
-                            : status === "Approved"
-                            ? "bg-primary"
-                            : "bg-secondary"
-                        }`}
+                              ? "bg-warning text-dark"
+                              : status === "Approved"
+                                ? "bg-primary"
+                                : "bg-secondary"
+                          }`}
                       >
                         {status}
                       </span>
                     </td>
 
-        <td>
-  <button
-    className="btn btn-sm btn-primary"
-    onClick={() => navigate(`/assigned-items/${id}`)}
-  >
-    View Assigned Items
-  </button>
-</td>
+                    <td>
+                      <button
+                        className="btn btn-sm btn-primary"
+                        onClick={() => navigate(`/assigned-items/${id}`)}
+                      >
+                        View Assigned Items
+                      </button>
+                    </td>
 
 
 
-                   <td>
-  {/* Edit button visible ONLY when Pending */}
-  {status === "Pending" && (
-    <button
-      className="btn btn-sm btn-warning me-2"
-      onClick={() => navigate(`/contact/${id}`)}
-    >
-      Edit
-    </button>
-  )}
+                    <td>
+                      {/* Edit button visible ONLY when Pending */}
+                      {status === "Pending" && (
+                        <button
+                          className="btn btn-sm btn-warning me-2"
+                          onClick={() => navigate(`/contact/${id}`)}
+                        >
+                          Edit
+                        </button>
+                      )}
 
-  {status === "Approved" && (
-    <button
-      className="btn btn-sm btn-danger"
-      onClick={() => handleReturn(id)}
-    >
-      Return
-    </button>
-  )}
+                      {status === "Approved" && (
+                        <button
+                          className="btn btn-sm btn-danger"
+                          onClick={() => handleReturn(id)}
+                        >
+                          Return
+                        </button>
+                      )}
 
-  {status === "Returned" && <em>Returned</em>}
-</td>
+                      {status === "Returned" && <em>Returned</em>}
+                    </td>
 
                   </tr>
                 );

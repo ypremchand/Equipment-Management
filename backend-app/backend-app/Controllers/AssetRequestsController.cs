@@ -3,6 +3,7 @@ using backend_app.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using System.Security.Cryptography;
 
 namespace backend_app.Controllers
 {
@@ -137,7 +138,9 @@ namespace backend_app.Controllers
                             a.AssetTypeItemId,
                             a.Status,
                             a.AssignedDate,
-                            a.ReturnedDate,   
+
+                            a.ReturnedDate, 
+
                             Detail = detail
                         };
 
@@ -258,8 +261,6 @@ namespace backend_app.Controllers
 
         // --------------------------
         // 4) CONFIRM APPROVE (ASSIGN ITEMS)
-        // Expecting DTO: { Assignments: [ { ItemId, AssetType, AssetTypeItemIds: [int] } ] }
-        // --------------------------
         [HttpPost("confirm-approve/{requestId}")]
         public async Task<IActionResult> ConfirmApprove(int requestId, [FromBody] ApproveRequestDto dto)
         {
@@ -282,61 +283,83 @@ namespace backend_app.Controllers
                     if (item == null)
                         return BadRequest($"Item with id {assign.ItemId} not found in request.");
 
-                    // Remove old assignments and restore stock for those
+                    // -----------------------------------------
+                    // 1) RESTORE STOCK FOR OLD ASSIGNMENTS
+                    // -----------------------------------------
                     var oldAssigned = await _context.AssignedAssets
                         .Where(a => a.AssetRequestItemId == item.Id)
                         .ToListAsync();
 
-                    // Restore stock for each old assignment by finding the target item's AssetId
                     foreach (var old in oldAssigned)
                     {
-                        // ❗ Only restore if it was still assigned
-                        if (old.Status != "Assigned")
-                            continue;
+                        if (old.Status != "Assigned") continue;
 
-                        var t = old.AssetType?.ToLowerInvariant();
+                        var type = old.AssetType?.ToLowerInvariant();
 
-                        if (t == "laptop")
+                        if (type == "laptop")
                         {
                             var lap = await _context.Laptops.FindAsync(old.AssetTypeItemId);
+                            if (lap != null)
+                            {
+                                lap.IsAssigned = false;
+                                lap.AssignedDate = null;
+                                lap.ReturnedDate = DateTime.Now;
+                            }
+
                             if (lap?.AssetId != null)
                             {
                                 var asset = await _context.Assets.FindAsync(lap.AssetId.Value);
-                                if (asset != null)
-                                    asset.Quantity += 1;
+                                if (asset != null) asset.Quantity += 1;
                             }
                         }
-                        else if (t == "mobile")
+
+                        else if (type == "mobile")
                         {
                             var mob = await _context.Mobiles.FindAsync(old.AssetTypeItemId);
+                            if (mob != null)
+                            {
+                                mob.IsAssigned = false;
+                                mob.AssignedDate = null;
+                                mob.ReturnedDate = DateTime.Now;
+                            }
+
                             if (mob?.AssetId != null)
                             {
                                 var asset = await _context.Assets.FindAsync(mob.AssetId.Value);
-                                if (asset != null)
-                                    asset.Quantity += 1;
+                                if (asset != null) asset.Quantity += 1;
                             }
                         }
-                        else if (t == "tablet")
+
+                        else if (type == "tablet")
                         {
                             var tab = await _context.Tablets.FindAsync(old.AssetTypeItemId);
+                            if (tab != null)
+                            {
+                                tab.IsAssigned = false;
+                                tab.AssignedDate = null;
+                                tab.ReturnedDate = DateTime.Now;
+                            }
+
                             if (tab?.AssetId != null)
                             {
                                 var asset = await _context.Assets.FindAsync(tab.AssetId.Value);
-                                if (asset != null)
-                                    asset.Quantity += 1;
+                                if (asset != null) asset.Quantity += 1;
                             }
                         }
                     }
 
-
+                    // Remove old assignments
                     _context.AssignedAssets.RemoveRange(oldAssigned);
                     await _context.SaveChangesAsync();
 
-                    // Create new assignments
+                    // -----------------------------------------
+                    // 2) CREATE NEW ASSIGNMENTS
+                    // -----------------------------------------
                     foreach (var assetTypeItemId in assign.AssetTypeItemIds)
                     {
                         var type = assign.AssetType?.Trim().ToLowerInvariant();
-                        var assigned = new AssignedAsset
+
+                        var newAssigned = new AssignedAsset
                         {
                             AssetRequestItemId = item.Id,
                             AssetType = type,
@@ -345,47 +368,72 @@ namespace backend_app.Controllers
                             Status = "Assigned"
                         };
 
-                        _context.AssignedAssets.Add(assigned);
+                        _context.AssignedAssets.Add(newAssigned);
 
-                        // Reduce stock on related Asset (via the concrete table's AssetId)
+                        // Deduct from stock + update state based on type
                         if (type == "laptop")
                         {
                             var lap = await _context.Laptops.FindAsync(assetTypeItemId);
-                            if (lap?.AssetId != null)
+                            if (lap != null)
                             {
-                                var asset = await _context.Assets.FindAsync(lap.AssetId.Value);
-                                if (asset != null) asset.Quantity = Math.Max(0, asset.Quantity - 1);
+                                lap.IsAssigned = true;
+                                lap.AssignedDate = DateTime.Now;
+                                lap.ReturnedDate = null;
+
+                                if (lap.AssetId != null)
+                                {
+                                    var asset = await _context.Assets.FindAsync(lap.AssetId.Value);
+                                    if (asset != null) asset.Quantity = Math.Max(0, asset.Quantity - 1);
+                                }
                             }
                         }
+
                         else if (type == "mobile")
                         {
                             var mob = await _context.Mobiles.FindAsync(assetTypeItemId);
-                            if (mob?.AssetId != null)
+                            if (mob != null)
                             {
-                                var asset = await _context.Assets.FindAsync(mob.AssetId.Value);
-                                if (asset != null) asset.Quantity = Math.Max(0, asset.Quantity - 1);
+                                mob.IsAssigned = true;
+                                mob.AssignedDate = DateTime.Now;
+                                mob.ReturnedDate = null;
+
+                                if (mob.AssetId != null)
+                                {
+                                    var asset = await _context.Assets.FindAsync(mob.AssetId.Value);
+                                    if (asset != null) asset.Quantity = Math.Max(0, asset.Quantity - 1);
+                                }
                             }
                         }
+
                         else if (type == "tablet")
                         {
                             var tab = await _context.Tablets.FindAsync(assetTypeItemId);
-                            if (tab?.AssetId != null)
+                            if (tab != null)
                             {
-                                var asset = await _context.Assets.FindAsync(tab.AssetId.Value);
-                                if (asset != null) asset.Quantity = Math.Max(0, asset.Quantity - 1);
+                                tab.IsAssigned = true;
+                                tab.AssignedDate = DateTime.Now;
+                                tab.ReturnedDate = null;
+
+                                if (tab.AssetId != null)
+                                {
+                                    var asset = await _context.Assets.FindAsync(tab.AssetId.Value);
+                                    if (asset != null) asset.Quantity = Math.Max(0, asset.Quantity - 1);
+                                }
                             }
                         }
+
                         else
                         {
-                            // Unknown type - skip or return error
                             await tx.RollbackAsync();
-                            return BadRequest($"Unknown AssetType '{assign.AssetType}' provided for assignment.");
+                            return BadRequest($"Unknown AssetType '{assign.AssetType}'.");
                         }
                     }
 
+                    // Update approved count
                     item.ApprovedQuantity = assign.AssetTypeItemIds?.Count ?? 0;
                 }
 
+                // Final update
                 request.Status = "Approved";
                 await _context.SaveChangesAsync();
                 await tx.CommitAsync();
@@ -398,6 +446,7 @@ namespace backend_app.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
+
 
         // DTOs used by ConfirmApprove
         public class ApproveRequestDto
@@ -440,39 +489,66 @@ namespace backend_app.Controllers
                 {
                     foreach (var assigned in item.AssignedAssets ?? Enumerable.Empty<AssignedAsset>())
                     {
-                        var t = assigned.AssetType?.ToLowerInvariant();
+                        var type = assigned.AssetType?.ToLowerInvariant();
 
-                        if (t == "laptop")
+                        if (type == "laptop")
                         {
                             var lap = await _context.Laptops.FindAsync(assigned.AssetTypeItemId);
-                            if (lap?.AssetId != null)
+
+                            if (lap != null && lap.IsAssigned == true && lap.ReturnedDate == null)
                             {
-                                var asset = await _context.Assets.FindAsync(lap.AssetId.Value);
-                                if (asset != null) asset.Quantity += 1;
+                                lap.IsAssigned = false;
+                                lap.AssignedDate = null;
+                                lap.ReturnedDate = DateTime.Now;
+
+                                if (lap.AssetId != null)
+                                {
+                                    var asset = await _context.Assets.FindAsync(lap.AssetId.Value);
+                                    if (asset != null) asset.Quantity += 1;
+                                }
                             }
                         }
-                        else if (t == "mobile")
+
+                        else if (type == "mobile")
                         {
                             var mob = await _context.Mobiles.FindAsync(assigned.AssetTypeItemId);
-                            if (mob?.AssetId != null)
+
+                            if (mob != null && mob.IsAssigned == true && mob.ReturnedDate == null)
                             {
-                                var asset = await _context.Assets.FindAsync(mob.AssetId.Value);
-                                if (asset != null) asset.Quantity += 1;
+                                mob.IsAssigned = false;
+                                mob.AssignedDate = null;
+                                mob.ReturnedDate = DateTime.Now;
+
+                                if (mob.AssetId != null)
+                                {
+                                    var asset = await _context.Assets.FindAsync(mob.AssetId.Value);
+                                    if (asset != null) asset.Quantity += 1;
+                                }
                             }
                         }
-                        else if (t == "tablet")
+
+                        else if (type == "tablet")
                         {
                             var tab = await _context.Tablets.FindAsync(assigned.AssetTypeItemId);
-                            if (tab?.AssetId != null)
+
+                            if (tab != null && tab.IsAssigned == true && tab.ReturnedDate == null)
                             {
-                                var asset = await _context.Assets.FindAsync(tab.AssetId.Value);
-                                if (asset != null) asset.Quantity += 1;
+                                tab.IsAssigned = false;
+                                tab.AssignedDate = null;
+                                tab.ReturnedDate = DateTime.Now;
+
+                                if (tab.AssetId != null)
+                                {
+                                    var asset = await _context.Assets.FindAsync(tab.AssetId.Value);
+                                    if (asset != null) asset.Quantity += 1;
+                                }
                             }
                         }
                     }
-
-                    
                 }
+
+
+
 
 
                 // Delete assigned assets, items and the request

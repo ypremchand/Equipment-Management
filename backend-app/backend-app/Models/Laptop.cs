@@ -10,7 +10,7 @@ namespace backend_app.Models
         public int Id { get; set; }
 
         [Required] public string Brand { get; set; }
-        [Required] public string ModelNumber { get; set; }   // ✅ Replaced SerialNumber with ModelNumber
+        [Required] public string ModelNumber { get; set; }
         [Required] public string AssetTag { get; set; }
         [Required] public DateTime PurchaseDate { get; set; }
         [Required] public string Processor { get; set; }
@@ -25,9 +25,13 @@ namespace backend_app.Models
         public string? Remarks { get; set; }
         public DateTime? LastServicedDate { get; set; }
 
+        // 🔥 ADD THESE FIELDS
+        public bool IsAssigned { get; set; } = false;
+        public DateTime? AssignedDate { get; set; }
+        public DateTime? ReturnedDate { get; set; }
+
         [ForeignKey("Asset")]
         public int? AssetId { get; set; }
-
         public Asset? Asset { get; set; }
     }
 }

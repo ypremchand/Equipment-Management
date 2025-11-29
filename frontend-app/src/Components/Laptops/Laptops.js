@@ -30,65 +30,65 @@ export default function Laptops() {
 
   // Filters / search / sort (these are sent to backend as query params)
   const [searchInput, setSearchInput] = useState("");
-  const [filters, setFilters] = useState({ brand: "", ram: "", storage: "", location: ""});
+  const [filters, setFilters] = useState({ brand: "", ram: "", storage: "", location: "" });
   const [sort, setSort] = useState({ by: "id", dir: "asc" });
-const [allOptions, setAllOptions] = useState({ brands: [], rams: [], storages: [], locations: [] });
+  const [allOptions, setAllOptions] = useState({ brands: [], rams: [], storages: [], locations: [] });
 
   // debounce ref
   const searchDebounceRef = useRef(null);
 
   // Fetch data from backend with server-side filtering/sorting/pagination
   const fetchLaptops = useCallback(async (currentPage = 1) => {
-  setLoading(true);
-  try {
-    const params = {
-      page: currentPage,
-      pageSize,
-      search: searchInput || undefined,
-      sortBy: sort.by,
-      sortDir: sort.dir,
-      brand: filters.brand || undefined,
-      ram: filters.ram || undefined,
-      storage: filters.storage || undefined,
-      location: filters.location || undefined,
-    };
+    setLoading(true);
+    try {
+      const params = {
+        page: currentPage,
+        pageSize,
+        search: searchInput || undefined,
+        sortBy: sort.by,
+        sortDir: sort.dir,
+        brand: filters.brand || undefined,
+        ram: filters.ram || undefined,
+        storage: filters.storage || undefined,
+        location: filters.location || undefined,
+      };
 
-    const res = await axios.get(API_URL, { params });
-    const data = res.data;
+      const res = await axios.get(API_URL, { params });
+      const data = res.data;
 
-    setLaptops(data.data || []);
-    setTotalPages(data.totalPages ?? 1);
-    setPage(data.currentPage ?? currentPage);
-  } catch (err) {
-    console.error("fetchLaptops error", err);
-  } finally {
-    setLoading(false);
-  }
-}, [searchInput, filters, sort]);
+      setLaptops(data.data || []);
+      setTotalPages(data.totalPages ?? 1);
+      setPage(data.currentPage ?? currentPage);
+    } catch (err) {
+      console.error("fetchLaptops error", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [searchInput, filters, sort]);
 
 
   // initial + page + when filters/search/sort change
-useEffect(() => {
-  if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+  useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
 
-  searchDebounceRef.current = setTimeout(() => {
-    fetchLaptops(1);
-  }, 300);
+    searchDebounceRef.current = setTimeout(() => {
+      fetchLaptops(1);
+    }, 300);
 
-  return () => clearTimeout(searchDebounceRef.current);
-}, [searchInput, filters, sort, fetchLaptops]);
+    return () => clearTimeout(searchDebounceRef.current);
+  }, [searchInput, filters, sort, fetchLaptops]);
 
 
 
   useEffect(() => {
-  fetchLaptops(page);
-}, [page, fetchLaptops]);
+    fetchLaptops(page);
+  }, [page, fetchLaptops]);
 
-useEffect(() => {
-  axios.get(API_URL + "/options")
-    .then(res => setAllOptions(res.data))
-    .catch(err => console.error("options load error", err));
-}, []);
+  useEffect(() => {
+    axios.get(API_URL + "/options")
+      .then(res => setAllOptions(res.data))
+      .catch(err => console.error("options load error", err));
+  }, []);
 
   // Helpers
   function getEmptyForm() {
@@ -266,13 +266,13 @@ useEffect(() => {
             </select>
           </div>
 
-          
+
 
           <div className="col ms-auto d-flex gap-2 justify-content-end">
             <button
               className="btn btn-outline-secondary"
               onClick={() => {
-                setFilters({ brand: "", ram: "", storage: "", location: ""});
+                setFilters({ brand: "", ram: "", storage: "", location: "" });
                 setSearchInput("");
               }}
             >
@@ -383,9 +383,9 @@ useEffect(() => {
 
           {/* Pagination */}
           <div className="d-flex justify-content-center mt-3">
-            <button className="btn btn-outline-primary me-2" disabled={page === 1} onClick={prevPage}>◀ Prev</button>
+            <button className="btn btn-outline-primary me-2" disabled={page === 1} onClick={prevPage}>◀️ Prev</button>
             <span className="align-self-center">Page {page} of {totalPages}</span>
-            <button className="btn btn-outline-primary ms-2" disabled={page === totalPages} onClick={nextPage}>Next ▶</button>
+            <button className="btn btn-outline-primary ms-2" disabled={page === totalPages} onClick={nextPage}>Next ▶️</button>
           </div>
         </>
       ) : (

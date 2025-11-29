@@ -20,7 +20,7 @@ namespace backend_app.Controllers
         }
 
         // ============================================================
-        // GET ALL (Filters + Search + Sorting + Pagination)
+        // GET ALL TABLETS (same logic as laptops)
         // ============================================================
         [HttpGet]
         public async Task<ActionResult<object>> GetTablets(
@@ -43,66 +43,66 @@ namespace backend_app.Controllers
                 .Include(t => t.Asset)
                 .AsQueryable();
 
-            // Remove assigned tablets
+            // 1️⃣ SEARCH
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim().ToLower().Replace(" ", "");
+
+                query = query.Where(t =>
+                    ((t.Brand ?? "").ToLower().Replace(" ", "")).Contains(s) ||
+                    ((t.Model ?? "").ToLower().Replace(" ", "")).Contains(s) ||
+                    ((t.AssetTag ?? "").ToLower().Replace(" ", "")).Contains(s) ||
+                    ((t.Processor ?? "").ToLower().Replace(" ", "")).Contains(s) ||
+                    ((t.Ram ?? "").ToLower().Replace(" ", "")).Contains(s) ||
+                    ((t.Storage ?? "").ToLower().Replace(" ", "")).Contains(s) ||
+                    ((t.Location ?? "").ToLower().Replace(" ", "")).Contains(s)
+                );
+            }
+
+            // 2️⃣ FILTERS
+            if (!string.IsNullOrWhiteSpace(brand))
+            {
+                var b = brand.Trim().ToLower().Replace(" ", "");
+                query = query.Where(t => ((t.Brand ?? "").ToLower().Replace(" ", "")).Contains(b));
+            }
+
+            if (!string.IsNullOrWhiteSpace(ram))
+            {
+                var r = ram.Trim().ToLower().Replace(" ", "");
+                query = query.Where(t => ((t.Ram ?? "").ToLower().Replace(" ", "")).Contains(r));
+            }
+
+            if (!string.IsNullOrWhiteSpace(storage))
+            {
+                var st = storage.Trim().ToLower().Replace(" ", "");
+                query = query.Where(t => ((t.Storage ?? "").ToLower().Replace(" ", "")).Contains(st));
+            }
+
+            if (!string.IsNullOrWhiteSpace(location))
+            {
+                var loc = location.Trim().ToLower().Replace(" ", "");
+                query = query.Where(t =>
+                    ("," + ((t.Location ?? "").ToLower().Replace(" ", "")) + ",")
+                        .Contains("," + loc + ","));
+            }
+
+            if (!string.IsNullOrWhiteSpace(networkType))
+            {
+                var nt = networkType.Trim().ToLower().Replace(" ", "");
+                query = query.Where(t => ((t.NetworkType ?? "").ToLower().Replace(" ", "")).Contains(nt));
+            }
+
+            // 3️⃣ EXCLUDE ASSIGNED TABLETS
             var assignedIds = await _context.AssignedAssets
-                .Where(a => a.AssetType.ToLower() == "tablet" && a.Status == "Assigned")
+                .Where(a => a.AssetType != null &&
+                            a.Status == "Assigned" &&
+                            a.AssetType.ToLower() == "tablet")
                 .Select(a => a.AssetTypeItemId)
                 .ToListAsync();
 
             query = query.Where(t => !assignedIds.Contains(t.Id));
 
-            // 🔍 SEARCH
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                string s = search.Trim().ToLower().Replace(" ", "");
-
-                query = query.Where(t =>
-                    (t.Brand ?? "").ToLower().Replace(" ", "").Contains(s) ||
-                    (t.Model ?? "").ToLower().Replace(" ", "").Contains(s) ||
-                    (t.AssetTag ?? "").ToLower().Replace(" ", "").Contains(s) ||
-                    (t.Processor ?? "").ToLower().Replace(" ", "").Contains(s) ||
-                    (t.Ram ?? "").ToLower().Replace(" ", "").Contains(s) ||
-                    (t.Storage ?? "").ToLower().Replace(" ", "").Contains(s) ||
-                    (t.Location ?? "").ToLower().Replace(" ", "").Contains(s)
-                );
-            }
-
-            // 🔽 FILTERS (partial match like laptops)
-            if (!string.IsNullOrWhiteSpace(brand))
-            {
-                string b = brand.Trim().ToLower().Replace(" ", "");
-                query = query.Where(t => (t.Brand ?? "").ToLower().Replace(" ", "").Contains(b));
-            }
-
-            if (!string.IsNullOrWhiteSpace(ram))
-            {
-                string r = ram.Trim().ToLower().Replace(" ", "");
-                query = query.Where(t => (t.Ram ?? "").ToLower().Replace(" ", "").Contains(r));
-            }
-
-            if (!string.IsNullOrWhiteSpace(storage))
-            {
-                string s2 = storage.Trim().ToLower().Replace(" ", "");
-                query = query.Where(t => (t.Storage ?? "").ToLower().Replace(" ", "").Contains(s2));
-            }
-
-            // Multi-location matching
-            if (!string.IsNullOrWhiteSpace(location))
-            {
-                string loc = location.Trim().ToLower().Replace(" ", "");
-                query = query.Where(t =>
-                    ("," + ((t.Location ?? "").ToLower().Replace(" ", "")) + ",")
-                        .Contains("," + loc + ",")
-                );
-            }
-
-            if (!string.IsNullOrWhiteSpace(networkType))
-            {
-                string nt = networkType.Trim().ToLower().Replace(" ", "");
-                query = query.Where(t => (t.NetworkType ?? "").ToLower().Replace(" ", "").Contains(nt));
-            }
-
-            // 🔽 SORT
+            // 4️⃣ SORTING
             bool desc = sortDir?.ToLower() == "desc";
 
             query = sortBy?.ToLower() switch
@@ -113,60 +113,56 @@ namespace backend_app.Controllers
                 "storage" => desc ? query.OrderByDescending(t => t.Storage) : query.OrderBy(t => t.Storage),
                 "location" => desc ? query.OrderByDescending(t => t.Location) : query.OrderBy(t => t.Location),
                 "processor" => desc ? query.OrderByDescending(t => t.Processor) : query.OrderBy(t => t.Processor),
+                "networktype" => desc ? query.OrderByDescending(t => t.NetworkType) : query.OrderBy(t => t.NetworkType),
                 _ => desc ? query.OrderByDescending(t => t.Id) : query.OrderBy(t => t.Id),
             };
 
-            // 🔽 PAGINATION
+            // 5️⃣ PAGINATION
             var totalItems = await query.CountAsync();
-
-            var tablets = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+            var data = await query.Skip((page - 1) * pageSize)
+                                  .Take(pageSize)
+                                  .ToListAsync();
 
             return Ok(new
             {
                 currentPage = page,
                 pageSize,
                 totalItems,
-                totalPages,
-                data = tablets
+                totalPages = (int)Math.Ceiling(totalItems / (double)pageSize),
+                data
             });
         }
 
         // ============================================================
-        // OPTIONS (for dropdown lists)
+        // OPTIONS (same pattern as laptop/mobile)
         // ============================================================
         [HttpGet("options")]
         public async Task<IActionResult> GetOptions()
         {
             var brands = await _context.Tablets
                 .Select(t => t.Brand)
-                .Where(x => x != null && x != "")
+                .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Distinct()
                 .OrderBy(x => x)
                 .ToListAsync();
 
             var rams = await _context.Tablets
                 .Select(t => t.Ram)
-                .Where(x => x != null && x != "")
+                .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Distinct()
                 .OrderBy(x => x)
                 .ToListAsync();
 
             var storages = await _context.Tablets
                 .Select(t => t.Storage)
-                .Where(x => x != null && x != "")
+                .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Distinct()
                 .OrderBy(x => x)
                 .ToListAsync();
 
-            // Split multi-location strings
             var rawLocations = await _context.Tablets
                 .Select(t => t.Location)
-                .Where(x => x != null && x != "")
+                .Where(x => !string.IsNullOrWhiteSpace(x))
                 .ToListAsync();
 
             var locations = rawLocations
@@ -180,7 +176,7 @@ namespace backend_app.Controllers
         }
 
         // ============================================================
-        // REMAINING CRUD (same as before)
+        // CRUD (unchanged)
         // ============================================================
 
         [HttpGet("{id}")]
@@ -190,36 +186,36 @@ namespace backend_app.Controllers
                 .Include(t => t.Asset)
                 .FirstOrDefaultAsync(t => t.Id == id);
 
-            if (tablet == null)
-                return NotFound();
-
-            return tablet;
+            return tablet == null ? NotFound() : tablet;
         }
 
         [HttpPost]
         public async Task<ActionResult<Tablet>> PostTablet([FromBody] Tablet tablet)
         {
+            if (tablet.AssetTag == null)
+                return BadRequest(new { message = "AssetTag is required" });
+
             bool exists = await _context.Tablets
-                .AnyAsync(t => t.AssetTag.ToLower() == tablet.AssetTag.ToLower());
+                .AnyAsync(t => (t.AssetTag ?? "").ToLower() == tablet.AssetTag.ToLower());
 
             if (exists)
-                return BadRequest(new { message = "Asset number already exists" });
+                return BadRequest(new { message = "AssetTag already exists" });
 
-            var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Name.ToLower().Contains("tablet"));
+            var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Name.ToLower() == "tablets")
+                        ?? new Asset { Name = "Tablets", Quantity = 0 };
 
-            if (asset == null)
+            if (asset.Id == 0)
             {
-                asset = new Asset { Name = "Tablets", Quantity = 0 };
                 _context.Assets.Add(asset);
                 await _context.SaveChangesAsync();
             }
 
             tablet.AssetId = asset.Id;
+
             _context.Tablets.Add(tablet);
             await _context.SaveChangesAsync();
 
             asset.Quantity = await _context.Tablets.CountAsync(t => t.AssetId == asset.Id);
-            _context.Entry(asset).State = EntityState.Modified;
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetTablet), new { id = tablet.Id }, tablet);
@@ -228,28 +224,22 @@ namespace backend_app.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutTablet(int id, [FromBody] Tablet tablet)
         {
-            if (id != tablet.Id)
-                return BadRequest();
+            tablet.Id = id;
 
             bool exists = await _context.Tablets
-                .AnyAsync(t => t.Id != id && t.AssetTag.ToLower() == tablet.AssetTag.ToLower());
+                .AnyAsync(t => t.Id != id && (t.AssetTag ?? "").ToLower() == tablet.AssetTag.ToLower());
 
             if (exists)
-                return BadRequest(new { message = "Another tablet with this asset tag already exists" });
+                return BadRequest(new { message = "AssetTag already exists" });
 
             _context.Entry(tablet).State = EntityState.Modified;
-
             await _context.SaveChangesAsync();
 
             if (tablet.AssetId.HasValue)
             {
                 var asset = await _context.Assets.FindAsync(tablet.AssetId.Value);
-                if (asset != null)
-                {
-                    asset.Quantity = await _context.Tablets.CountAsync(t => t.AssetId == asset.Id);
-                    _context.Entry(asset).State = EntityState.Modified;
-                    await _context.SaveChangesAsync();
-                }
+                asset.Quantity = await _context.Tablets.CountAsync(t => t.AssetId == asset.Id);
+                await _context.SaveChangesAsync();
             }
 
             return NoContent();
@@ -259,8 +249,7 @@ namespace backend_app.Controllers
         public async Task<IActionResult> DeleteTablet(int id)
         {
             var tablet = await _context.Tablets.FindAsync(id);
-            if (tablet == null)
-                return NotFound();
+            if (tablet == null) return NotFound();
 
             var history = new AdminDeleteHistory
             {
@@ -272,7 +261,7 @@ namespace backend_app.Controllers
 
             _context.AdminDeleteHistories.Add(history);
 
-            int? assetId = tablet.AssetId;
+            var assetId = tablet.AssetId;
 
             _context.Tablets.Remove(tablet);
             await _context.SaveChangesAsync();
@@ -280,12 +269,8 @@ namespace backend_app.Controllers
             if (assetId.HasValue)
             {
                 var asset = await _context.Assets.FindAsync(assetId.Value);
-                if (asset != null)
-                {
-                    asset.Quantity = await _context.Tablets.CountAsync(t => t.AssetId == asset.Id);
-                    _context.Entry(asset).State = EntityState.Modified;
-                    await _context.SaveChangesAsync();
-                }
+                asset.Quantity = await _context.Tablets.CountAsync(t => t.AssetId == asset.Id);
+                await _context.SaveChangesAsync();
             }
 
             return NoContent();
@@ -295,7 +280,7 @@ namespace backend_app.Controllers
         public async Task<IActionResult> CheckDuplicate([FromQuery] string assetTag)
         {
             bool exists = await _context.Tablets
-                .AnyAsync(t => t.AssetTag.ToLower() == assetTag.ToLower());
+                .AnyAsync(t => (t.AssetTag ?? "").ToLower() == assetTag.ToLower());
 
             return Ok(new { exists });
         }

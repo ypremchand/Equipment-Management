@@ -139,7 +139,7 @@ function Requests() {
                       Approve
                     </Button>
                   )}
-                {/* Once the status is approved, disable Reject Button */}
+                  {/* Once the status is approved, disable Reject Button */}
                   {(req.status || "").toLowerCase() === "pending" && (
                     <Button
                       variant="danger"
@@ -481,4 +481,3 @@ function ViewAssignedModal({ show, onHide, request }) {
     </Modal>
   );
 }
-

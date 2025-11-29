@@ -239,7 +239,6 @@ namespace backend_app.Controllers
             }
 
             await _context.SaveChangesAsync();
-
             return Ok(new { message = "Request updated successfully." });
         }
 

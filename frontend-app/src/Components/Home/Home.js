@@ -57,7 +57,7 @@ function Home() {
               {assets.map((asset) => (
                 <tr key={asset.id}>
                   <td>{asset.name}</td>
-                  <td>{asset.quantity}</td>
+                  <td>{asset.totalQuantity}</td>
                   <td>
                     <button
                       className="btn btn-warning btn-sm me-2"

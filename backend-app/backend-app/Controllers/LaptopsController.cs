@@ -19,13 +19,6 @@ namespace backend_app.Controllers
             _context = context;
         }
 
-        private string Normalize(string? value)
-        {
-            return string.IsNullOrWhiteSpace(value)
-                ? ""
-                : value.Trim().ToLower().Replace(" ", "");
-        }
-
         // ============================================================
         // GET ALL LAPTOPS (Search + Filters + Sorting + Pagination)
         // ============================================================
@@ -46,77 +39,74 @@ namespace backend_app.Controllers
             if (page <= 0) page = 1;
             if (pageSize <= 0) pageSize = 10;
 
-            // 1️⃣ START QUERY
             var query = _context.Laptops
                 .Include(l => l.Asset)
                 .AsQueryable();
 
-            // 2️⃣ APPLY SEARCH
+            // 1️⃣ SEARCH (null-safe)
             if (!string.IsNullOrWhiteSpace(search))
             {
-                string s = search.Trim().ToLower();
+                var s = search.Trim().ToLower().Replace(" ", "");
 
                 query = query.Where(l =>
-                    l.Brand.ToLower().Contains(s) ||
-                    l.ModelNumber.ToLower().Contains(s) ||
-                    l.AssetTag.ToLower().Contains(s) ||
-                    l.Processor.ToLower().Contains(s) ||
-                    l.Ram.ToLower().Contains(s) ||
-                    l.Storage.ToLower().Contains(s) ||
-                    l.OperatingSystem.ToLower().Contains(s) ||
-                    l.Location.ToLower().Contains(s)
+                    ((l.Brand ?? "").ToLower().Replace(" ", "")).Contains(s) ||
+                    ((l.ModelNumber ?? "").ToLower().Replace(" ", "")).Contains(s) ||
+                    ((l.AssetTag ?? "").ToLower().Replace(" ", "")).Contains(s) ||
+                    ((l.Processor ?? "").ToLower().Replace(" ", "")).Contains(s) ||
+                    ((l.Ram ?? "").ToLower().Replace(" ", "")).Contains(s) ||
+                    ((l.Storage ?? "").ToLower().Replace(" ", "")).Contains(s) ||
+                    ((l.OperatingSystem ?? "").ToLower().Replace(" ", "")).Contains(s) ||
+                    ((l.Location ?? "").ToLower().Replace(" ", "")).Contains(s)
                 );
-
             }
 
-            // 3️⃣ APPLY FILTERS
-            // 3️⃣ APPLY FILTERS (EF-friendly)
+            // 2️⃣ FILTERS
             if (!string.IsNullOrWhiteSpace(brand))
             {
-                string b = brand.Trim().ToLower().Replace(" ", "");
+                var b = brand.Trim().ToLower().Replace(" ", "");
                 query = query.Where(l =>
-                    (l.Brand ?? "").ToLower().Replace(" ", "").Contains(b)
-                );
+                    ((l.Brand ?? "").ToLower().Replace(" ", "")).Contains(b));
             }
 
             if (!string.IsNullOrWhiteSpace(ram))
             {
-                string r = ram.Trim().ToLower().Replace(" ", "");
+                var r = ram.Trim().ToLower().Replace(" ", "");
                 query = query.Where(l =>
-                    (l.Ram ?? "").ToLower().Replace(" ", "").Contains(r)
-                );
+                    ((l.Ram ?? "").ToLower().Replace(" ", "")).Contains(r));
             }
 
             if (!string.IsNullOrWhiteSpace(storage))
             {
-                string s = storage.Trim().ToLower().Replace(" ", "");
+                var st = storage.Trim().ToLower().Replace(" ", "");
                 query = query.Where(l =>
-                    (l.Storage ?? "").ToLower().Replace(" ", "").Contains(s)
-                );
+                    ((l.Storage ?? "").ToLower().Replace(" ", "")).Contains(st));
             }
 
             if (!string.IsNullOrWhiteSpace(location))
             {
-                // normalize requested location (remove extra spaces and lower-case)
-                string loc = location.Trim().ToLower().Replace(" ", "");
-
-                // Build a pattern of comma-wrapped normalized locations so we can match whole items:
-                // e.g. if stored "Bangalore, Chennai" -> we check ",bangalore,chennai,".Contains(",chennai,")
+                var loc = location.Trim().ToLower().Replace(" ", "");
                 query = query.Where(l =>
-                    ("," + ((l.Location ?? "").ToLower().Replace(" ", "")) + ",").Contains("," + loc + ",")
-                );
+                    ("," + ((l.Location ?? "").ToLower().Replace(" ", "")) + ",")
+                        .Contains("," + loc + ","));
             }
-
 
             if (!string.IsNullOrWhiteSpace(operatingSystem))
             {
-                string os = operatingSystem.Trim().ToLower().Replace(" ", "");
+                var os = operatingSystem.Trim().ToLower().Replace(" ", "");
                 query = query.Where(l =>
-                    (l.OperatingSystem ?? "").ToLower().Replace(" ", "").Contains(os)
-                );
+                    ((l.OperatingSystem ?? "").ToLower().Replace(" ", "")).Contains(os));
             }
 
+            // 3️⃣ EXCLUDE ASSIGNED LAPTOPS
+            var assignedLaptopIds = await _context.AssignedAssets
+                .Where(a =>
+                    a.AssetType != null &&
+                    a.Status == "Assigned" &&
+                    a.AssetType.ToLower() == "laptop")
+                .Select(a => a.AssetTypeItemId)
+                .ToListAsync();
 
+            query = query.Where(l => !assignedLaptopIds.Contains(l.Id));
 
             // 4️⃣ SORTING
             bool desc = sortDir?.ToLower() == "desc";
@@ -133,17 +123,8 @@ namespace backend_app.Controllers
                 _ => desc ? query.OrderByDescending(l => l.Id) : query.OrderBy(l => l.Id),
             };
 
-            // 5️⃣ REMOVE ASSIGNED LAPTOPS (AFTER SEARCH & FILTERS)
-            var assignedLaptopIds = await _context.AssignedAssets
-                .Where(a => a.AssetType.ToLower() == "laptop" && a.Status == "Assigned")
-                .Select(a => a.AssetTypeItemId)
-                .ToListAsync();
-
-            query = query.Where(l => !assignedLaptopIds.Contains(l.Id));
-
-            // 6️⃣ PAGINATION
+            // 5️⃣ PAGINATION
             var totalItems = await query.CountAsync();
-
             var laptops = await query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -161,6 +142,9 @@ namespace backend_app.Controllers
             });
         }
 
+        // ============================================================
+        // OPTIONS for dropdowns (brand/ram/storage/location)
+        // ============================================================
         [HttpGet("options")]
         public async Task<IActionResult> GetOptions()
         {
@@ -185,18 +169,15 @@ namespace backend_app.Controllers
                 .OrderBy(x => x)
                 .ToListAsync();
 
-            // Fetch raw location strings from DB (e.g. "Bangalore, Chennai")
             var rawLocations = await _context.Laptops
                 .Select(l => l.Location)
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .ToListAsync();
 
-            // Split (in-memory), normalize and distinct
             var locations = rawLocations
                 .SelectMany(x => x.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
                 .Select(x => x.Trim())
                 .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Select(x => x) // keep original capitalization if you want; or .ToLower() for normalized list
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .OrderBy(x => x)
                 .ToList();
@@ -210,10 +191,8 @@ namespace backend_app.Controllers
             });
         }
 
-
-
         // ============================================================
-        // GET SINGLE LAPTOP BY ID
+        // GET SINGLE LAPTOP
         // ============================================================
         [HttpGet("{id}")]
         public async Task<ActionResult<Laptop>> GetLaptop(int id)
@@ -234,13 +213,17 @@ namespace backend_app.Controllers
         [HttpPost]
         public async Task<ActionResult<Laptop>> PostLaptop([FromBody] Laptop laptop)
         {
+            if (laptop.AssetTag == null)
+                return BadRequest(new { message = "AssetTag is required" });
+
             bool exists = await _context.Laptops
-                .AnyAsync(l => l.AssetTag.ToLower() == laptop.AssetTag.ToLower());
+                .AnyAsync(l => (l.AssetTag ?? "").ToLower() == laptop.AssetTag.ToLower());
 
             if (exists)
                 return BadRequest(new { message = "Asset number already exists" });
 
-            var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Name.ToLower().Contains("laptop"));
+            var asset = await _context.Assets
+                .FirstOrDefaultAsync(a => a.Name.ToLower() == "laptops");
 
             if (asset == null)
             {
@@ -266,10 +249,14 @@ namespace backend_app.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutLaptop(int id, [FromBody] Laptop laptop)
         {
-            laptop.Id = id;
+            if (id != laptop.Id && laptop.Id != 0)
+                laptop.Id = id;
+
+            if (laptop.AssetTag == null)
+                return BadRequest(new { message = "AssetTag is required" });
 
             bool exists = await _context.Laptops
-                .AnyAsync(l => l.Id != id && l.AssetTag.ToLower() == laptop.AssetTag.ToLower());
+                .AnyAsync(l => l.Id != id && (l.AssetTag ?? "").ToLower() == laptop.AssetTag.ToLower());
 
             if (exists)
                 return BadRequest(new { message = "Another laptop with the same AssetTag exists" });
@@ -282,10 +269,10 @@ namespace backend_app.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!_context.Laptops.Any(e => e.Id == id))
+                if (!await _context.Laptops.AnyAsync(e => e.Id == id))
                     return NotFound();
-                else
-                    throw;
+
+                throw;
             }
 
             if (laptop.AssetId.HasValue)
@@ -351,7 +338,7 @@ namespace backend_app.Controllers
                 return BadRequest(new { message = "AssetTag is required" });
 
             bool exists = await _context.Laptops
-                .AnyAsync(l => l.AssetTag.ToLower() == assetTag.ToLower());
+                .AnyAsync(l => (l.AssetTag ?? "").ToLower() == assetTag.ToLower());
 
             return Ok(new { exists });
         }

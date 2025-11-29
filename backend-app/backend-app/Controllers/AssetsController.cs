@@ -2,10 +2,6 @@
 using backend_app.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace backend_app.Controllers
 {
@@ -20,23 +16,17 @@ namespace backend_app.Controllers
             _context = context;
         }
 
-        // ---------------------------------------------
-        // ✅ GET ALL ASSETS WITH AVAILABLE COUNT
-        // ---------------------------------------------
+        // ============================================================
+        // GET ALL ASSETS (with available quantity)
+        // ============================================================
         [HttpGet]
         public async Task<IActionResult> GetAssets()
         {
             var assets = await _context.Assets.ToListAsync();
 
-            // Fetch all assigned assets
             var assigned = await _context.AssignedAssets
                 .Where(a => a.Status == "Assigned")
                 .ToListAsync();
-
-            // Fetch concrete items (laptops, mobiles, tablets, etc.)
-            var laptops = await _context.Laptops.ToListAsync();
-            var mobiles = await _context.Mobiles.ToListAsync();
-            var tablets = await _context.Tablets.ToListAsync();
 
             var result = assets.Select(a =>
             {
@@ -46,18 +36,13 @@ namespace backend_app.Controllers
                 string key = a.Name.ToLower();
 
                 if (key == "laptops")
-                {
                     assignedCount = assigned.Count(x => x.AssetType == "laptop");
-                }
+
                 else if (key == "mobiles")
-                {
                     assignedCount = assigned.Count(x => x.AssetType == "mobile");
-                }
+
                 else if (key == "tablets")
-                {
                     assignedCount = assigned.Count(x => x.AssetType == "tablet");
-                }
-                // You can extend this for Desktops, Printers etc.
 
                 int available = Math.Max(0, total - assignedCount);
 
@@ -67,16 +52,16 @@ namespace backend_app.Controllers
                     name = a.Name,
                     totalQuantity = total,
                     assignedQuantity = assignedCount,
-                    quantity = available  // 👈 Use this in Home component
+                    quantity = available
                 };
             });
 
             return Ok(result);
         }
 
-        // ---------------------------------------------
-        // GET BY ID
-        // ---------------------------------------------
+        // ============================================================
+        // GET SINGLE ASSET
+        // ============================================================
         [HttpGet("{id}")]
         public async Task<IActionResult> GetAsset(int id)
         {
@@ -87,9 +72,9 @@ namespace backend_app.Controllers
             return Ok(asset);
         }
 
-        // ---------------------------------------------
-        // CREATE
-        // ---------------------------------------------
+        // ============================================================
+        // CREATE ASSET
+        // ============================================================
         [HttpPost]
         public async Task<ActionResult<Asset>> CreateAsset(Asset asset)
         {
@@ -99,29 +84,29 @@ namespace backend_app.Controllers
             return CreatedAtAction(nameof(GetAsset), new { id = asset.Id }, asset);
         }
 
-        // ---------------------------------------------
-        // UPDATE
-        // ---------------------------------------------
+        // ============================================================
+        // UPDATE ASSET
+        // ============================================================
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateAsset(int id, Asset updatedAsset)
         {
             if (id != updatedAsset.Id)
-                return BadRequest("Asset ID mismatch");
+                return BadRequest("ID mismatch");
 
-            var existingAsset = await _context.Assets.FindAsync(id);
-            if (existingAsset == null)
+            var existing = await _context.Assets.FindAsync(id);
+            if (existing == null)
                 return NotFound();
 
-            existingAsset.Name = updatedAsset.Name;
+            existing.Name = updatedAsset.Name;
+            existing.Quantity = updatedAsset.Quantity;
 
             await _context.SaveChangesAsync();
-
             return NoContent();
         }
 
-        // ---------------------------------------------
-        // DELETE
-        // ---------------------------------------------
+        // ============================================================
+        // DELETE ASSET
+        // ============================================================
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAsset(int id)
         {

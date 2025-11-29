@@ -200,12 +200,12 @@ export default function Mobiles() {
     setShowForm(false);
   };
 
-   const toggleSort = (field) => {
+  const toggleSort = (field) => {
     setSort((s) => (s.by === field ? { by: field, dir: s.dir === "asc" ? "desc" : "asc" } : { by: field, dir: "asc" }));
   };
 
   // Export Helpers
- 
+
 
   const exportToPDF = () => {
     if (!mobiles.length) return alert("No data");
@@ -313,7 +313,7 @@ export default function Mobiles() {
               Reset
             </button>
 
-           
+
             <button className="btn btn-outline-danger" onClick={exportToPDF}>
               Export PDF
             </button>
@@ -324,7 +324,7 @@ export default function Mobiles() {
       {!showForm && (
         <div className="text-center mb-3">
           <button className="btn btn-success" onClick={() => setShowForm(true)}>
-            ➕ Add Mobile
+            ➕ Add New Mobile
           </button>
         </div>
       )}
@@ -373,36 +373,35 @@ export default function Mobiles() {
             <table className="table table-bordered table-striped text-center align-middle">
               <thead className="table-dark">
                 <tr>
-                  <th onClick={() => toggleSort("id")} style={{ cursor: "pointer" }}># {sort.by === "id" ? (sort.dir === "asc" ? "▲" : "▼") : ""}</th>
-                  <th onClick={() => toggleSort("brand")} style={{ cursor: "pointer" }}>Brand {sort.by === "brand" ? (sort.dir === "asc" ? "▲" : "▼") : ""}</th>
-                  <th>Model</th>                    
-                  <th>IMEI</th>
-                  <th>Processor</th>                   
-                  <th>RAM</th>                 
-                  <th>Storage</th>                   
-                  <th>Location</th>                  
+                  <th onClick={() => toggleSort("id")} style={{ cursor: "pointer" }}>
+                    # {sort.by === "id" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                  </th>
+                  <th onClick={() => toggleSort("brand")} style={{ cursor: "pointer" }}>
+                    Brand {sort.by === "brand" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                  </th>
+                  <th>Model</th>
+                  <th>Asset Tag</th>
+                  <th>Processor</th>
+                  <th>RAM</th>
+                  <th>Storage</th>
+                  <th>Location</th>
                   <th>Actions</th>
                 </tr>
               </thead>
+
               <tbody>
                 {mobiles.map((m, idx) => (
                   <tr key={m.id}>
                     <td>{(page - 1) * pageSize + idx + 1}</td>
                     <td>{m.brand}</td>
                     <td>{m.model}</td>
-                    <td>{m.imeiNumber || m.IMEINumber}</td>
+                    <td>{m.assetTag}</td>
                     <td>{m.processor}</td>
                     <td>{m.ram}</td>
                     <td>{m.storage}</td>
                     <td>{m.location}</td>
                     <td className="d-flex justify-content-center gap-2">
-                      <button
-                        className="btn btn-info btn-sm"
-                        onClick={() => {
-                          setSelectedMobile(m);
-                          setShowModal(true);
-                        }}
-                      >
+                      <button className="btn btn-info btn-sm" onClick={() => { setSelectedMobile(m); setShowModal(true); }}>
                         View
                       </button>
                       <button className="btn btn-warning btn-sm" onClick={() => handleEdit(m)}>
@@ -415,6 +414,7 @@ export default function Mobiles() {
                   </tr>
                 ))}
               </tbody>
+
             </table>
           </div>
         )}
@@ -427,7 +427,7 @@ export default function Mobiles() {
           disabled={page === 1}
           onClick={() => setPage((p) => Math.max(1, p - 1))}
         >
-          ◀ Prev
+          ◀️ Prev
         </Button>
         <span>
           Page {page} of {totalPages}
@@ -437,7 +437,7 @@ export default function Mobiles() {
           disabled={page === totalPages}
           onClick={() => setPage((p) => p + 1)}
         >
-          Next ▶
+          Next ▶️
         </Button>
       </div>
 

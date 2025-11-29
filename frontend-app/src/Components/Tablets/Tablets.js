@@ -373,16 +373,18 @@ export default function Tablets() {
             <table className="table table-bordered table-striped text-center">
               <thead className="table-dark">
                 <tr>
-                   <th onClick={() => toggleSort("id")} style={{ cursor: "pointer" }}># {sort.by === "id" ? (sort.dir === "asc" ? "▲" : "▼") : ""}</th>
-                  <th onClick={() => toggleSort("brand")} style={{ cursor: "pointer" }}>Brand {sort.by === "brand" ? (sort.dir === "asc" ? "▲" : "▼") : ""}</th>
+                  <th onClick={() => toggleSort("id")} style={{ cursor: "pointer" }}>
+                    # {sort.by === "id" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                  </th>
                   <th onClick={() => toggleSort("brand")} style={{ cursor: "pointer" }}>
-                    Brand
+                    Brand {sort.by === "brand" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
                   </th>
                   <th>Model</th>
+                  <th>Asset Tag</th>
                   <th>Processor</th>
-                  <th>RAM</th>                   
-                  <th>Storage</th>                 
-                  <th>Location</th>                  
+                  <th>RAM</th>
+                  <th>Storage</th>
+                  <th>Location</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -393,6 +395,7 @@ export default function Tablets() {
                     <td>{(page - 1) * pageSize + i + 1}</td>
                     <td>{t.brand}</td>
                     <td>{t.model}</td>
+                    <td>{t.assetTag}</td>
                     <td>{t.processor}</td>
                     <td>{t.ram}</td>
                     <td>{t.storage}</td>
@@ -411,6 +414,7 @@ export default function Tablets() {
                   </tr>
                 ))}
               </tbody>
+
             </table>
           </div>
         )}

@@ -106,6 +106,9 @@ namespace backend_app.Migrations
                     Location = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Remarks = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LastServicedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsAssigned = table.Column<bool>(type: "bit", nullable: false),
+                    AssignedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ReturnedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     AssetId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
@@ -139,6 +142,9 @@ namespace backend_app.Migrations
                     Location = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Remarks = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LastServicedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsAssigned = table.Column<bool>(type: "bit", nullable: false),
+                    AssignedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ReturnedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     AssetId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
@@ -172,6 +178,9 @@ namespace backend_app.Migrations
                     Location = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Remarks = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LastServicedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsAssigned = table.Column<bool>(type: "bit", nullable: false),
+                    AssignedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ReturnedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     AssetId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
