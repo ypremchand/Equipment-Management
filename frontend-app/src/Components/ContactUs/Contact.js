@@ -207,36 +207,65 @@ function Contact() {
   useEffect(() => {
     if (!editData || assets.length === 0) return;
 
-    setSelectedLocation(editData.location?.name || "");
-    setMessage(editData.message || "");
+    const loadForEdit = async () => {
 
-    const mapped = editData.assetRequestItems.map((item) => {
-      const assetObj = assets.find((a) => a.name === item.asset?.name);
+      // 1️⃣ Load dropdown data for every asset row
+      for (const item of editData.assetRequestItems) {
+        const assetName = item.asset?.name;
+        if (assetName) {
+          await loadCategoryItems(assetName);
+        }
+      }
 
-      return {
-        assetName: item.asset?.name || "",
-        quantity: assetObj ? assetObj.quantity : 0,
-        requestedQuantity: item.requestedQuantity || "",
+      // 2️⃣ Once data loaded → map saved values correctly
+      const mapped = editData.assetRequestItems.map((item) => {
+        const assetName = item.asset?.name;
+        const assetObj = assets.find((a) => a.name === assetName);
 
-        brand: item.brand || "",
-        processor: item.processor || "",
-        storage: item.storage || "",
-        ram: item.ram || "",
-        operatingSystem: item.operatingSystem || "",
-        networkType: item.networkType || "",
-        simType: item.simType || "",
-        simSupport: item.simSupport || "",
+        return {
+          assetName,
+          quantity: assetObj ? assetObj.quantity : 0,
+          requestedQuantity: item.requestedQuantity ?? "",
 
-        scannerType: item.scannerType || "",
-        scanSpeed: item.scanSpeed || "",
-        printerType: item.printerType || "",
-        paperSize: item.paperSize || "",
-        dpi: item.dpi || ""
-      };
-    });
+          brand: item.brand ?? "",
 
-    setAssetRequests(mapped);
-  }, [editData, assets]);
+          processor: assetName === "Laptops"
+            ? (item.processor || "i5")
+            : (item.processor || ""),
+
+          storage: assetName === "Laptops"
+            ? (item.storage || "512GB")
+            : (item.storage || ""),
+
+          ram: assetName === "Laptops"
+            ? (item.ram || "8GB")
+            : (item.ram || ""),
+
+          operatingSystem: assetName === "Laptops"
+            ? (item.operatingSystem || "Windows 10")
+            : (item.operatingSystem || ""),
+
+          networkType: item.networkType ?? "",
+          simType: item.simType ?? "",
+          simSupport: item.simSupport ?? "",
+          scannerType: item.scannerType ?? "",
+          scanSpeed: item.scanSpeed ?? "",
+          printerType: item.printerType ?? "",
+          paperSize: item.paperSize ?? "",
+          dpi: item.dpi ?? ""
+        };
+      });
+
+
+
+      // 3️⃣ Update UI state
+      setAssetRequests(mapped);
+      setSelectedLocation(editData.location?.name ?? "");
+      setMessage(editData.message ?? "");
+    };
+
+    loadForEdit();
+  }, [editData, assets, loadCategoryItems]);  // ← required
 
   // ============================================================
   // HANDLERS
@@ -245,6 +274,7 @@ function Contact() {
   const handleAssetChange = async (index, assetName) => {
     const assetObj = assets.find((a) => a.name === assetName);
 
+    // First reset row
     setAssetRequests((prev) => {
       const updated = [...prev];
       updated[index] = {
@@ -264,13 +294,29 @@ function Contact() {
         scanSpeed: "",
         printerType: "",
         paperSize: "",
-        dpi: ""
+        dpi: "",
       };
       return updated;
     });
 
+    // Load dropdown API data first
     await loadCategoryItems(assetName);
+
+    // Apply defaults AFTER the options exist
+    if (assetName === "Laptops") {
+      setAssetRequests((prev) => {
+        const updated = [...prev];
+        updated[index].processor = "i5";
+        updated[index].storage = "512GB";
+        updated[index].ram = "8GB";
+        updated[index].operatingSystem = "Windows 10";
+        return updated;
+      });
+    }
   };
+
+
+
 
   const handleSpecChange = (index, field, value) => {
     setAssetRequests((prev) => {
@@ -316,6 +362,12 @@ function Contact() {
 
   const handleRemoveRow = (index) => {
     setAssetRequests((prev) => prev.filter((_, i) => i !== index));
+  };
+
+
+  const includeDefault = (options, def) => {
+    if (!def) return options;
+    return options.includes(def) ? options : [def, ...options];
   };
 
   // SUBMIT
@@ -416,10 +468,22 @@ function Contact() {
           {/* ROWS */}
           {assetRequests.map((req, index) => {
             const brandOptions = getOptionsFor(req.assetName, "brand");
-            const processorOptions = getOptionsFor(req.assetName, "processor");
+            const processorOptions = includeDefault(
+              getOptionsFor(req.assetName, "processor"),
+              req.assetName === "Laptops" ? "i5" : ""
+            );
+
             const storageOptions = getOptionsFor(req.assetName, "storage");
-            const ramOptions = getOptionsFor(req.assetName, "ram");
-            const osOptions = getOptionsFor(req.assetName, "operatingSystem");
+            const ramOptions = includeDefault(
+              getOptionsFor(req.assetName, "ram"),
+              req.assetName === "Laptops" ? "8GB" : ""
+            );
+
+            const osOptions = includeDefault(
+              getOptionsFor(req.assetName, "operatingSystem"),
+              req.assetName === "Laptops" ? "Windows 10" : ""
+            );
+
             const networkOptions = getOptionsFor(req.assetName, "networkType");
             const simTypeOptions = getOptionsFor(req.assetName, "simType");
             const simSupportOptions = getOptionsFor(req.assetName, "simSupport");
@@ -458,6 +522,7 @@ function Contact() {
                   <div className="col-md-2">
                     <label className="form-label">Available</label>
                     <input className="form-control" value={req.quantity} readOnly />
+
                   </div>
 
                   {/* REQUEST QTY */}

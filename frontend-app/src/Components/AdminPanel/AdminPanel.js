@@ -48,6 +48,20 @@ function AdminPanel() {
     fetchLocations();
   }, []);
 
+
+
+  const assetRouteMap = {
+    laptops: "/laptops",
+    mobiles: "/mobiles",
+    tablets: "/tablets",
+    desktops: "/desktops",
+    printers: "/printers",
+    "scanner1(docs scanner)": "/scanner1",
+    "scanner2(icr scanner)": "/scanner2",
+    "scanner3(omr scanner)": "/scanner3",
+  };
+
+
   const handleAssetSubmit = async (e) => {
     e.preventDefault();
     if (!asset.trim()) return alert("Please enter an asset name");
@@ -181,12 +195,14 @@ function AdminPanel() {
                     <td>{i + 1}</td>
                     <td>
                       <Link
-                        to={`/${item.name.toLowerCase().replace(/\s+/g, "")}`} // ✅ Dynamic path
+                        to={assetRouteMap[item.name.toLowerCase()] || "/"}
                         className="text-decoration-none"
                       >
                         {item.name}
                       </Link>
                     </td>
+
+
 
                     <td>{item.totalQuantity}</td>
                     <td>

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using backend_app.Data;
 
@@ -11,9 +12,11 @@ using backend_app.Data;
 namespace backend_app.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251201060146_UpdatedAssetsRequestItem")]
+    partial class UpdatedAssetsRequestItem
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -109,6 +112,9 @@ namespace backend_app.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime>("AssignedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ReturnedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Status")
@@ -271,6 +277,9 @@ namespace backend_app.Migrations
                     b.Property<string>("Remarks")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("ReturnedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Storage")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -366,6 +375,9 @@ namespace backend_app.Migrations
                     b.Property<string>("Remarks")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("ReturnedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("SIMType")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -445,6 +457,9 @@ namespace backend_app.Migrations
 
                     b.Property<string>("Remarks")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ReturnedDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("SIMSupport")
                         .IsRequired()

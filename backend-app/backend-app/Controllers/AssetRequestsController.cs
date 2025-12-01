@@ -139,8 +139,6 @@ namespace backend_app.Controllers
                             a.Status,
                             a.AssignedDate,
 
-                            a.ReturnedDate, 
-
                             Detail = detail
                         };
 
@@ -249,7 +247,6 @@ namespace backend_app.Controllers
                             a.AssetTypeItemId,
                             a.Status,
                             a.AssignedDate,
-                            a.ReturnedDate,
                             Detail = detail
                         };
                     })
@@ -303,7 +300,6 @@ namespace backend_app.Controllers
                             {
                                 lap.IsAssigned = false;
                                 lap.AssignedDate = null;
-                                lap.ReturnedDate = DateTime.Now;
                             }
 
                             if (lap?.AssetId != null)
@@ -320,7 +316,6 @@ namespace backend_app.Controllers
                             {
                                 mob.IsAssigned = false;
                                 mob.AssignedDate = null;
-                                mob.ReturnedDate = DateTime.Now;
                             }
 
                             if (mob?.AssetId != null)
@@ -337,7 +332,6 @@ namespace backend_app.Controllers
                             {
                                 tab.IsAssigned = false;
                                 tab.AssignedDate = null;
-                                tab.ReturnedDate = DateTime.Now;
                             }
 
                             if (tab?.AssetId != null)
@@ -378,7 +372,6 @@ namespace backend_app.Controllers
                             {
                                 lap.IsAssigned = true;
                                 lap.AssignedDate = DateTime.Now;
-                                lap.ReturnedDate = null;
 
                                 if (lap.AssetId != null)
                                 {
@@ -395,7 +388,6 @@ namespace backend_app.Controllers
                             {
                                 mob.IsAssigned = true;
                                 mob.AssignedDate = DateTime.Now;
-                                mob.ReturnedDate = null;
 
                                 if (mob.AssetId != null)
                                 {
@@ -412,7 +404,6 @@ namespace backend_app.Controllers
                             {
                                 tab.IsAssigned = true;
                                 tab.AssignedDate = DateTime.Now;
-                                tab.ReturnedDate = null;
 
                                 if (tab.AssetId != null)
                                 {
@@ -495,11 +486,10 @@ namespace backend_app.Controllers
                         {
                             var lap = await _context.Laptops.FindAsync(assigned.AssetTypeItemId);
 
-                            if (lap != null && lap.IsAssigned == true && lap.ReturnedDate == null)
+                            if (lap != null && lap.IsAssigned == true)
                             {
                                 lap.IsAssigned = false;
                                 lap.AssignedDate = null;
-                                lap.ReturnedDate = DateTime.Now;
 
                                 if (lap.AssetId != null)
                                 {
@@ -513,11 +503,10 @@ namespace backend_app.Controllers
                         {
                             var mob = await _context.Mobiles.FindAsync(assigned.AssetTypeItemId);
 
-                            if (mob != null && mob.IsAssigned == true && mob.ReturnedDate == null)
+                            if (mob != null && mob.IsAssigned == true)
                             {
                                 mob.IsAssigned = false;
                                 mob.AssignedDate = null;
-                                mob.ReturnedDate = DateTime.Now;
 
                                 if (mob.AssetId != null)
                                 {
@@ -531,11 +520,10 @@ namespace backend_app.Controllers
                         {
                             var tab = await _context.Tablets.FindAsync(assigned.AssetTypeItemId);
 
-                            if (tab != null && tab.IsAssigned == true && tab.ReturnedDate == null)
+                            if (tab != null && tab.IsAssigned == true )
                             {
                                 tab.IsAssigned = false;
                                 tab.AssignedDate = null;
-                                tab.ReturnedDate = DateTime.Now;
 
                                 if (tab.AssetId != null)
                                 {
@@ -592,8 +580,28 @@ namespace backend_app.Controllers
                 {
                     i.Id,
                     RequestedQuantity = i.RequestedQuantity,
-                    Asset = new { i.Asset.Id, i.Asset.Name }
+                    Asset = new { i.Asset.Id, i.Asset.Name },
+
+                    // Laptops / Mobiles / Tablets
+                    Brand = i.Brand,
+                    Processor = i.Processor,
+                    Storage = i.Storage,
+                    Ram = i.Ram,
+                    OperatingSystem = i.OperatingSystem,
+                    NetworkType = i.NetworkType,
+                    SimType = i.SimType,
+                    SimSupport = i.SimSupport,
+
+                    // Scanners
+                    ScannerType = i.ScannerType,
+                    ScanSpeed = i.ScanSpeed,
+
+                    // Printers
+                    PrinterType = i.PrinterType,
+                    PaperSize = i.PaperSize,
+                    Dpi = i.Dpi
                 })
+
             });
         }
 

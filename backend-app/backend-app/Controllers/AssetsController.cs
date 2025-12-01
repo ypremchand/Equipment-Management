@@ -31,18 +31,11 @@ namespace backend_app.Controllers
             var result = assets.Select(a =>
             {
                 int total = a.Quantity;
-                int assignedCount = 0;
 
-                string key = a.Name.ToLower();
-
-                if (key == "laptops")
-                    assignedCount = assigned.Count(x => x.AssetType == "laptop");
-
-                else if (key == "mobiles")
-                    assignedCount = assigned.Count(x => x.AssetType == "mobile");
-
-                else if (key == "tablets")
-                    assignedCount = assigned.Count(x => x.AssetType == "tablet");
+                int assignedCount = assigned.Count(x =>
+                    x.AssetType != null &&
+                    x.AssetType.Trim().ToLower() == a.Name.Trim().ToLower()
+                );
 
                 int available = Math.Max(0, total - assignedCount);
 
@@ -55,6 +48,7 @@ namespace backend_app.Controllers
                     quantity = available
                 };
             });
+
 
             return Ok(result);
         }

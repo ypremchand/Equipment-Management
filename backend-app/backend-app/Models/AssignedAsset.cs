@@ -14,7 +14,4 @@ public class AssignedAsset
     public string Status { get; set; } = "Assigned";
 
     public DateTime AssignedDate { get; set; } = DateTime.Now;
-
-    // ✅ Add this
-    public DateTime? ReturnedDate { get; set; }
 }

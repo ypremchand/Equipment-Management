@@ -95,6 +95,7 @@ function AssignedItems() {
                       <th>Asset Tag</th>
                       <th>Status</th>
                       <th>Assigned Date</th>
+                      
                       <th>Returned Date</th>
                     </tr>
                   </thead>
@@ -106,6 +107,7 @@ function AssignedItems() {
                         <td>{a.detail?.assetTag}</td>
                         <td>{a.status}</td>
                         <td>{a.assignedDate}</td>
+                        
                         <td>{a.returnedDate}</td>
                       </tr>
                     ))}

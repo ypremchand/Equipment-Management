@@ -14,8 +14,10 @@ import Laptops from "./Components/Laptops/Laptops";
 import Mobiles from "./Components/Mobiles/Mobiles";
 import Tablets from "./Components/Tablets/Tablets";
 import Desktops from "./Components/Desktops/Desktops";
-import Scanners from "./Components/Scanners/Scanners";
 import Printers from "./Components/Printers/Printers";
+import Scanner1 from "./Components/Scanner1/Scanner1";
+import Scanner2 from "./Components/Scanner2/Scanner2";
+import Scanner3 from "./Components/Scanner3/Scanner3";
 import ContactedUs from "./Components/ContactedUs/ContactedUs";
 import AdminDeleteHistory from "./Components/AdminDeleteHistory/AdminDeleteHistory";
 import UserDeleteHistory from "./Components/UserDeleteHistory/UserDeleteHistory";
@@ -90,12 +92,20 @@ function App() {
               element={user?.email?.includes("@admin") ? <Desktops /> : <Navigate to="/" />}
             />
             <Route
-              path="/scanners"
-              element={user?.email?.includes("@admin") ? <Scanners /> : <Navigate to="/" />}
-            />
-            <Route
               path="/printers"
               element={user?.email?.includes("@admin") ? <Printers /> : <Navigate to="/" />}
+            />
+            <Route
+              path="/scanner1"
+              element={user?.email?.includes("@admin") ? <Scanner1 /> : <Navigate to="/" />}
+            />
+            <Route
+              path="/scanner2"
+              element={user?.email?.includes("@admin") ? <Scanner2 /> : <Navigate to="/" />}
+            />
+            <Route
+              path="/scanner3"
+              element={user?.email?.includes("@admin") ? <Scanner3 /> : <Navigate to="/" />}
             />
             <Route
               path="/requests"

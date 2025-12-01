@@ -29,7 +29,6 @@ namespace backend_app.Models
         // 🔥 Required for assignment tracking
         public bool IsAssigned { get; set; } = false;
         public DateTime? AssignedDate { get; set; }
-        public DateTime? ReturnedDate { get; set; }
 
         [ForeignKey("Asset")]
         public int? AssetId { get; set; }

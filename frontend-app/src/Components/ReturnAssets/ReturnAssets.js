@@ -14,7 +14,6 @@ function ReturnAssets() {
   const user = saved ? JSON.parse(saved) : null;
 
   const API = "http://localhost:5083/api/assetrequests";
-  const RETURN_API = "http://localhost:5083/api/contact/return";
 
   // Safe object getter (handles both PascalCase & camelCase)
   const get = (obj, ...keys) => {
@@ -60,18 +59,7 @@ function ReturnAssets() {
     fetchRequests();
   }, [fetchRequests]);
 
-  const handleReturn = async (id) => {
-    if (!window.confirm("Are you sure you want to return these assets?")) return;
 
-    try {
-      await axios.put(`${RETURN_API}/${id}`);
-      alert("Assets returned successfully!");
-      fetchRequests();
-    } catch (err) {
-      console.error("Error returning assets:", err);
-      alert("Failed to return assets.");
-    }
-  };
 
   return (
     <div className="return-asset-page container mt-4">
@@ -151,16 +139,13 @@ function ReturnAssets() {
 
                       {status === "Approved" && (
                         <button
-                          className="btn btn-sm btn-danger"
-                          onClick={() => handleReturn(id)}
+                          className="btn btn-sm btn-success"
                         >
-                          Return
+                          Approved
                         </button>
                       )}
-
-                      {status === "Returned" && <em>Returned</em>}
+                      {status === "approved" && <em>Approved</em>}
                     </td>
-
                   </tr>
                 );
               })}

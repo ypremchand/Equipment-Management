@@ -16,7 +16,90 @@ namespace backend_app.Controllers
             _context = context;
         }
 
-        // ✅ POST: api/contact (User creates request)
+        // ============================================================
+        // CATEGORY DETECTOR
+        // ============================================================
+        private string GetCategoryFromAssetName(string assetName)
+        {
+            assetName = assetName.ToLower();
+
+            if (assetName.Contains("laptop")) return "Laptop";
+            if (assetName.Contains("mobile")) return "Mobile";
+            if (assetName.Contains("tablet")) return "Tablet";
+            if (assetName.Contains("scanner")) return "Scanner";
+            if (assetName.Contains("printer")) return "Printer";
+
+            return "Unknown";
+        }
+
+        // ============================================================
+        // CLEAN SPECS BASED ON CATEGORY
+        // ============================================================
+        private void CleanSpecsByCategory(string category, AssetRequestItemDto item)
+        {
+            if (category == "Laptop")
+            {
+                item.NetworkType = null;
+                item.SimType = null;
+                item.SimSupport = null;
+                item.ScannerType = null;
+                item.ScanSpeed = null;
+                item.PrinterType = null;
+                item.PaperSize = null;
+                item.Dpi = null;
+            }
+            else if (category == "Mobile")
+            {
+                item.OperatingSystem = null;
+                item.SimSupport = null;
+                item.ScannerType = null;
+                item.ScanSpeed = null;
+                item.PrinterType = null;
+                item.PaperSize = null;
+                item.Dpi = null;
+            }
+            else if (category == "Tablet")
+            {
+                item.SimType = null;
+                item.ScannerType = null;
+                item.ScanSpeed = null;
+                item.PrinterType = null;
+                item.PaperSize = null;
+                item.Dpi = null;
+            }
+            else if (category == "Scanner")
+            {
+                item.Brand = null;
+                item.Processor = null;
+                item.Storage = null;
+                item.Ram = null;
+                item.OperatingSystem = null;
+                item.NetworkType = null;
+                item.SimType = null;
+                item.SimSupport = null;
+                item.PrinterType = null;
+                item.PaperSize = null;
+                item.Dpi = null;
+            }
+            else if (category == "Printer")
+            {
+                item.Brand = null;
+                item.Processor = null;
+                item.Storage = null;
+                item.Ram = null;
+                item.OperatingSystem = null;
+                item.NetworkType = null;
+                item.SimType = null;
+                item.SimSupport = null;
+                item.ScannerType = null;
+                item.ScanSpeed = null;
+            }
+        }
+
+
+        // ============================================================
+        // POST: CREATE NEW REQUEST
+        // ============================================================
         [HttpPost]
         public async Task<IActionResult> CreateContact([FromBody] AssetRequestDto request)
         {
@@ -37,8 +120,7 @@ namespace backend_app.Controllers
             if (location == null)
                 return NotFound("Location not found.");
 
-
-            // ✅ Create asset request (Pending status)
+            // Create asset request
             var assetRequest = new AssetRequest
             {
                 UserId = user.Id,
@@ -51,139 +133,48 @@ namespace backend_app.Controllers
             _context.AssetRequests.Add(assetRequest);
             await _context.SaveChangesAsync();
 
-            // ✅ Add request items
+            // Save items
             foreach (var item in request.AssetRequests)
             {
                 var asset = await _context.Assets
-    .FirstOrDefaultAsync(a => a.Name.ToLower() == item.Asset.ToLower());
-
+                    .FirstOrDefaultAsync(a => a.Name.ToLower() == item.Asset.ToLower());
 
                 if (asset != null)
                 {
+                    string category = GetCategoryFromAssetName(asset.Name);
+                    CleanSpecsByCategory(category, item); // ⭐ Clean fields
+
                     _context.AssetRequestItems.Add(new AssetRequestItem
                     {
                         AssetRequestId = assetRequest.Id,
                         AssetId = asset.Id,
-                        RequestedQuantity = item.RequestedQuantity
+                        RequestedQuantity = item.RequestedQuantity,
+
+                        Brand = item.Brand,
+                        Processor = item.Processor,
+                        Storage = item.Storage,
+                        Ram = item.Ram,
+                        OperatingSystem = item.OperatingSystem,
+                        NetworkType = item.NetworkType,
+                        SimType = item.SimType,
+                        SimSupport = item.SimSupport,
+                        ScannerType = item.ScannerType,
+                        ScanSpeed = item.ScanSpeed,
+                        PrinterType = item.PrinterType,
+                        PaperSize = item.PaperSize,
+                        Dpi = item.Dpi
                     });
                 }
             }
 
             await _context.SaveChangesAsync();
-
-            return Ok(new { message = "✅ Request submitted successfully. Waiting for admin approval." });
+            return Ok(new { message = "Request submitted successfully." });
         }
 
-        // ✅ GET: api/contact?email=user@mail.com (Get user's asset requests)
-        [HttpGet]
-        public async Task<IActionResult> GetRequests([FromQuery] string? email)
-        {
-            var query = _context.AssetRequests
-                .Include(r => r.AssetRequestItems)
-                    .ThenInclude(i => i.Asset)
-                .Include(r => r.Location)
-                .Include(r => r.User)
-                .AsQueryable();
 
-            if (!string.IsNullOrWhiteSpace(email))
-            {
-                query = query.Where(r =>
-                    string.Equals(r.User.Email, email, StringComparison.OrdinalIgnoreCase));
-            }
-
-            var result = await query
-                .Select(r => new
-                {
-                    r.Id,
-                    r.RequestDate,
-                    r.Status,
-                    Location = r.Location.Name,
-                    AssetRequestItems = r.AssetRequestItems.Select(i => new
-                    {
-                        AssetName = i.Asset.Name,
-                        i.RequestedQuantity
-                    })
-                })
-                .OrderByDescending(r => r.RequestDate)
-                .ToListAsync();
-
-            return Ok(result);
-        }
-
-        // ✅ PUT: api/contact/return/{id}
-        [HttpPut("return/{id}")]
-        public async Task<IActionResult> ReturnAssets(int id)
-        {
-            var request = await _context.AssetRequests
-                .Include(r => r.AssetRequestItems)
-                    .ThenInclude(i => i.AssignedAssets)
-                .FirstOrDefaultAsync(r => r.Id == id);
-
-            if (request == null)
-                return NotFound("Request not found.");
-
-            if (string.Equals(request.Status, "Returned", StringComparison.OrdinalIgnoreCase))
-                return BadRequest("Assets already returned.");
-
-            using var transaction = await _context.Database.BeginTransactionAsync();
-
-            try
-            {
-                foreach (var item in request.AssetRequestItems)
-                {
-                    foreach (var assigned in item.AssignedAssets)
-                    {
-                        // Mark return
-                        assigned.Status = "Returned";
-                        assigned.ReturnedDate = DateTime.Now;
-
-                        var type = assigned.AssetType.ToLower();
-
-                        if (string.Equals(type, "laptop", StringComparison.OrdinalIgnoreCase))
-                        {
-                            var lap = await _context.Laptops.FindAsync(assigned.AssetTypeItemId);
-                            if (lap?.AssetId != null)
-                            {
-                                var asset = await _context.Assets.FindAsync(lap.AssetId.Value);
-                                if (asset != null)
-                                    asset.Quantity += 1;
-                            }
-                        }
-                        else if (string.Equals(type, "mobile", StringComparison.OrdinalIgnoreCase))
-                        {
-                            var mob = await _context.Mobiles.FindAsync(assigned.AssetTypeItemId);
-                            if (mob?.AssetId != null)
-                            {
-                                var asset = await _context.Assets.FindAsync(mob.AssetId.Value);
-                                if (asset != null)
-                                    asset.Quantity += 1;
-                            }
-                        }
-                        else if (string.Equals(type, "tablet", StringComparison.OrdinalIgnoreCase))
-                        {
-                            var tab = await _context.Tablets.FindAsync(assigned.AssetTypeItemId);
-                            if (tab?.AssetId != null)
-                            {
-                                var asset = await _context.Assets.FindAsync(tab.AssetId.Value);
-                                if (asset != null)
-                                    asset.Quantity += 1;
-                            }
-                        }
-                    }
-                }
-
-                request.Status = "Returned";
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-
-                return Ok(new { message = "Assets returned successfully!" });
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                return StatusCode(500, $"Error returning assets: {ex.Message}");
-            }
-        }
+        // ============================================================
+        // PUT: UPDATE REQUEST
+        // ============================================================
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateRequest(int id, [FromBody] AssetRequestDto request)
         {
@@ -197,7 +188,7 @@ namespace backend_app.Controllers
             if (existing == null)
                 return NotFound("Request not found.");
 
-            if (!string.Equals(existing.Status, "Pending", StringComparison.OrdinalIgnoreCase))
+            if (existing.Status != "Pending")
                 return BadRequest("Only pending requests can be edited.");
 
             // Update location
@@ -219,23 +210,41 @@ namespace backend_app.Controllers
                 user.PhoneNumber = request.PhoneNumber;
             }
 
-            // Remove old asset items
+            // Remove existing items
             _context.AssetRequestItems.RemoveRange(existing.AssetRequestItems);
 
-            // Add new items
+            // Add new cleaned items
             foreach (var item in request.AssetRequests)
             {
                 var asset = await _context.Assets
                     .FirstOrDefaultAsync(a => a.Name.ToLower() == item.Asset.ToLower());
 
-                if (asset == null) continue;
-
-                _context.AssetRequestItems.Add(new AssetRequestItem
+                if (asset != null)
                 {
-                    AssetRequestId = existing.Id,
-                    AssetId = asset.Id,
-                    RequestedQuantity = item.RequestedQuantity
-                });
+                    string category = GetCategoryFromAssetName(asset.Name);
+                    CleanSpecsByCategory(category, item); // ⭐ Clean fields
+
+                    _context.AssetRequestItems.Add(new AssetRequestItem
+                    {
+                        AssetRequestId = existing.Id,
+                        AssetId = asset.Id,
+                        RequestedQuantity = item.RequestedQuantity,
+
+                        Brand = item.Brand,
+                        Processor = item.Processor,
+                        Storage = item.Storage,
+                        Ram = item.Ram,
+                        OperatingSystem = item.OperatingSystem,
+                        NetworkType = item.NetworkType,
+                        SimType = item.SimType,
+                        SimSupport = item.SimSupport,
+                        ScannerType = item.ScannerType,
+                        ScanSpeed = item.ScanSpeed,
+                        PrinterType = item.PrinterType,
+                        PaperSize = item.PaperSize,
+                        Dpi = item.Dpi
+                    });
+                }
             }
 
             await _context.SaveChangesAsync();
@@ -243,38 +252,39 @@ namespace backend_app.Controllers
         }
 
 
-        // ===============================
-        // ✅ DTOs (Warning-Free)
-        // ===============================
 
-        public class AssetRequestDto(
-     string Username,
-     string Email,
-     string PhoneNumber,
-     string Location,
-     string Message,
-     List<AssetRequestItemDto> AssetRequests)
+        // ============================================================
+        // DTOs
+        // ============================================================
+        public class AssetRequestDto
         {
-            public string Username { get; set; } = Username;
-            public string Email { get; set; } = Email;
-            public string PhoneNumber { get; set; } = PhoneNumber;
-            public string Location { get; set; } = Location;
-            public string Message { get; set; } = Message;
-
-            // Collection initialization simplified
-            public List<AssetRequestItemDto> AssetRequests { get; set; } = AssetRequests ?? new();
+            public string Username { get; set; }
+            public string Email { get; set; }
+            public string PhoneNumber { get; set; }
+            public string Location { get; set; }
+            public string Message { get; set; }
+            public List<AssetRequestItemDto> AssetRequests { get; set; }
         }
 
-
-        public class AssetRequestItemDto(
-    string Asset,
-    int RequestedQuantity,
-    int AvailableQuantity)
+        public class AssetRequestItemDto
         {
-            public string Asset { get; set; } = Asset;
-            public int RequestedQuantity { get; set; } = RequestedQuantity;
-            public int AvailableQuantity { get; set; } = AvailableQuantity;
-        }
+            public string Asset { get; set; }
+            public int RequestedQuantity { get; set; }
+            public int AvailableQuantity { get; set; }
 
+            public string? Brand { get; set; }
+            public string? Processor { get; set; }
+            public string? Storage { get; set; }
+            public string? Ram { get; set; }
+            public string? OperatingSystem { get; set; }
+            public string? NetworkType { get; set; }
+            public string? SimType { get; set; }
+            public string? SimSupport { get; set; }
+            public string? ScannerType { get; set; }
+            public string? ScanSpeed { get; set; }
+            public string? PrinterType { get; set; }
+            public string? PaperSize { get; set; }
+            public string? Dpi { get; set; }
+        }
     }
 }

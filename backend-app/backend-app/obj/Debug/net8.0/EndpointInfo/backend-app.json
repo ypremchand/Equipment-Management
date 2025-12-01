@@ -383,48 +383,6 @@
             "description": "OK"
           }
         }
-      },
-      "get": {
-        "tags": [
-          "Contact"
-        ],
-        "parameters": [
-          {
-            "name": "email",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/api/Contact/return/{id}": {
-      "put": {
-        "tags": [
-          "Contact"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
       }
     },
     "/api/Contact/{id}": {
@@ -1727,6 +1685,9 @@
             "type": "integer",
             "format": "int32"
           },
+          "assetRequest": {
+            "$ref": "#/components/schemas/AssetRequest"
+          },
           "assetId": {
             "type": "integer",
             "format": "int32"
@@ -1741,6 +1702,58 @@
           "approvedQuantity": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "brand": {
+            "type": "string",
+            "nullable": true
+          },
+          "processor": {
+            "type": "string",
+            "nullable": true
+          },
+          "storage": {
+            "type": "string",
+            "nullable": true
+          },
+          "ram": {
+            "type": "string",
+            "nullable": true
+          },
+          "operatingSystem": {
+            "type": "string",
+            "nullable": true
+          },
+          "networkType": {
+            "type": "string",
+            "nullable": true
+          },
+          "simType": {
+            "type": "string",
+            "nullable": true
+          },
+          "simSupport": {
+            "type": "string",
+            "nullable": true
+          },
+          "scannerType": {
+            "type": "string",
+            "nullable": true
+          },
+          "scanSpeed": {
+            "type": "string",
+            "nullable": true
+          },
+          "printerType": {
+            "type": "string",
+            "nullable": true
+          },
+          "paperSize": {
+            "type": "string",
+            "nullable": true
+          },
+          "dpi": {
+            "type": "string",
             "nullable": true
           },
           "assignedAssets": {
@@ -1767,6 +1780,58 @@
           "availableQuantity": {
             "type": "integer",
             "format": "int32"
+          },
+          "brand": {
+            "type": "string",
+            "nullable": true
+          },
+          "processor": {
+            "type": "string",
+            "nullable": true
+          },
+          "storage": {
+            "type": "string",
+            "nullable": true
+          },
+          "ram": {
+            "type": "string",
+            "nullable": true
+          },
+          "operatingSystem": {
+            "type": "string",
+            "nullable": true
+          },
+          "networkType": {
+            "type": "string",
+            "nullable": true
+          },
+          "simType": {
+            "type": "string",
+            "nullable": true
+          },
+          "simSupport": {
+            "type": "string",
+            "nullable": true
+          },
+          "scannerType": {
+            "type": "string",
+            "nullable": true
+          },
+          "scanSpeed": {
+            "type": "string",
+            "nullable": true
+          },
+          "printerType": {
+            "type": "string",
+            "nullable": true
+          },
+          "paperSize": {
+            "type": "string",
+            "nullable": true
+          },
+          "dpi": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -1822,11 +1887,6 @@
           "assignedDate": {
             "type": "string",
             "format": "date-time"
-          },
-          "returnedDate": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
           }
         },
         "additionalProperties": false
@@ -1913,11 +1973,6 @@
             "type": "boolean"
           },
           "assignedDate": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "returnedDate": {
             "type": "string",
             "format": "date-time",
             "nullable": true
@@ -2061,11 +2116,6 @@
             "format": "date-time",
             "nullable": true
           },
-          "returnedDate": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
           "assetId": {
             "type": "integer",
             "format": "int32",
@@ -2189,11 +2239,6 @@
             "type": "boolean"
           },
           "assignedDate": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "returnedDate": {
             "type": "string",
             "format": "date-time",
             "nullable": true
