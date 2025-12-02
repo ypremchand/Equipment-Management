@@ -131,6 +131,38 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "backend_app.Controllers.AssetRequestsController",
+    "Method": "RejectRequest",
+    "RelativePath": "api/AssetRequests/reject/{id}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_app.Controllers.AssetRequestsController",
+    "Method": "ReturnItem",
+    "RelativePath": "api/AssetRequests/return-item/{assignedId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "assignedId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "backend_app.Controllers.AssetsController",
     "Method": "GetAssets",
     "RelativePath": "api/Assets",

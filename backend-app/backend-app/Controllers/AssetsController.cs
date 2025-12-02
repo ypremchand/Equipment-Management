@@ -2,6 +2,7 @@
 using backend_app.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace backend_app.Controllers
 {
@@ -16,39 +17,74 @@ namespace backend_app.Controllers
             _context = context;
         }
 
+        // ---- same logic as in React normalizeType ----
+        private string NormalizeType(string? name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return string.Empty;
+
+            var n = name.Trim().ToLowerInvariant();
+
+            if (n.Contains("laptop")) return "laptop";
+            if (n.Contains("mobile")) return "mobile";
+            if (n.Contains("tablet")) return "tablet";
+
+            return n;
+        }
+
         // ============================================================
-        // GET ALL ASSETS (with available quantity)
+        // GET ALL ASSETS (with available quantity based on items)
         // ============================================================
         [HttpGet]
         public async Task<IActionResult> GetAssets()
         {
             var assets = await _context.Assets.ToListAsync();
 
-            var assigned = await _context.AssignedAssets
-                .Where(a => a.Status == "Assigned")
-                .ToListAsync();
+            // load concrete items once
+            var laptops = await _context.Laptops.ToListAsync();
+            var mobiles = await _context.Mobiles.ToListAsync();
+            var tablets = await _context.Tablets.ToListAsync();
 
             var result = assets.Select(a =>
             {
-                int total = a.Quantity;
+                var type = NormalizeType(a.Name);
 
-                int assignedCount = assigned.Count(x =>
-                    x.AssetType != null &&
-                    x.AssetType.Trim().ToLower() == a.Name.Trim().ToLower()
-                );
+                int total = 0;
+                int assigned = 0;
 
-                int available = Math.Max(0, total - assignedCount);
+                if (type == "laptop")
+                {
+                    total = laptops.Count(x => x.AssetId == a.Id);
+                    assigned = laptops.Count(x => x.AssetId == a.Id && x.IsAssigned);
+                }
+                else if (type == "mobile")
+                {
+                    total = mobiles.Count(x => x.AssetId == a.Id);
+                    assigned = mobiles.Count(x => x.AssetId == a.Id && x.IsAssigned);
+                }
+                else if (type == "tablet")
+                {
+                    total = tablets.Count(x => x.AssetId == a.Id);
+                    assigned = tablets.Count(x => x.AssetId == a.Id && x.IsAssigned);
+                }
+                else
+                {
+                    // For Desktops / Printers / Scanners (no item table yet),
+                    // fallback to the manual quantity field.
+                    total = a.Quantity;
+                    assigned = 0; // you can extend this later with AssignedAssets if needed
+                }
+
+                int available = Math.Max(0, total - assigned);
 
                 return new
                 {
                     id = a.Id,
                     name = a.Name,
                     totalQuantity = total,
-                    assignedQuantity = assignedCount,
-                    quantity = available
+                    assignedQuantity = assigned,
+                    quantity = available   // Admin panel uses this as "Available Qty"
                 };
             });
-
 
             return Ok(result);
         }

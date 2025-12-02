@@ -95,41 +95,65 @@ namespace backend_app.Controllers
                 r.Message,
                 User = new { r.User.Id, r.User.Name, r.User.Email },
                 Location = new { r.Location.Id, r.Location.Name },
+
                 AssetRequestItems = r.AssetRequestItems.Select(i => new
                 {
                     i.Id,
                     Asset = new { i.Asset.Id, i.Asset.Name },
                     i.RequestedQuantity,
                     i.ApprovedQuantity,
+
+                    // ✅ All filter fields included
+                    Brand = i.Brand,
+                    Processor = i.Processor,
+                    Storage = i.Storage,
+                    Ram = i.Ram,
+                    OperatingSystem = i.OperatingSystem,
+                    NetworkType = i.NetworkType,
+                    SimType = i.SimType,
+                    SimSupport = i.SimSupport,
+                    ScannerType = i.ScannerType,
+                    ScanSpeed = i.ScanSpeed,
+                    PrinterType = i.PrinterType,
+                    PaperSize = i.PaperSize,
+                    Dpi = i.Dpi,
+
+                    // Assigned items with details
                     AssignedAssets = i.AssignedAssets.Select(a =>
                     {
                         object detail = null;
                         var type = a.AssetType?.ToLowerInvariant();
-                        if (type == "laptop" && laptops.TryGetValue(a.AssetTypeItemId, out var lap)) detail = new
-                        {
-                            lap.Id,
-                            lap.Brand,
-                            lap.ModelNumber,
-                            lap.AssetTag,
-                            lap.PurchaseDate
-                        };
-                        else if (type == "mobile" && mobiles.TryGetValue(a.AssetTypeItemId, out var mob)) detail = new
-                        {
-                            mob.Id,
-                            mob.Brand,
-                            mob.Model,
-                            mob.IMEINumber,
-                            mob.AssetTag,
-                            mob.PurchaseDate
-                        };
-                        else if (type == "tablet" && tablets.TryGetValue(a.AssetTypeItemId, out var tab)) detail = new
-                        {
-                            tab.Id,
-                            tab.Brand,
-                            tab.Model,
-                            tab.AssetTag,
-                            tab.PurchaseDate
-                        };
+
+                        if (type == "laptop" && laptops.TryGetValue(a.AssetTypeItemId, out var lap))
+                            detail = new
+                            {
+                                lap.Id,
+                                lap.Brand,
+                                lap.ModelNumber,
+                                lap.AssetTag,
+                                lap.PurchaseDate
+                            };
+
+                        else if (type == "mobile" && mobiles.TryGetValue(a.AssetTypeItemId, out var mob))
+                            detail = new
+                            {
+                                mob.Id,
+                                mob.Brand,
+                                mob.Model,
+                                mob.IMEINumber,
+                                mob.AssetTag,
+                                mob.PurchaseDate
+                            };
+
+                        else if (type == "tablet" && tablets.TryGetValue(a.AssetTypeItemId, out var tab))
+                            detail = new
+                            {
+                                tab.Id,
+                                tab.Brand,
+                                tab.Model,
+                                tab.AssetTag,
+                                tab.PurchaseDate
+                            };
 
                         return new
                         {
@@ -138,13 +162,12 @@ namespace backend_app.Controllers
                             a.AssetTypeItemId,
                             a.Status,
                             a.AssignedDate,
-
                             Detail = detail
                         };
-
                     })
                 })
             });
+
 
             return Ok(result);
         }
@@ -167,7 +190,7 @@ namespace backend_app.Controllers
                 .OrderByDescending(r => r.RequestDate)
                 .ToListAsync();
 
-            // same projection pattern as GetAll to attach details
+            // --- Collect assigned item IDs
             var allLaptopIds = requests
                 .SelectMany(r => r.AssetRequestItems ?? Enumerable.Empty<AssetRequestItem>())
                 .SelectMany(i => i.AssignedAssets ?? Enumerable.Empty<AssignedAsset>())
@@ -192,10 +215,20 @@ namespace backend_app.Controllers
                 .Distinct()
                 .ToList();
 
-            var laptops = await _context.Laptops.Where(l => allLaptopIds.Contains(l.Id)).ToDictionaryAsync(l => l.Id);
-            var mobiles = await _context.Mobiles.Where(m => allMobileIds.Contains(m.Id)).ToDictionaryAsync(m => m.Id);
-            var tablets = await _context.Tablets.Where(t => allTabletIds.Contains(t.Id)).ToDictionaryAsync(t => t.Id);
+            // --- Load lookup tables
+            var laptops = await _context.Laptops
+                .Where(l => allLaptopIds.Contains(l.Id))
+                .ToDictionaryAsync(l => l.Id);
 
+            var mobiles = await _context.Mobiles
+                .Where(m => allMobileIds.Contains(m.Id))
+                .ToDictionaryAsync(m => m.Id);
+
+            var tablets = await _context.Tablets
+                .Where(t => allTabletIds.Contains(t.Id))
+                .ToDictionaryAsync(t => t.Id);
+
+            // --- Final DTO Projection (corrected!)
             var result = requests.Select(r => new
             {
                 r.Id,
@@ -204,41 +237,64 @@ namespace backend_app.Controllers
                 r.Message,
                 User = new { r.User.Id, r.User.Name, r.User.Email },
                 Location = new { r.Location.Id, r.Location.Name },
+
                 AssetRequestItems = r.AssetRequestItems.Select(i => new
                 {
                     i.Id,
                     Asset = new { i.Asset.Id, i.Asset.Name },
                     i.RequestedQuantity,
                     i.ApprovedQuantity,
+
+                    // 🔥 All filters included
+                    Brand = i.Brand,
+                    Processor = i.Processor,
+                    Storage = i.Storage,
+                    Ram = i.Ram,
+                    OperatingSystem = i.OperatingSystem,
+                    NetworkType = i.NetworkType,
+                    SimType = i.SimType,
+                    SimSupport = i.SimSupport,
+                    ScannerType = i.ScannerType,
+                    ScanSpeed = i.ScanSpeed,
+                    PrinterType = i.PrinterType,
+                    PaperSize = i.PaperSize,
+                    Dpi = i.Dpi,
+
                     AssignedAssets = i.AssignedAssets.Select(a =>
                     {
                         object detail = null;
                         var type = a.AssetType?.ToLowerInvariant();
-                        if (type == "laptop" && laptops.TryGetValue(a.AssetTypeItemId, out var lap)) detail = new
-                        {
-                            lap.Id,
-                            lap.Brand,
-                            lap.ModelNumber,
-                            lap.AssetTag,
-                            lap.PurchaseDate
-                        };
-                        else if (type == "mobile" && mobiles.TryGetValue(a.AssetTypeItemId, out var mob)) detail = new
-                        {
-                            mob.Id,
-                            mob.Brand,
-                            mob.Model,
-                            mob.IMEINumber,
-                            mob.AssetTag,
-                            mob.PurchaseDate
-                        };
-                        else if (type == "tablet" && tablets.TryGetValue(a.AssetTypeItemId, out var tab)) detail = new
-                        {
-                            tab.Id,
-                            tab.Brand,
-                            tab.Model,
-                            tab.AssetTag,
-                            tab.PurchaseDate
-                        };
+
+                        if (type == "laptop" && laptops.TryGetValue(a.AssetTypeItemId, out var lap))
+                            detail = new
+                            {
+                                lap.Id,
+                                lap.Brand,
+                                lap.ModelNumber,
+                                lap.AssetTag,
+                                lap.PurchaseDate
+                            };
+
+                        else if (type == "mobile" && mobiles.TryGetValue(a.AssetTypeItemId, out var mob))
+                            detail = new
+                            {
+                                mob.Id,
+                                mob.Brand,
+                                mob.Model,
+                                mob.IMEINumber,
+                                mob.AssetTag,
+                                mob.PurchaseDate
+                            };
+
+                        else if (type == "tablet" && tablets.TryGetValue(a.AssetTypeItemId, out var tab))
+                            detail = new
+                            {
+                                tab.Id,
+                                tab.Brand,
+                                tab.Model,
+                                tab.AssetTag,
+                                tab.PurchaseDate
+                            };
 
                         return new
                         {
@@ -256,8 +312,10 @@ namespace backend_app.Controllers
             return Ok(result);
         }
 
+
         // --------------------------
         // 4) CONFIRM APPROVE (ASSIGN ITEMS)
+        // --------------------------
         [HttpPost("confirm-approve/{requestId}")]
         public async Task<IActionResult> ConfirmApprove(int requestId, [FromBody] ApproveRequestDto dto)
         {
@@ -301,12 +359,6 @@ namespace backend_app.Controllers
                                 lap.IsAssigned = false;
                                 lap.AssignedDate = null;
                             }
-
-                            if (lap?.AssetId != null)
-                            {
-                                var asset = await _context.Assets.FindAsync(lap.AssetId.Value);
-                                if (asset != null) asset.Quantity += 1;
-                            }
                         }
 
                         else if (type == "mobile")
@@ -317,12 +369,6 @@ namespace backend_app.Controllers
                                 mob.IsAssigned = false;
                                 mob.AssignedDate = null;
                             }
-
-                            if (mob?.AssetId != null)
-                            {
-                                var asset = await _context.Assets.FindAsync(mob.AssetId.Value);
-                                if (asset != null) asset.Quantity += 1;
-                            }
                         }
 
                         else if (type == "tablet")
@@ -332,12 +378,6 @@ namespace backend_app.Controllers
                             {
                                 tab.IsAssigned = false;
                                 tab.AssignedDate = null;
-                            }
-
-                            if (tab?.AssetId != null)
-                            {
-                                var asset = await _context.Assets.FindAsync(tab.AssetId.Value);
-                                if (asset != null) asset.Quantity += 1;
                             }
                         }
                     }
@@ -364,7 +404,6 @@ namespace backend_app.Controllers
 
                         _context.AssignedAssets.Add(newAssigned);
 
-                        // Deduct from stock + update state based on type
                         if (type == "laptop")
                         {
                             var lap = await _context.Laptops.FindAsync(assetTypeItemId);
@@ -372,15 +411,8 @@ namespace backend_app.Controllers
                             {
                                 lap.IsAssigned = true;
                                 lap.AssignedDate = DateTime.Now;
-
-                                if (lap.AssetId != null)
-                                {
-                                    var asset = await _context.Assets.FindAsync(lap.AssetId.Value);
-                                    if (asset != null) asset.Quantity = Math.Max(0, asset.Quantity - 1);
-                                }
                             }
                         }
-
                         else if (type == "mobile")
                         {
                             var mob = await _context.Mobiles.FindAsync(assetTypeItemId);
@@ -388,15 +420,8 @@ namespace backend_app.Controllers
                             {
                                 mob.IsAssigned = true;
                                 mob.AssignedDate = DateTime.Now;
-
-                                if (mob.AssetId != null)
-                                {
-                                    var asset = await _context.Assets.FindAsync(mob.AssetId.Value);
-                                    if (asset != null) asset.Quantity = Math.Max(0, asset.Quantity - 1);
-                                }
                             }
                         }
-
                         else if (type == "tablet")
                         {
                             var tab = await _context.Tablets.FindAsync(assetTypeItemId);
@@ -404,15 +429,8 @@ namespace backend_app.Controllers
                             {
                                 tab.IsAssigned = true;
                                 tab.AssignedDate = DateTime.Now;
-
-                                if (tab.AssetId != null)
-                                {
-                                    var asset = await _context.Assets.FindAsync(tab.AssetId.Value);
-                                    if (asset != null) asset.Quantity = Math.Max(0, asset.Quantity - 1);
-                                }
                             }
                         }
-
                         else
                         {
                             await tx.RollbackAsync();
@@ -438,7 +456,6 @@ namespace backend_app.Controllers
             }
         }
 
-
         // DTOs used by ConfirmApprove
         public class ApproveRequestDto
         {
@@ -454,6 +471,137 @@ namespace backend_app.Controllers
 
             // list of ids from corresponding table (Laptop.Id or Mobile.Id etc)
             public List<int> AssetTypeItemIds { get; set; } = new();
+        }
+
+        // --------------------------
+        // 4.5) REJECT REQUEST (new)
+        // --------------------------
+        [HttpPost("reject/{id}")]
+        public async Task<IActionResult> RejectRequest(int id)
+        {
+            var request = await _context.AssetRequests
+                .Include(r => r.AssetRequestItems)
+                    .ThenInclude(i => i.AssignedAssets)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (request == null)
+                return NotFound("Request not found.");
+
+            // Optional: only allow rejecting pending
+            if (!string.Equals(request.Status, "Pending", StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest("Only pending requests can be rejected.");
+            }
+
+            using var tx = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Unassign any already assigned items (usually none for pending, but safe)
+                foreach (var item in request.AssetRequestItems ?? Enumerable.Empty<AssetRequestItem>())
+                {
+                    foreach (var assigned in item.AssignedAssets ?? Enumerable.Empty<AssignedAsset>())
+                    {
+                        var type = assigned.AssetType?.ToLowerInvariant();
+
+                        if (type == "laptop")
+                        {
+                            var lap = await _context.Laptops.FindAsync(assigned.AssetTypeItemId);
+                            if (lap != null)
+                            {
+                                lap.IsAssigned = false;
+                                lap.AssignedDate = null;
+                            }
+                        }
+                        else if (type == "mobile")
+                        {
+                            var mob = await _context.Mobiles.FindAsync(assigned.AssetTypeItemId);
+                            if (mob != null)
+                            {
+                                mob.IsAssigned = false;
+                                mob.AssignedDate = null;
+                            }
+                        }
+                        else if (type == "tablet")
+                        {
+                            var tab = await _context.Tablets.FindAsync(assigned.AssetTypeItemId);
+                            if (tab != null)
+                            {
+                                tab.IsAssigned = false;
+                                tab.AssignedDate = null;
+                            }
+                        }
+                    }
+                }
+
+                // Remove AssignedAssets rows, but keep request & items
+                _context.AssignedAssets.RemoveRange(
+                    request.AssetRequestItems.SelectMany(i => i.AssignedAssets)
+                );
+
+                request.Status = "Rejected";
+
+                await _context.SaveChangesAsync();
+                await tx.CommitAsync();
+
+                return Ok(new { message = "Request rejected successfully." });
+            }
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync();
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPost("return-item/{assignedId}")]
+        public async Task<IActionResult> ReturnItem(int assignedId)
+        {
+            var assigned = await _context.AssignedAssets
+                .FirstOrDefaultAsync(a => a.Id == assignedId);
+
+            if (assigned == null)
+                return NotFound("Assigned asset not found.");
+
+            if (assigned.Status == "Returned")
+                return BadRequest("Item already returned.");
+
+            // Mark as returned
+            assigned.Status = "Returned";
+            //assigned.ReturnedDate = DateTime.Now;
+
+            // Restore device availability
+            var type = assigned.AssetType?.ToLowerInvariant();
+
+            if (type == "laptop")
+            {
+                var lap = await _context.Laptops.FindAsync(assigned.AssetTypeItemId);
+                if (lap != null)
+                {
+                    lap.IsAssigned = false;
+                    lap.AssignedDate = null;
+                }
+            }
+            else if (type == "mobile")
+            {
+                var mob = await _context.Mobiles.FindAsync(assigned.AssetTypeItemId);
+                if (mob != null)
+                {
+                    mob.IsAssigned = false;
+                    mob.AssignedDate = null;
+                }
+            }
+            else if (type == "tablet")
+            {
+                var tab = await _context.Tablets.FindAsync(assigned.AssetTypeItemId);
+                if (tab != null)
+                {
+                    tab.IsAssigned = false;
+                    tab.AssignedDate = null;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Item returned successfully!" });
         }
 
         // --------------------------
@@ -490,12 +638,6 @@ namespace backend_app.Controllers
                             {
                                 lap.IsAssigned = false;
                                 lap.AssignedDate = null;
-
-                                if (lap.AssetId != null)
-                                {
-                                    var asset = await _context.Assets.FindAsync(lap.AssetId.Value);
-                                    if (asset != null) asset.Quantity += 1;
-                                }
                             }
                         }
 
@@ -507,12 +649,6 @@ namespace backend_app.Controllers
                             {
                                 mob.IsAssigned = false;
                                 mob.AssignedDate = null;
-
-                                if (mob.AssetId != null)
-                                {
-                                    var asset = await _context.Assets.FindAsync(mob.AssetId.Value);
-                                    if (asset != null) asset.Quantity += 1;
-                                }
                             }
                         }
 
@@ -520,24 +656,14 @@ namespace backend_app.Controllers
                         {
                             var tab = await _context.Tablets.FindAsync(assigned.AssetTypeItemId);
 
-                            if (tab != null && tab.IsAssigned == true )
+                            if (tab != null && tab.IsAssigned == true)
                             {
                                 tab.IsAssigned = false;
                                 tab.AssignedDate = null;
-
-                                if (tab.AssetId != null)
-                                {
-                                    var asset = await _context.Assets.FindAsync(tab.AssetId.Value);
-                                    if (asset != null) asset.Quantity += 1;
-                                }
                             }
                         }
                     }
                 }
-
-
-
-
 
                 // Delete assigned assets, items and the request
                 _context.AssignedAssets.RemoveRange(request.AssetRequestItems.SelectMany(i => i.AssignedAssets));
@@ -555,6 +681,7 @@ namespace backend_app.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -604,6 +731,5 @@ namespace backend_app.Controllers
 
             });
         }
-
     }
 }

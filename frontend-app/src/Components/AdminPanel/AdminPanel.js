@@ -204,7 +204,7 @@ function AdminPanel() {
 
 
 
-                    <td>{item.totalQuantity}</td>
+                    <td>{item.quantity}</td>
                     <td>
                       <button
                         className="btn btn-warning btn-sm me-2"

@@ -403,7 +403,6 @@ function Contact() {
           .map((r) => `Requesting ${r.requestedQuantity} of ${r.assetName}`)
           .join(", ")
     };
-
     try {
       if (id) {
         await axios.put(`${CONTACT_API}/${id}`, payload);
@@ -826,7 +825,7 @@ function Contact() {
 
           {/* SUBMIT */}
           <div className="text-center">
-            <button className="btn btn-primary w-50" type="submit">
+            <button className="btn btn-primary" type="submit">
               {id ? "Update Request" : "Submit Request"}
             </button>
           </div>

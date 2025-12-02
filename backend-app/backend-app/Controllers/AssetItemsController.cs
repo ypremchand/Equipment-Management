@@ -20,25 +20,97 @@ namespace backend_app.Controllers
         public async Task<IActionResult> GetAvailable([FromQuery] string type)
         {
             if (string.IsNullOrWhiteSpace(type))
-                return BadRequest("Asset type required.");
+                return BadRequest("Type is required.");
 
-            type = type.ToLower();
-
-            var assigned = await _context.AssignedAssets
-                .Where(x => x.Status == "Assigned")
-                .Select(x => x.AssetTypeItemId)
-                .ToListAsync();
+            type = type.Trim().ToLower();
 
             if (type == "laptop")
-                return Ok(await _context.Laptops.Where(x => !assigned.Contains(x.Id)).ToListAsync());
+            {
+                var data = await _context.Laptops
+                    .Where(x => x.IsAssigned == false)
+                    .Select(x => new
+                    {
+                        x.Id,
+                        x.Brand,
+                        x.ModelNumber,
+                        x.AssetTag,
+                        x.PurchaseDate,
+                        x.Processor,
+                        x.Ram,
+                        x.Storage,
+                        x.GraphicsCard,
+                        x.DisplaySize,
+                        x.OperatingSystem,
+                        x.BatteryCapacity,
+                        x.Location,
+                        x.Remarks,
+                        x.LastServicedDate,
+                        x.IsAssigned,
+                        x.AssignedDate,
+                        x.AssetId
+                    })
+                    .ToListAsync();
+
+                return Ok(data);
+            }
 
             if (type == "mobile")
-                return Ok(await _context.Mobiles.Where(x => !assigned.Contains(x.Id)).ToListAsync());
+            {
+                var data = await _context.Mobiles
+                    .Where(x => x.IsAssigned == false)
+                    .Select(x => new
+                    {
+                        x.Id,
+                        x.Brand,
+                        x.Model,
+                        x.IMEINumber,
+                        x.AssetTag,
+                        x.PurchaseDate,
+                        x.Processor,
+                        x.Ram,
+                        x.Storage,
+                        x.NetworkType,
+                        x.Location,
+                        x.Remarks,
+                        x.LastServicedDate,
+                        x.IsAssigned,
+                        x.AssignedDate,
+                        x.AssetId
+                    })
+                    .ToListAsync();
+
+                return Ok(data);
+            }
 
             if (type == "tablet")
-                return Ok(await _context.Tablets.Where(x => !assigned.Contains(x.Id)).ToListAsync());
+            {
+                var data = await _context.Tablets
+                    .Where(x => x.IsAssigned == false)
+                    .Select(x => new
+                    {
+                        x.Id,
+                        x.Brand,
+                        x.Model,
+                        x.AssetTag,
+                        x.PurchaseDate,
+                        x.Processor,
+                        x.Ram,
+                        x.Storage,
+                        x.NetworkType,
+                        x.Location,
+                        x.Remarks,
+                        x.LastServicedDate,
+                        x.IsAssigned,
+                        x.AssignedDate,
+                        x.AssetId
+                    })
+                    .ToListAsync();
 
-            return BadRequest("Unsupported asset type: " + type);
+                return Ok(data);
+            }
+
+            return BadRequest("Unknown asset type.");
         }
+
     }
-}
+    }
