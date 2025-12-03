@@ -105,7 +105,6 @@ function ReturnAssets() {
                     {/* Header */}
                     <div className="d-flex justify-content-between">
                       <h5 className="card-title">Request #{i + 1}</h5>
-
                       <span
                         className={`badge ${
                           status === "Returned"

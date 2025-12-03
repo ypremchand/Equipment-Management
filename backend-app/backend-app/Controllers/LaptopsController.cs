@@ -342,5 +342,10 @@ namespace backend_app.Controllers
 
             return Ok(new { exists });
         }
+        public class DeleteRequest
+        {
+            public string? Reason { get; set; }
+        }
+
     }
 }

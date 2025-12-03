@@ -56,29 +56,36 @@ namespace backend_app.Controllers
 
             return NoContent();
         }
-
-        // ✅ DELETE location + log delete history
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteLocation(int id)
+        public async Task<IActionResult> DeleteLocation(int id, [FromBody] DeleteRequest body)
         {
             var location = await _context.Locations.FindAsync(id);
             if (location == null)
                 return NotFound();
 
-            // 🔹 Log Delete History
             var history = new AdminDeleteHistory
             {
                 DeletedItemName = location.Name,
                 ItemType = "Location",
-                AdminName = "AdminUser", // Replace with logged-in admin if available
-                DeletedAt = DateTime.Now
+                AdminName = "AdminUser",
+                DeletedAt = DateTime.Now,
+                Reason = body?.Reason ?? "No reason provided",
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? ""
             };
-            _context.AdminDeleteHistories.Add(history);
 
+            _context.AdminDeleteHistories.Add(history);
             _context.Locations.Remove(location);
+
             await _context.SaveChangesAsync();
 
             return NoContent();
         }
+
+        public class DeleteRequest
+        {
+            public string? Reason { get; set; }
+        }
+
+
     }
 }

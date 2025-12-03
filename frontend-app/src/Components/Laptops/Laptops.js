@@ -172,17 +172,29 @@ export default function Laptops() {
     setShowForm(true);
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this laptop?")) return;
-    try {
-      await axios.delete(`${API_URL}/${id}`);
-      alert("Deleted");
-      fetchLaptops(page);
-    } catch (err) {
-      console.error("delete", err);
-      alert("Failed to delete");
-    }
-  };
+const handleDelete = async (id) => {
+  const reason = prompt("Please enter the reason for deleting this laptop:");
+
+  if (!reason || reason.trim() === "") {
+    alert("Deletion cancelled — reason is required.");
+    return;
+  }
+
+  if (!window.confirm("Are you sure you want to delete this laptop?")) return;
+
+  try {
+    await axios.delete(`${API_URL}/${id}`, {
+      data: { reason }   // <-- send reason to backend
+    });
+
+    alert("Laptop deleted successfully");
+    fetchLaptops(page);
+  } catch (err) {
+    console.error("delete error", err);
+    alert("Failed to delete laptop");
+  }
+};
+
 
   const resetForm = () => {
     setEditingId(null);

@@ -3,6 +3,7 @@ using backend_app.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using static backend_app.Controllers.LocationsController;
 
 namespace backend_app.Controllers
 {
@@ -137,17 +138,46 @@ namespace backend_app.Controllers
         // ============================================================
         // DELETE ASSET
         // ============================================================
+
+        private async Task LogDelete(string itemName, string itemType)
+        {
+            var log = new AdminDeleteHistory
+            {
+                DeletedItemName = itemName,
+                ItemType = itemType,
+                AdminName = "Admin", // TODO -> Replace with actual logged-in admin if available
+                DeletedAt = DateTime.Now
+            };
+
+            _context.AdminDeleteHistories.Add(log);
+            await _context.SaveChangesAsync();
+        }
+
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteAsset(int id)
+        public async Task<IActionResult> DeleteAsset(int id, [FromBody] DeleteRequest body)
         {
             var asset = await _context.Assets.FindAsync(id);
             if (asset == null)
                 return NotFound();
 
+            var history = new AdminDeleteHistory
+            {
+                DeletedItemName = asset.Name,
+                ItemType = "Asset",
+                AdminName = "Admin",
+                DeletedAt = DateTime.Now,
+                Reason = body?.Reason ?? "No reason provided",
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? ""
+            };
+
+            _context.AdminDeleteHistories.Add(history);
             _context.Assets.Remove(asset);
+
             await _context.SaveChangesAsync();
 
             return NoContent();
         }
+
+
     }
 }

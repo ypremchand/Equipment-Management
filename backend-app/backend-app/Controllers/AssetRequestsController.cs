@@ -162,6 +162,7 @@ namespace backend_app.Controllers
                             a.AssetTypeItemId,
                             a.Status,
                             a.AssignedDate,
+                            a.ReturnedDate,
                             Detail = detail
                         };
                     })
@@ -303,6 +304,7 @@ namespace backend_app.Controllers
                             a.AssetTypeItemId,
                             a.Status,
                             a.AssignedDate,
+                            a.ReturnedDate,
                             Detail = detail
                         };
                     })
@@ -566,7 +568,7 @@ namespace backend_app.Controllers
 
             // Mark as returned
             assigned.Status = "Returned";
-            //assigned.ReturnedDate = DateTime.Now;
+            assigned.ReturnedDate = DateTime.Now;    // ← This is the magic line
 
             // Restore device availability
             var type = assigned.AssetType?.ToLowerInvariant();
@@ -603,6 +605,7 @@ namespace backend_app.Controllers
 
             return Ok(new { message = "Item returned successfully!" });
         }
+
 
         // --------------------------
         // 5) DELETE REQUEST

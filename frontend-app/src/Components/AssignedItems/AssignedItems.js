@@ -23,10 +23,10 @@ function AssignedItems() {
       setAssignedItems([]);
       return;
     }
-
+   
     setRequestData(req);
 
-    const flat = [];
+    const flat = []; 
     req.assetRequestItems.forEach((i) => {
       if (i.assignedAssets?.length) {
         flat.push(...i.assignedAssets);

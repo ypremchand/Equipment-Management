@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
-import "./style.css"
+import "./style.css";
 
 function AdminDeleteHistory() {
   const [logs, setLogs] = useState([]);
@@ -10,18 +10,30 @@ function AdminDeleteHistory() {
   useEffect(() => {
     axios
       .get("http://localhost:5083/api/AdminDeleteHistories")
-      .then((res) => setLogs(res.data))
-      .catch((err) => console.error("Error fetching history:", err))
+      .then((res) => {
+        console.log("Delete history:", res.data);
+
+        const rows = res.data.data; // Extract paginated array
+
+        setLogs(Array.isArray(rows) ? rows : []);
+      })
+      .catch((err) => {
+        console.error("Error fetching history:", err);
+        setLogs([]);
+      })
       .finally(() => setLoading(false));
   }, []);
 
   return (
     <div className="admin-delete-history-page container mt-4">
       <h3 className="text-center mb-4">🗑️ Admin Delete History</h3>
+
       {loading ? (
-        <div className="text-center"><div className="spinner-border"></div></div>
+        <div className="text-center"><div className="spinner-border" /></div>
       ) : logs.length === 0 ? (
-        <p className="alert alert-info text-center fw-bold">No deletion records found.</p>
+        <p className="alert alert-info text-center fw-bold">
+          No deletion records found.
+        </p>
       ) : (
         <table className="table table-striped table-bordered text-center">
           <thead className="table-dark">
@@ -31,8 +43,11 @@ function AdminDeleteHistory() {
               <th>Type</th>
               <th>Admin</th>
               <th>Date</th>
+              <th>IP Address</th>
+              <th>Reason</th>
             </tr>
           </thead>
+
           <tbody>
             {logs.map((log, idx) => (
               <tr key={log.id}>
@@ -41,6 +56,8 @@ function AdminDeleteHistory() {
                 <td>{log.itemType}</td>
                 <td>{log.adminName}</td>
                 <td>{new Date(log.deletedAt).toLocaleString()}</td>
+                <td>{log.ipAddress || "—"}</td>
+                <td>{log.reason || "—"}</td>
               </tr>
             ))}
           </tbody>

@@ -97,11 +97,27 @@ function AdminPanel() {
     }
   };
 
-  const handleDeleteAsset = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this asset?")) return;
-    await axios.delete(`${ASSETS_API}/${id}`);
+const handleDeleteAsset = async (id) => {
+  const reason = prompt("Please enter the reason for deleting this asset:");
+
+  if (!reason || reason.trim() === "") {
+    alert("Deletion cancelled. Reason is required.");
+    return;
+  }
+
+  if (!window.confirm("Are you sure you want to delete this asset?")) return;
+
+  try {
+    await axios.delete(`${ASSETS_API}/${id}`, {
+      data: { reason }  // <-- send reason in request body
+    });
     fetchAssets();
-  };
+  } catch (err) {
+    console.error(err);
+    alert("Failed to delete asset");
+  }
+};
+
 
   const handleLocationSubmit = async (e) => {
     e.preventDefault();
@@ -126,11 +142,27 @@ function AdminPanel() {
     }
   };
 
-  const handleDeleteLocation = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this location?")) return;
-    await axios.delete(`${LOCATIONS_API}/${id}`);
+const handleDeleteLocation = async (id) => {
+  const reason = prompt("Please enter the reason for deleting this location:");
+
+  if (!reason || reason.trim() === "") {
+    alert("Deletion cancelled. Reason is required.");
+    return;
+  }
+
+  if (!window.confirm("Are you sure you want to delete this location?")) return;
+
+  try {
+    await axios.delete(`${LOCATIONS_API}/${id}`, {
+      data: { reason } // <-- send reason
+    });
     fetchLocations();
-  };
+  } catch (err) {
+    console.error(err);
+    alert("Failed to delete location");
+  }
+};
+
 
   return (
     <div className="admin-page container mt-4">

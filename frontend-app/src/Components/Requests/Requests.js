@@ -5,14 +5,35 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "./style.css";
 
 function Requests() {
+  const API_URL = "http://localhost:5083/api/AssetRequests";
+
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState(null);
+
+  // Pagination
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+
+  // Modals
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
 
-  const API_URL = "http://localhost:5083/api/AssetRequests";
+  // Search + Filters
+  const [searchInput, setSearchInput] = useState("");
+  const [filters, setFilters] = useState({
+    user: "",
+    email: "",
+    location: ""
+  });
 
+  const [allOptions, setAllOptions] = useState({
+    users: [],
+    emails: [],
+    locations: []
+  });
+
+  // Load all requests
   const fetchRequests = async () => {
     try {
       setLoading(true);
@@ -30,6 +51,64 @@ function Requests() {
     fetchRequests();
   }, []);
 
+  // Populate dropdowns from loaded data
+  useEffect(() => {
+    if (requests.length > 0) {
+      const users = new Set();
+      const emails = new Set();
+      const locations = new Set();
+
+      requests.forEach(r => {
+        if (r.user?.name) users.add(r.user.name);
+        if (r.user?.email) emails.add(r.user.email);
+        if (r.location?.name) locations.add(r.location.name);
+      });
+
+      setAllOptions({
+        users: [...users],
+        emails: [...emails],
+        locations: [...locations]
+      });
+    }
+  }, [requests]);
+
+  // FILTERING + SEARCH
+  const filteredRequests = requests.filter((req) => {
+    const name = req.user?.name?.toLowerCase() || "";
+    const email = req.user?.email?.toLowerCase() || "";
+    const location = req.location?.name?.toLowerCase() || "";
+
+    const search = searchInput.toLowerCase();
+
+    const matchesSearch =
+      name.includes(search) ||
+      email.includes(search) ||
+      location.includes(search);
+
+    const matchesUser =
+      !filters.user || name === filters.user.toLowerCase();
+
+    const matchesEmail =
+      !filters.email || email === filters.email.toLowerCase();
+
+    const matchesLocation =
+      !filters.location || location === filters.location.toLowerCase();
+
+    return matchesSearch && matchesUser && matchesEmail && matchesLocation;
+  });
+
+  // PAGINATION
+  const totalPages = Math.ceil(filteredRequests.length / pageSize);
+  const startIndex = (page - 1) * pageSize;
+  const paginatedRequests = filteredRequests.slice(
+    startIndex,
+    startIndex + pageSize
+  );
+
+  const nextPage = () => page < totalPages && setPage((p) => p + 1);
+  const prevPage = () => page > 1 && setPage((p) => p - 1);
+
+  // ACTIONS
   const handleApprove = (req) => {
     setSelectedRequest(req);
     setShowApproveModal(true);
@@ -46,8 +125,6 @@ function Requests() {
     }
   };
 
-
-
   const handleDelete = async (id) => {
     try {
       if (!window.confirm("Delete this request permanently?")) return;
@@ -59,6 +136,7 @@ function Requests() {
     }
   };
 
+  // VIEW BUTTON LOGIC
   const canView = (req) =>
     (req.status || "").toString().toLowerCase() === "approved" ||
     req.assetRequestItems?.some((i) => (i.assignedAssets?.length || 0) > 0);
@@ -66,109 +144,197 @@ function Requests() {
   return (
     <div className="requests-page container mt-4">
       <h2 className="text-center mb-4">📦 Asset Requests</h2>
+
+      {/* FILTER + SEARCH BOX */}
+      <div className="card p-3 mb-3">
+        <div className="row g-2 align-items-center">
+          <div className="col-md-3">
+            <input
+              className="form-control"
+              placeholder="🔍 Search (users/emails/locations...)"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+          </div>
+
+          {/* User Filter */}
+          <div className="col-auto">
+            <select
+              className="form-select"
+              value={filters.user}
+              onChange={(e) => setFilters((p) => ({ ...p, user: e.target.value }))}
+            >
+              <option value="">All Users</option>
+              {allOptions.users.map((u) => (
+                <option key={u} value={u}>{u}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Email Filter */}
+          <div className="col-auto">
+            <select
+              className="form-select"
+              value={filters.email}
+              onChange={(e) => setFilters((p) => ({ ...p, email: e.target.value }))}
+            >
+              <option value="">All Emails</option>
+              {allOptions.emails.map((e) => (
+                <option key={e} value={e}>{e}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Location Filter */}
+          <div className="col-auto">
+            <select
+              className="form-select"
+              value={filters.location}
+              onChange={(e) => setFilters((p) => ({ ...p, location: e.target.value }))}
+            >
+              <option value="">All Locations</option>
+              {allOptions.locations.map((loc) => (
+                <option key={loc} value={loc}>{loc}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* RESET */}
+          <div className="col ms-auto d-flex gap-2 justify-content-end">
+            <button
+              className="btn btn-outline-secondary"
+              onClick={() => {
+                setFilters({ user: "", email: "", location: "" });
+                setSearchInput("");
+              }}
+            >
+              Reset
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* MAIN TABLE */}
       {loading ? (
         <div className="text-center">
           <Spinner animation="border" /> <p>Loading...</p>
         </div>
-      ) : requests.length === 0 ? (
+      ) : filteredRequests.length === 0 ? (
         <p className="text-center fw-bold">No requests found</p>
       ) : (
-
-
-        <Table bordered hover responsive>
-          <thead className="table-dark text-center">
-            <tr>
-              <th>#</th>
-              <th>User</th>
-              <th>Email</th>
-              <th>Location</th>
-              <th>Date</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-
-          <tbody className="text-center align-middle">
-            {requests.map((req, i) => (
-              <tr key={req.id}>
-                <td>{i + 1}</td>
-                <td>{req.user?.name}</td>
-                <td>{req.user?.email}</td>
-                <td>{req.location?.name}</td>
-                <td>
-                  {req.requestDate
-                    ? new Date(req.requestDate).toLocaleString()
-                    : ""}
-                </td>
-
-                <td>
-                  <span
-                    className={`badge ${(req.status || "").toLowerCase() === "pending"
-                      ? "bg-warning text-dark"
-                      : (req.status || "").toLowerCase() === "approved"
-                        ? "bg-success"
-                        : "bg-danger"
-                      }`}
-                  >
-                    {req.status}
-                  </span>
-                </td>
-
-                <td>
-                  {/* VIEW BUTTON */}
-                  {canView(req) && (
-                    <Button
-                      variant="info"
-                      size="sm"
-                      className="me-2"
-                      onClick={() => {
-                        setSelectedRequest(req);
-                        setShowViewModal(true);
-                      }}
-                    >
-                      View
-                    </Button>
-                  )}
-
-                  {/* APPROVE BUTTON — ONLY IF PENDING */}
-                  {(req.status || "").toLowerCase() === "pending" && (
-                    <Button
-                      variant="success"
-                      size="sm"
-                      className="me-2"
-                      onClick={() => handleApprove(req)}
-                    >
-                      Approve
-                    </Button>
-                  )}
-                  {/* Once the status is approved, disable Reject Button */}
-                  {(req.status || "").toLowerCase() === "pending" && (
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      className="me-2"
-                      onClick={() => handleReject(req.id)}
-                    >
-                      Reject
-                    </Button>
-                  )}
-
-
-                  <Button
-                    variant="outline-danger"
-                    size="sm"
-                    onClick={() => handleDelete(req.id)}
-                  >
-                    Delete
-                  </Button>
-                </td>
+        <>
+          <Table bordered hover responsive>
+            <thead className="table-dark text-center">
+              <tr>
+                <th>#</th>
+                <th>User</th>
+                <th>Email</th>
+                <th>Location</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </Table>
+            </thead>
+
+            <tbody className="text-center align-middle">
+              {paginatedRequests.map((req, i) => (
+                <tr key={req.id}>
+                  <td>{startIndex + i + 1}</td>
+                  <td>{req.user?.name}</td>
+                  <td>{req.user?.email}</td>
+                  <td>{req.location?.name}</td>
+                  <td>{req.requestDate ? new Date(req.requestDate).toLocaleString() : ""}</td>
+
+                  <td>
+                    <span
+                      className={`badge ${
+                        req.status?.toLowerCase() === "pending"
+                          ? "bg-warning text-dark"
+                          : req.status?.toLowerCase() === "approved"
+                          ? "bg-success"
+                          : "bg-danger"
+                      }`}
+                    >
+                      {req.status}
+                    </span>
+                  </td>
+
+                  <td>
+                    {canView(req) && (
+                      <Button
+                        variant="info"
+                        size="sm"
+                        className="me-2"
+                        onClick={() => {
+                          setSelectedRequest(req);
+                          setShowViewModal(true);
+                        }}
+                      >
+                        View
+                      </Button>
+                    )}
+
+                    {req.status?.toLowerCase() === "pending" && (
+                      <>
+                        <Button
+                          variant="success"
+                          size="sm"
+                          className="me-2"
+                          onClick={() => handleApprove(req)}
+                        >
+                          Approve
+                        </Button>
+
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          className="me-2"
+                          onClick={() => handleReject(req.id)}
+                        >
+                          Reject
+                        </Button>
+                      </>
+                    )}
+
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      onClick={() => handleDelete(req.id)}
+                    >
+                      Delete
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+
+          {/* PAGINATION */}
+          <div className="d-flex justify-content-center mt-3">
+            <button
+              className="btn btn-outline-primary me-2"
+              disabled={page === 1}
+              onClick={prevPage}
+            >
+              ◀️ Prev
+            </button>
+
+            <span className="align-self-center">
+              Page {page} of {totalPages}
+            </span>
+
+            <button
+              className="btn btn-outline-primary ms-2"
+              disabled={page === totalPages}
+              onClick={nextPage}
+            >
+              Next ▶️
+            </button>
+          </div>
+        </>
       )}
 
-      {/* ASSIGN + APPROVE MODAL */}
+      {/* MODALS */}
       <AssignApproveModal
         show={showApproveModal}
         onHide={() => setShowApproveModal(false)}
@@ -176,7 +342,6 @@ function Requests() {
         fetchRequests={fetchRequests}
       />
 
-      {/* VIEW ASSIGNED ASSETS MODAL */}
       <ViewAssignedModal
         show={showViewModal}
         onHide={() => setShowViewModal(false)}
