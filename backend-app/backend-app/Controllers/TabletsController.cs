@@ -19,8 +19,14 @@ namespace backend_app.Controllers
             _context = context;
         }
 
+        // Payload class (adds DamageReason only)
+        public class TabletPayload : Tablet
+        {
+            public string? DamageReason { get; set; }
+        }
+
         // ============================================================
-        // GET ALL TABLETS (same logic as laptops)
+        // GET ALL TABLETS (Search + Filters + Sorting + Pagination)
         // ============================================================
         [HttpGet]
         public async Task<ActionResult<object>> GetTablets(
@@ -43,7 +49,7 @@ namespace backend_app.Controllers
                 .Include(t => t.Asset)
                 .AsQueryable();
 
-            // 1️⃣ SEARCH
+            // 🔍 SEARCH
             if (!string.IsNullOrWhiteSpace(search))
             {
                 var s = search.Trim().ToLower().Replace(" ", "");
@@ -59,7 +65,7 @@ namespace backend_app.Controllers
                 );
             }
 
-            // 2️⃣ FILTERS
+            // 🎯 FILTERS
             if (!string.IsNullOrWhiteSpace(brand))
             {
                 var b = brand.Trim().ToLower().Replace(" ", "");
@@ -89,10 +95,11 @@ namespace backend_app.Controllers
             if (!string.IsNullOrWhiteSpace(networkType))
             {
                 var nt = networkType.Trim().ToLower().Replace(" ", "");
-                query = query.Where(t => ((t.NetworkType ?? "").ToLower().Replace(" ", "")).Contains(nt));
+                query = query.Where(t =>
+                    ((t.NetworkType ?? "").ToLower().Replace(" ", "")).Contains(nt));
             }
 
-            // 3️⃣ EXCLUDE ASSIGNED TABLETS
+            // 🚫 EXCLUDE ASSIGNED TABLETS
             var assignedIds = await _context.AssignedAssets
                 .Where(a => a.AssetType != null &&
                             a.Status == "Assigned" &&
@@ -102,7 +109,15 @@ namespace backend_app.Controllers
 
             query = query.Where(t => !assignedIds.Contains(t.Id));
 
-            // 4️⃣ SORTING
+            // 🚫 EXCLUDE DAMAGED TABLETS
+            var damagedIds = await _context.DamagedAssets
+                .Where(d => d.AssetType.ToLower() == "tablet")
+                .Select(d => d.AssetTypeItemId)
+                .ToListAsync();
+
+            query = query.Where(t => !damagedIds.Contains(t.Id));
+
+            // 🔽 SORTING
             bool desc = sortDir?.ToLower() == "desc";
 
             query = sortBy?.ToLower() switch
@@ -113,15 +128,16 @@ namespace backend_app.Controllers
                 "storage" => desc ? query.OrderByDescending(t => t.Storage) : query.OrderBy(t => t.Storage),
                 "location" => desc ? query.OrderByDescending(t => t.Location) : query.OrderBy(t => t.Location),
                 "processor" => desc ? query.OrderByDescending(t => t.Processor) : query.OrderBy(t => t.Processor),
-                "networktype" => desc ? query.OrderByDescending(t => t.NetworkType) : query.OrderBy(t => t.NetworkType),
                 _ => desc ? query.OrderByDescending(t => t.Id) : query.OrderBy(t => t.Id),
             };
 
-            // 5️⃣ PAGINATION
+            // 📄 PAGINATION
             var totalItems = await query.CountAsync();
-            var data = await query.Skip((page - 1) * pageSize)
-                                  .Take(pageSize)
-                                  .ToListAsync();
+
+            var items = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
 
             return Ok(new
             {
@@ -129,12 +145,13 @@ namespace backend_app.Controllers
                 pageSize,
                 totalItems,
                 totalPages = (int)Math.Ceiling(totalItems / (double)pageSize),
-                data
+                data = items
             });
         }
 
+
         // ============================================================
-        // OPTIONS (same pattern as laptop/mobile)
+        // DROPDOWN OPTIONS
         // ============================================================
         [HttpGet("options")]
         public async Task<IActionResult> GetOptions()
@@ -175,10 +192,10 @@ namespace backend_app.Controllers
             return Ok(new { brands, rams, storages, locations });
         }
 
-        // ============================================================
-        // CRUD (unchanged)
-        // ============================================================
 
+        // ============================================================
+        // GET SINGLE TABLET
+        // ============================================================
         [HttpGet("{id}")]
         public async Task<ActionResult<Tablet>> GetTablet(int id)
         {
@@ -186,70 +203,148 @@ namespace backend_app.Controllers
                 .Include(t => t.Asset)
                 .FirstOrDefaultAsync(t => t.Id == id);
 
-            return tablet == null ? NotFound() : tablet;
+            if (tablet == null)
+                return NotFound();
+
+            return tablet;
         }
 
+
+        // ============================================================
+        // CREATE TABLET (with damage handling)
+        // ============================================================
         [HttpPost]
-        public async Task<ActionResult<Tablet>> PostTablet([FromBody] Tablet tablet)
+        public async Task<ActionResult<Tablet>> PostTablet([FromBody] TabletPayload payload)
         {
-            if (tablet.AssetTag == null)
+            if (payload.AssetTag == null)
                 return BadRequest(new { message = "AssetTag is required" });
 
+            // Check duplicate
             bool exists = await _context.Tablets
-                .AnyAsync(t => (t.AssetTag ?? "").ToLower() == tablet.AssetTag.ToLower());
+                .AnyAsync(t => (t.AssetTag ?? "").ToLower() == payload.AssetTag.ToLower());
 
             if (exists)
                 return BadRequest(new { message = "AssetTag already exists" });
 
-            var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Name.ToLower() == "tablets")
-                        ?? new Asset { Name = "Tablets", Quantity = 0 };
+            var asset = await _context.Assets
+                .FirstOrDefaultAsync(a => a.Name.ToLower() == "tablets");
 
-            if (asset.Id == 0)
+            if (asset == null)
             {
+                asset = new Asset { Name = "Tablets", Quantity = 0 };
                 _context.Assets.Add(asset);
                 await _context.SaveChangesAsync();
             }
 
-            tablet.AssetId = asset.Id;
+            payload.AssetId = asset.Id;
 
-            _context.Tablets.Add(tablet);
+            _context.Tablets.Add(payload);
             await _context.SaveChangesAsync();
 
+            // Update asset quantity
             asset.Quantity = await _context.Tablets.CountAsync(t => t.AssetId == asset.Id);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetTablet), new { id = tablet.Id }, tablet);
+            // Handle damaged
+            if (!string.IsNullOrWhiteSpace(payload.Remarks) &&
+                payload.Remarks.Trim().ToLower() == "yes")
+            {
+                if (string.IsNullOrWhiteSpace(payload.DamageReason))
+                    return BadRequest(new { message = "Damage reason is required when Remarks = Yes" });
+
+                var damaged = new DamagedAsset
+                {
+                    AssetType = "Tablet",
+                    AssetTypeItemId = payload.Id,
+                    AssetTag = payload.AssetTag,
+                    Reason = payload.DamageReason,
+                    ReportedAt = DateTime.Now
+                };
+
+                _context.DamagedAssets.Add(damaged);
+                await _context.SaveChangesAsync();
+            }
+
+            return CreatedAtAction(nameof(GetTablet), new { id = payload.Id }, payload);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutTablet(int id, [FromBody] Tablet tablet)
-        {
-            tablet.Id = id;
 
+        // ============================================================
+        // UPDATE TABLET (with damage handling)
+        // ============================================================
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutTablet(int id, [FromBody] TabletPayload payload)
+        {
+            if (payload.Id != id)
+                payload.Id = id;
+
+            // Duplicate check
             bool exists = await _context.Tablets
-                .AnyAsync(t => t.Id != id && (t.AssetTag ?? "").ToLower() == tablet.AssetTag.ToLower());
+                .AnyAsync(t => t.Id != id &&
+                               (t.AssetTag ?? "").ToLower() == payload.AssetTag.ToLower());
 
             if (exists)
-                return BadRequest(new { message = "AssetTag already exists" });
+                return BadRequest(new { message = "Another tablet with same AssetTag exists" });
 
-            _context.Entry(tablet).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
+            _context.Entry(payload).State = EntityState.Modified;
 
-            if (tablet.AssetId.HasValue)
+            try
             {
-                var asset = await _context.Assets.FindAsync(tablet.AssetId.Value);
-                asset.Quantity = await _context.Tablets.CountAsync(t => t.AssetId == asset.Id);
                 await _context.SaveChangesAsync();
+            }
+            catch
+            {
+                if (!await _context.Tablets.AnyAsync(t => t.Id == id))
+                    return NotFound();
+
+                throw;
+            }
+
+            // Damage handling
+            if (!string.IsNullOrWhiteSpace(payload.Remarks) &&
+                payload.Remarks.Trim().ToLower() == "yes")
+            {
+                if (string.IsNullOrWhiteSpace(payload.DamageReason))
+                    return BadRequest(new { message = "Damage reason is required when Remarks = Yes" });
+
+                var damaged = new DamagedAsset
+                {
+                    AssetType = "Tablet",
+                    AssetTypeItemId = payload.Id,
+                    AssetTag = payload.AssetTag,
+                    Reason = payload.DamageReason,
+                    ReportedAt = DateTime.Now
+                };
+
+                _context.DamagedAssets.Add(damaged);
+                await _context.SaveChangesAsync();
+            }
+
+            // update asset qty
+            if (payload.AssetId.HasValue)
+            {
+                var asset = await _context.Assets.FindAsync(payload.AssetId.Value);
+                if (asset != null)
+                {
+                    asset.Quantity = await _context.Tablets.CountAsync(t => t.AssetId == asset.Id);
+                    _context.Entry(asset).State = EntityState.Modified;
+                    await _context.SaveChangesAsync();
+                }
             }
 
             return NoContent();
         }
 
+
+        // ============================================================
+        // DELETE TABLET
+        // ============================================================
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTablet(int id)
         {
             var tablet = await _context.Tablets.FindAsync(id);
-            if (tablet == null) return NotFound();
+            if (tablet == null)
+                return NotFound();
 
             var history = new AdminDeleteHistory
             {
@@ -269,13 +364,21 @@ namespace backend_app.Controllers
             if (assetId.HasValue)
             {
                 var asset = await _context.Assets.FindAsync(assetId.Value);
-                asset.Quantity = await _context.Tablets.CountAsync(t => t.AssetId == asset.Id);
-                await _context.SaveChangesAsync();
+                if (asset != null)
+                {
+                    asset.Quantity = await _context.Tablets.CountAsync(t => t.AssetId == asset.Id);
+                    _context.Entry(asset).State = EntityState.Modified;
+                    await _context.SaveChangesAsync();
+                }
             }
 
             return NoContent();
         }
 
+
+        // ============================================================
+        // CHECK DUPLICATE ASSET TAG
+        // ============================================================
         [HttpGet("check-duplicate")]
         public async Task<IActionResult> CheckDuplicate([FromQuery] string assetTag)
         {

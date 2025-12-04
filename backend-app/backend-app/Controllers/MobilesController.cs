@@ -19,8 +19,14 @@ namespace backend_app.Controllers
             _context = context;
         }
 
+        // Payload class so DamageReason is accepted but NOT stored in Mobiles table.
+        public class MobilePayload : Mobile
+        {
+            public string? DamageReason { get; set; }
+        }
+
         // ============================================================
-        // GET ALL MOBILES (same logic as laptops)
+        // GET ALL MOBILES (search, filters, pagination, exclude damaged)
         // ============================================================
         [HttpGet]
         public async Task<ActionResult<object>> GetMobiles(
@@ -43,7 +49,7 @@ namespace backend_app.Controllers
                 .Include(m => m.Asset)
                 .AsQueryable();
 
-            // 1️⃣ SEARCH (same as laptops)
+            // 🔍 SEARCH
             if (!string.IsNullOrWhiteSpace(search))
             {
                 var s = search.Trim().ToLower().Replace(" ", "");
@@ -59,7 +65,7 @@ namespace backend_app.Controllers
                 );
             }
 
-            // 2️⃣ FILTERS (same as laptop)
+            // 🎯 FILTERS
             if (!string.IsNullOrWhiteSpace(brand))
             {
                 var b = brand.Trim().ToLower().Replace(" ", "");
@@ -89,10 +95,11 @@ namespace backend_app.Controllers
             if (!string.IsNullOrWhiteSpace(networkType))
             {
                 var nt = networkType.Trim().ToLower().Replace(" ", "");
-                query = query.Where(m => ((m.NetworkType ?? "").ToLower().Replace(" ", "")).Contains(nt));
+                query = query.Where(m =>
+                    ((m.NetworkType ?? "").ToLower().Replace(" ", "")).Contains(nt));
             }
 
-            // 3️⃣ EXCLUDE ASSIGNED MOBILES (same logic as laptop)
+            // 🚫 EXCLUDE ASSIGNED MOBILES
             var assignedIds = await _context.AssignedAssets
                 .Where(a => a.AssetType != null &&
                             a.Status == "Assigned" &&
@@ -102,7 +109,15 @@ namespace backend_app.Controllers
 
             query = query.Where(m => !assignedIds.Contains(m.Id));
 
-            // 4️⃣ SORTING (identical to laptop sort pattern)
+            // 🚫 EXCLUDE DAMAGED MOBILES
+            var damagedIds = await _context.DamagedAssets
+                .Where(d => d.AssetType.ToLower() == "mobile")
+                .Select(d => d.AssetTypeItemId)
+                .ToListAsync();
+
+            query = query.Where(m => !damagedIds.Contains(m.Id));
+
+            // 🔽 SORTING
             bool desc = sortDir?.ToLower() == "desc";
 
             query = sortBy?.ToLower() switch
@@ -117,9 +132,12 @@ namespace backend_app.Controllers
                 _ => desc ? query.OrderByDescending(m => m.Id) : query.OrderBy(m => m.Id),
             };
 
-            // 5️⃣ PAGINATION
+            // 📄 PAGINATION
             var totalItems = await query.CountAsync();
-            var data = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+            var data = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
 
             return Ok(new
             {
@@ -132,7 +150,7 @@ namespace backend_app.Controllers
         }
 
         // ============================================================
-        // OPTIONS (same style as Laptop options)
+        // DROPDOWN OPTIONS
         // ============================================================
         [HttpGet("options")]
         public async Task<IActionResult> GetOptions()
@@ -174,9 +192,8 @@ namespace backend_app.Controllers
         }
 
         // ============================================================
-        // REMAINING CRUD (unchanged)
+        // GET MOBILE BY ID
         // ============================================================
-
         [HttpGet("{id}")]
         public async Task<ActionResult<Mobile>> GetMobile(int id)
         {
@@ -187,18 +204,22 @@ namespace backend_app.Controllers
             return mobile == null ? NotFound() : mobile;
         }
 
+        // ============================================================
+        // CREATE MOBILE (with damage workflow)
+        // ============================================================
         [HttpPost]
-        public async Task<ActionResult<Mobile>> PostMobile([FromBody] Mobile mobile)
+        public async Task<ActionResult<Mobile>> PostMobile([FromBody] MobilePayload payload)
         {
-            if (mobile.AssetTag == null)
+            if (payload.AssetTag == null)
                 return BadRequest(new { message = "AssetTag is required" });
 
             bool exists = await _context.Mobiles
-                .AnyAsync(m => (m.AssetTag ?? "").ToLower() == mobile.AssetTag.ToLower());
+                .AnyAsync(m => (m.AssetTag ?? "").ToLower() == payload.AssetTag.ToLower());
 
             if (exists)
                 return BadRequest(new { message = "AssetTag already exists" });
 
+            // Assign asset
             var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Name.ToLower() == "mobiles")
                         ?? new Asset { Name = "Mobiles", Quantity = 0 };
 
@@ -208,34 +229,82 @@ namespace backend_app.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            mobile.AssetId = asset.Id;
+            payload.AssetId = asset.Id;
 
-            _context.Mobiles.Add(mobile);
+            _context.Mobiles.Add(payload);
             await _context.SaveChangesAsync();
 
+            // Update quantity
             asset.Quantity = await _context.Mobiles.CountAsync(m => m.AssetId == asset.Id);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetMobile), new { id = mobile.Id }, mobile);
+            // Damage handling
+            if (!string.IsNullOrWhiteSpace(payload.Remarks) &&
+                payload.Remarks.Trim().ToLower() == "yes")
+            {
+                if (string.IsNullOrWhiteSpace(payload.DamageReason))
+                    return BadRequest(new { message = "Damage reason is required when Remarks = Yes" });
+
+                var damaged = new DamagedAsset
+                {
+                    AssetType = "Mobile",
+                    AssetTypeItemId = payload.Id,
+                    AssetTag = payload.AssetTag,
+                    Reason = payload.DamageReason,
+                    ReportedAt = DateTime.Now
+                };
+
+                _context.DamagedAssets.Add(damaged);
+                await _context.SaveChangesAsync();
+            }
+
+            return CreatedAtAction(nameof(GetMobile), new { id = payload.Id }, payload);
         }
 
+        // ============================================================
+        // UPDATE MOBILE (with damage workflow)
+        // ============================================================
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutMobile(int id, [FromBody] Mobile mobile)
+        public async Task<IActionResult> PutMobile(int id, [FromBody] MobilePayload payload)
         {
-            mobile.Id = id;
+            if (payload.Id != id)
+                payload.Id = id;
 
             bool exists = await _context.Mobiles
-                .AnyAsync(m => m.Id != id && (m.AssetTag ?? "").ToLower() == mobile.AssetTag.ToLower());
+                .AnyAsync(m => m.Id != id &&
+                               (m.AssetTag ?? "").ToLower() == payload.AssetTag.ToLower());
 
             if (exists)
                 return BadRequest(new { message = "AssetTag already exists" });
 
-            _context.Entry(mobile).State = EntityState.Modified;
+            // Update record
+            _context.Entry(payload).State = EntityState.Modified;
             await _context.SaveChangesAsync();
 
-            if (mobile.AssetId.HasValue)
+            // Handle damage
+            if (!string.IsNullOrWhiteSpace(payload.Remarks) &&
+                payload.Remarks.Trim().ToLower() == "yes")
             {
-                var asset = await _context.Assets.FindAsync(mobile.AssetId.Value);
+                if (string.IsNullOrWhiteSpace(payload.DamageReason))
+                    return BadRequest(new { message = "Damage reason is required when Remarks = Yes" });
+
+                var damaged = new DamagedAsset
+                {
+                    AssetType = "Mobile",
+                    AssetTypeItemId = payload.Id,
+                    AssetTag = payload.AssetTag,
+                    Reason = payload.DamageReason,
+                    ReportedAt = DateTime.Now
+                };
+
+                _context.DamagedAssets.Add(damaged);
+                await _context.SaveChangesAsync();
+            }
+
+            // Update asset quantity
+            if (payload.AssetId.HasValue)
+            {
+                var asset = await _context.Assets.FindAsync(payload.AssetId.Value);
                 asset.Quantity = await _context.Mobiles.CountAsync(m => m.AssetId == asset.Id);
                 await _context.SaveChangesAsync();
             }
@@ -243,6 +312,9 @@ namespace backend_app.Controllers
             return NoContent();
         }
 
+        // ============================================================
+        // DELETE MOBILE
+        // ============================================================
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteMobile(int id)
         {
@@ -274,6 +346,9 @@ namespace backend_app.Controllers
             return NoContent();
         }
 
+        // ============================================================
+        // CHECK DUPLICATE ASSET TAG
+        // ============================================================
         [HttpGet("check-duplicate")]
         public async Task<IActionResult> CheckDuplicate([FromQuery] string assetTag)
         {

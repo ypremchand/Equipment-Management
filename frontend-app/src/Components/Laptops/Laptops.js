@@ -6,7 +6,6 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "./style.css";
 
 // Export libs (ensure these are installed in your project)
-
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -66,7 +65,6 @@ export default function Laptops() {
     }
   }, [searchInput, filters, sort]);
 
-
   // initial + page + when filters/search/sort change
   useEffect(() => {
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
@@ -77,8 +75,6 @@ export default function Laptops() {
 
     return () => clearTimeout(searchDebounceRef.current);
   }, [searchInput, filters, sort, fetchLaptops]);
-
-
 
   useEffect(() => {
     fetchLaptops(page);
@@ -105,7 +101,8 @@ export default function Laptops() {
       operatingSystem: "",
       batteryCapacity: "",
       location: "",
-      remarks: "",
+      remarks: "",        // will be "Yes" or "No"
+      damageReason: "",   // only sent to backend when remarks === "Yes"
       lastServicedDate: "",
     };
   }
@@ -133,12 +130,19 @@ export default function Laptops() {
     const required = ["brand", "modelNumber", "assetTag", "purchaseDate", "processor", "ram", "storage", "operatingSystem", "location"];
     if (required.some((f) => !formData[f]?.toString()?.trim())) return alert("Please fill all required fields.");
 
+    // If remarks === Yes, damageReason must exist
+    if (formData.remarks === "Yes" && !formData.damageReason?.trim()) {
+      return alert("Please enter damage reason when Remarks is Yes.");
+    }
+
     try {
+      const payload = { ...formData }; // damageReason included (backend will use it to insert into DamagedAssets)
+
       if (editingId) {
-        await axios.put(`${API_URL}/${editingId}`, { id: editingId, ...formData });
+        await axios.put(`${API_URL}/${editingId}`, { id: editingId, ...payload });
         alert("✅Updated successfully");
       } else {
-        await axios.post(API_URL, formData);
+        await axios.post(API_URL, payload);
         alert("✅Added successfully");
       }
       setShowForm(false);
@@ -166,35 +170,35 @@ export default function Laptops() {
       operatingSystem: l.operatingSystem || "",
       batteryCapacity: l.batteryCapacity || "",
       location: l.location || "",
-      remarks: l.remarks || "",
+      remarks: l.remarks || "",         // may be "Yes" or "No"
+      damageReason: "",                 // we don't store damageReason in Laptops table (Option B), so leave blank on edit
       lastServicedDate: l.lastServicedDate?.split("T")[0] || "",
     });
     setShowForm(true);
   };
 
-const handleDelete = async (id) => {
-  const reason = prompt("Please enter the reason for deleting this laptop:");
+  const handleDelete = async (id) => {
+    const reason = prompt("Please enter the reason for deleting this laptop:");
 
-  if (!reason || reason.trim() === "") {
-    alert("Deletion cancelled — reason is required.");
-    return;
-  }
+    if (!reason || reason.trim() === "") {
+      alert("Deletion cancelled — reason is required.");
+      return;
+    }
 
-  if (!window.confirm("Are you sure you want to delete this laptop?")) return;
+    if (!window.confirm("Are you sure you want to delete this laptop?")) return;
 
-  try {
-    await axios.delete(`${API_URL}/${id}`, {
-      data: { reason }   // <-- send reason to backend
-    });
+    try {
+      await axios.delete(`${API_URL}/${id}`, {
+        data: { reason }   // <-- send reason to backend
+      });
 
-    alert("Laptop deleted successfully");
-    fetchLaptops(page);
-  } catch (err) {
-    console.error("delete error", err);
-    alert("Failed to delete laptop");
-  }
-};
-
+      alert("Laptop deleted successfully");
+      fetchLaptops(page);
+    } catch (err) {
+      console.error("delete error", err);
+      alert("Failed to delete laptop");
+    }
+  };
 
   const resetForm = () => {
     setEditingId(null);
@@ -211,7 +215,6 @@ const handleDelete = async (id) => {
   const prevPage = () => page > 1 && setPage((p) => p - 1);
 
   // Export helpers
-
   const exportToPDF = () => {
     if (!laptops || laptops.length === 0) return alert("No data to export");
     const doc = new jsPDF({ orientation: "landscape" });
@@ -221,7 +224,6 @@ const handleDelete = async (id) => {
     autoTable(doc, { head: [cols], body: rows, startY: 18, styles: { fontSize: 8 } });
     doc.save(`laptops_${Date.now()}.pdf`);
   };
-
 
   return (
     <div className="laptops-page container-fluid mt-4 mb-5 px-2" style={{ maxWidth: "100vw", overflowX: "hidden", paddingLeft: "10px", paddingRight: "10px" }}>
@@ -278,8 +280,6 @@ const handleDelete = async (id) => {
             </select>
           </div>
 
-
-
           <div className="col ms-auto d-flex gap-2 justify-content-end">
             <button
               className="btn btn-outline-secondary"
@@ -324,7 +324,7 @@ const handleDelete = async (id) => {
               ["operatingSystem", "Operating System *"],
               ["batteryCapacity", "Battery Capacity"],
               ["location", "Location *"],
-              ["remarks", "Remarks"],
+              // remark will be handled separately below
               ["lastServicedDate", "Last Serviced Date", "date"],
             ].map(([name, label, type = "text"]) => (
               <div key={name} className="col-12 col-sm-6 col-md-4 px-2">
@@ -340,6 +340,45 @@ const handleDelete = async (id) => {
                 {name === "assetTag" && assetError && <div className="invalid-feedback">{assetError}</div>}
               </div>
             ))}
+
+            {/* Remarks dropdown */}
+            <div className="col-12 col-sm-6 col-md-4 px-2">
+              <label className="form-label small fw-semibold">Remarks *</label>
+              <select
+                name="remarks"
+                value={formData.remarks}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setFormData((prev) => ({
+                    ...prev,
+                    remarks: value,
+                    damageReason: value === "Yes" ? prev.damageReason : "" // clear if No
+                  }));
+                }}
+                className="form-select"
+                required
+              >
+                <option value="">Select</option>
+                <option value="No">No</option>
+                <option value="Yes">Yes</option>
+              </select>
+            </div>
+
+            {/* Inline Damage Reason input (only when Remarks = Yes) */}
+            {formData.remarks === "Yes" && (
+              <div className="col-12 col-sm-6 col-md-4 px-2">
+                <label className="form-label small fw-semibold">Damage Reason *</label>
+                <input
+                  type="text"
+                  name="damageReason"
+                  value={formData.damageReason}
+                  onChange={handleChange}
+                  className="form-control"
+                  required
+                />
+              </div>
+            )}
+
           </div>
 
           <div className="text-center mt-4">

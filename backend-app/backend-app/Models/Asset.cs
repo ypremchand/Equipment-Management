@@ -14,6 +14,8 @@ namespace backend_app.Models
         [Range(0, int.MaxValue)]
         public int Quantity { get; set; }
 
-        //public ICollection<Laptop>? Laptops { get; set; }
+        // NEW — the table name that maps to related items (Laptops, Mobiles, Tablets…)
+        [StringLength(100)]
+        public string? TableName { get; set; }
     }
 }

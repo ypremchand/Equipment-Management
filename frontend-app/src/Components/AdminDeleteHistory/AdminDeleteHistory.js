@@ -43,7 +43,6 @@ function AdminDeleteHistory() {
               <th>Type</th>
               <th>Admin</th>
               <th>Date</th>
-              <th>IP Address</th>
               <th>Reason</th>
             </tr>
           </thead>
@@ -56,7 +55,6 @@ function AdminDeleteHistory() {
                 <td>{log.itemType}</td>
                 <td>{log.adminName}</td>
                 <td>{new Date(log.deletedAt).toLocaleString()}</td>
-                <td>{log.ipAddress || "—"}</td>
                 <td>{log.reason || "—"}</td>
               </tr>
             ))}

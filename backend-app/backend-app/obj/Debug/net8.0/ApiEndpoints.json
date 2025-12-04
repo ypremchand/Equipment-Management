@@ -184,6 +184,11 @@
         "Name": "assignedId",
         "Type": "System.Int32",
         "IsRequired": true
+      },
+      {
+        "Name": "payload",
+        "Type": "backend_app.Controllers.AssetRequestsController\u002BReturnPayload",
+        "IsRequired": true
       }
     ],
     "ReturnTypes": []
@@ -320,6 +325,64 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "backend_app.Controllers.DamagedAssetsController",
+    "Method": "GetDamagedAssets",
+    "RelativePath": "api/DamagedAssets",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "pageSize",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "search",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_app.Controllers.DamagedAssetsController",
+    "Method": "Get",
+    "RelativePath": "api/DamagedAssets/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_app.Controllers.DamagedAssetsController",
+    "Method": "RepairDamagedAsset",
+    "RelativePath": "api/DamagedAssets/repair/{id}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "backend_app.Controllers.LaptopsController",
     "Method": "GetLaptops",
     "RelativePath": "api/Laptops",
@@ -389,8 +452,8 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "laptop",
-        "Type": "backend_app.Models.Laptop",
+        "Name": "payload",
+        "Type": "backend_app.Controllers.LaptopsController\u002BLaptopPayload",
         "IsRequired": true
       }
     ],
@@ -446,8 +509,8 @@
         "IsRequired": true
       },
       {
-        "Name": "laptop",
-        "Type": "backend_app.Models.Laptop",
+        "Name": "payload",
+        "Type": "backend_app.Controllers.LaptopsController\u002BLaptopPayload",
         "IsRequired": true
       }
     ],
@@ -653,8 +716,8 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "mobile",
-        "Type": "backend_app.Models.Mobile",
+        "Name": "payload",
+        "Type": "backend_app.Controllers.MobilesController\u002BMobilePayload",
         "IsRequired": true
       }
     ],
@@ -710,8 +773,8 @@
         "IsRequired": true
       },
       {
-        "Name": "mobile",
-        "Type": "backend_app.Models.Mobile",
+        "Name": "payload",
+        "Type": "backend_app.Controllers.MobilesController\u002BMobilePayload",
         "IsRequired": true
       }
     ],
@@ -829,8 +892,8 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "tablet",
-        "Type": "backend_app.Models.Tablet",
+        "Name": "payload",
+        "Type": "backend_app.Controllers.TabletsController\u002BTabletPayload",
         "IsRequired": true
       }
     ],
@@ -886,8 +949,8 @@
         "IsRequired": true
       },
       {
-        "Name": "tablet",
-        "Type": "backend_app.Models.Tablet",
+        "Name": "payload",
+        "Type": "backend_app.Controllers.TabletsController\u002BTabletPayload",
         "IsRequired": true
       }
     ],
@@ -975,17 +1038,7 @@
     "IsController": true,
     "Order": 0,
     "Parameters": [],
-    "ReturnTypes": [
-      {
-        "Type": "System.Collections.Generic.IEnumerable\u00601[[backend_app.Models.UserDeleteHistory, backend-app, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "backend_app.Controllers.WeatherForecastController",

@@ -24,10 +24,19 @@ namespace backend_app.Controllers
 
             type = type.Trim().ToLower();
 
+            // Load damaged IDs once for the requested type
+            var damagedIds = await _context.DamagedAssets
+                .Where(d => d.AssetType.ToLower() == type)
+                .Select(d => d.AssetTypeItemId)
+                .ToListAsync();
+
+            // ===========================
+            //         LAPTOPS
+            // ===========================
             if (type == "laptop")
             {
                 var data = await _context.Laptops
-                    .Where(x => x.IsAssigned == false)
+                    .Where(x => !x.IsAssigned && !damagedIds.Contains(x.Id))
                     .Select(x => new
                     {
                         x.Id,
@@ -54,10 +63,13 @@ namespace backend_app.Controllers
                 return Ok(data);
             }
 
+            // ===========================
+            //         MOBILES
+            // ===========================
             if (type == "mobile")
             {
                 var data = await _context.Mobiles
-                    .Where(x => x.IsAssigned == false)
+                    .Where(x => !x.IsAssigned && !damagedIds.Contains(x.Id))
                     .Select(x => new
                     {
                         x.Id,
@@ -82,10 +94,13 @@ namespace backend_app.Controllers
                 return Ok(data);
             }
 
+            // ===========================
+            //         TABLETS
+            // ===========================
             if (type == "tablet")
             {
                 var data = await _context.Tablets
-                    .Where(x => x.IsAssigned == false)
+                    .Where(x => !x.IsAssigned && !damagedIds.Contains(x.Id))
                     .Select(x => new
                     {
                         x.Id,
@@ -96,6 +111,10 @@ namespace backend_app.Controllers
                         x.Processor,
                         x.Ram,
                         x.Storage,
+                        x.DisplaySize,
+                        x.BatteryCapacity,
+                        x.IMEINumber,
+                        x.SIMSupport,
                         x.NetworkType,
                         x.Location,
                         x.Remarks,
@@ -111,6 +130,5 @@ namespace backend_app.Controllers
 
             return BadRequest("Unknown asset type.");
         }
-
     }
-    }
+}

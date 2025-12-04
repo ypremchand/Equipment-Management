@@ -70,7 +70,7 @@ namespace backend_app.Controllers
                 AdminName = "AdminUser",
                 DeletedAt = DateTime.Now,
                 Reason = body?.Reason ?? "No reason provided",
-                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? ""
+                //IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? ""
             };
 
             _context.AdminDeleteHistories.Add(history);

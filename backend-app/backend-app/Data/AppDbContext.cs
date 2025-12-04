@@ -14,6 +14,9 @@ namespace backend_app.Data
         public DbSet<Laptop> Laptops { get; set; }
         public DbSet<Mobile> Mobiles { get; set; }
         public DbSet<Tablet> Tablets { get; set; }
+        public DbSet<DamagedAsset> DamagedAssets { get; set; }
+        public DbSet<RepairHistory> RepairHistories { get; set; }
+
         public DbSet<Location> Locations { get; set; }
         public DbSet<AssignedAsset> AssignedAssets { get; set; }
         public DbSet<AssetRequest> AssetRequests { get; set; }

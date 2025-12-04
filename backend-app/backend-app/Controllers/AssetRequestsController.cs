@@ -554,11 +554,19 @@ namespace backend_app.Controllers
             }
         }
 
-        [HttpPost("return-item/{assignedId}")]
-        public async Task<IActionResult> ReturnItem(int assignedId)
+        // --------------------------
+        // RETURN ITEM (with damage flow + assetTag fix)
+        // --------------------------
+        public class ReturnPayload
         {
-            var assigned = await _context.AssignedAssets
-                .FirstOrDefaultAsync(a => a.Id == assignedId);
+            public bool IsDamaged { get; set; }
+            public string? DamageReason { get; set; }
+        }
+
+        [HttpPost("return-item/{assignedId}")]
+        public async Task<IActionResult> ReturnItem(int assignedId, [FromBody] ReturnPayload payload)
+        {
+            var assigned = await _context.AssignedAssets.FirstOrDefaultAsync(a => a.Id == assignedId);
 
             if (assigned == null)
                 return NotFound("Assigned asset not found.");
@@ -568,18 +576,27 @@ namespace backend_app.Controllers
 
             // Mark as returned
             assigned.Status = "Returned";
-            assigned.ReturnedDate = DateTime.Now;    // ← This is the magic line
+            assigned.ReturnedDate = DateTime.Now;
 
-            // Restore device availability
             var type = assigned.AssetType?.ToLowerInvariant();
+
+            // -------------------------------------------
+            // FETCH ASSET TAG + UPDATE REMARKS IF DAMAGED
+            // -------------------------------------------
+
+            string assetTag = null;
 
             if (type == "laptop")
             {
                 var lap = await _context.Laptops.FindAsync(assigned.AssetTypeItemId);
                 if (lap != null)
                 {
+                    assetTag = lap.AssetTag;
                     lap.IsAssigned = false;
                     lap.AssignedDate = null;
+
+                    if (payload.IsDamaged)
+                        lap.Remarks = "Yes";
                 }
             }
             else if (type == "mobile")
@@ -587,8 +604,12 @@ namespace backend_app.Controllers
                 var mob = await _context.Mobiles.FindAsync(assigned.AssetTypeItemId);
                 if (mob != null)
                 {
+                    assetTag = mob.AssetTag;
                     mob.IsAssigned = false;
                     mob.AssignedDate = null;
+
+                    if (payload.IsDamaged)
+                        mob.Remarks = "Yes";
                 }
             }
             else if (type == "tablet")
@@ -596,15 +617,40 @@ namespace backend_app.Controllers
                 var tab = await _context.Tablets.FindAsync(assigned.AssetTypeItemId);
                 if (tab != null)
                 {
+                    assetTag = tab.AssetTag;
                     tab.IsAssigned = false;
                     tab.AssignedDate = null;
+
+                    if (payload.IsDamaged)
+                        tab.Remarks = "Yes";
                 }
+            }
+
+            // -------------------------------------------
+            // ADD TO DAMAGED TABLE IF DAMAGED
+            // -------------------------------------------
+            if (payload.IsDamaged)
+            {
+                if (string.IsNullOrWhiteSpace(payload.DamageReason))
+                    return BadRequest("Damage reason is required.");
+
+                var damaged = new DamagedAsset
+                {
+                    AssetType = assigned.AssetType,
+                    AssetTypeItemId = assigned.AssetTypeItemId,
+                    AssetTag = assetTag,
+                    Reason = payload.DamageReason,
+                    ReportedAt = DateTime.Now
+                };
+
+                _context.DamagedAssets.Add(damaged);
             }
 
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Item returned successfully!" });
         }
+
 
 
         // --------------------------
@@ -618,6 +664,7 @@ namespace backend_app.Controllers
                     .ThenInclude(i => i.Asset)
                 .Include(r => r.AssetRequestItems)
                     .ThenInclude(i => i.AssignedAssets)
+                .Include(r => r.User)  // ← Needed to log user name
                 .FirstOrDefaultAsync(r => r.Id == id);
 
             if (request == null)
@@ -626,7 +673,23 @@ namespace backend_app.Controllers
             using var tx = await _context.Database.BeginTransactionAsync();
             try
             {
-                // Restore stock for each assigned asset using the concrete item's AssetId
+                // =====================================================
+                // 1) LOG USER DELETE HISTORY (NEW)
+                // =====================================================
+                var history = new UserDeleteHistory
+                {
+                    DeletedItemName = $"Request #{request.Id}",
+                    ItemType = "AssetRequest",
+                    UserName = request.User?.Name ?? "Unknown User",
+                    DeletedAt = DateTime.Now
+                };
+
+                _context.UserDeleteHistories.Add(history);
+
+
+                // =====================================================
+                // 2) RESTORE STOCK (EXACT CODE YOU PROVIDED)
+                // =====================================================
                 foreach (var item in request.AssetRequestItems ?? Enumerable.Empty<AssetRequestItem>())
                 {
                     foreach (var assigned in item.AssignedAssets ?? Enumerable.Empty<AssignedAsset>())
@@ -668,8 +731,13 @@ namespace backend_app.Controllers
                     }
                 }
 
-                // Delete assigned assets, items and the request
-                _context.AssignedAssets.RemoveRange(request.AssetRequestItems.SelectMany(i => i.AssignedAssets));
+                // =====================================================
+                // 3) DELETE THE REQUEST (YOUR ORIGINAL CODE)
+                // =====================================================
+                _context.AssignedAssets.RemoveRange(
+                    request.AssetRequestItems.SelectMany(i => i.AssignedAssets)
+                );
+
                 _context.AssetRequestItems.RemoveRange(request.AssetRequestItems);
                 _context.AssetRequests.Remove(request);
 
@@ -684,6 +752,7 @@ namespace backend_app.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
+
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)

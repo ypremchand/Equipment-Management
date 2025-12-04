@@ -1,4 +1,3 @@
-// src/Components/Mobiles/Mobiles.js
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
@@ -12,34 +11,27 @@ import autoTable from "jspdf-autotable";
 export default function Mobiles() {
   const API_URL = "http://localhost:5083/api/mobiles";
 
-  // Data
   const [mobiles, setMobiles] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Pagination
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 10;
 
-  // UI states
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [selectedMobile, setSelectedMobile] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [assetError, setAssetError] = useState("");
 
-  // Filters / Search / Sort
   const [searchInput, setSearchInput] = useState("");
   const [filters, setFilters] = useState({ brand: "", ram: "", storage: "", location: "" });
   const [sort, setSort] = useState({ by: "id", dir: "asc" });
 
-  // Global dropdown options
   const [allOptions, setAllOptions] = useState({ brands: [], rams: [], storages: [], locations: [] });
 
-  // Debounce ref
   const searchDebounceRef = useRef(null);
 
-  // Form State
   const [form, setForm] = useState(getEmptyForm());
 
   function getEmptyForm() {
@@ -58,13 +50,14 @@ export default function Mobiles() {
       networkType: "",
       location: "",
       remarks: "",
+      damageReason: "",   // NEW
       lastServicedDate: "",
     };
   }
 
-  // ======================================================
-  // 🔥 Fetch Mobiles with Server-side Filters + Search
-  // ======================================================
+  // ===================================================================
+  // FETCH MOBILES
+  // ===================================================================
   const fetchMobiles = useCallback(
     async (currentPage = 1) => {
       setLoading(true);
@@ -96,7 +89,6 @@ export default function Mobiles() {
     [searchInput, filters, sort]
   );
 
-  // Debounced fetching
   useEffect(() => {
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
 
@@ -107,28 +99,30 @@ export default function Mobiles() {
     return () => clearTimeout(searchDebounceRef.current);
   }, [searchInput, filters, sort, fetchMobiles]);
 
-  // Fetch page change
   useEffect(() => {
     fetchMobiles(page);
   }, [page, fetchMobiles]);
 
-  // Fetch dropdown options (/options)
   useEffect(() => {
-    axios
-      .get(API_URL + "/options")
+    axios.get(API_URL + "/options")
       .then((res) => setAllOptions(res.data))
       .catch((err) => console.error("Options load error", err));
   }, []);
 
-  // Form handlers
+  // ===================================================================
+  // FORM HANDLERS
+  // ===================================================================
   const handleChange = async (e) => {
     const { name, value } = e.target;
     setForm((p) => ({ ...p, [name]: value }));
 
     if (name === "assetTag") {
       if (!value.trim()) return setAssetError("");
+
       try {
-        const res = await axios.get(`${API_URL}/check-duplicate`, { params: { assetTag: value } });
+        const res = await axios.get(`${API_URL}/check-duplicate`, {
+          params: { assetTag: value },
+        });
         setAssetError(res.data.exists ? "Asset number already exists" : "");
       } catch (err) {
         console.error("Asset check error", err);
@@ -138,19 +132,27 @@ export default function Mobiles() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (assetError) return alert("Please fix asset tag issue.");
 
     const required = ["brand", "model", "assetTag", "purchaseDate", "processor", "ram", "storage", "location"];
-    if (required.some((f) => !form[f]?.toString()?.trim())) return alert("Fill all required fields");
+    if (required.some((f) => !form[f]?.trim())) {
+      return alert("Please fill all required fields.");
+    }
+
+    if (form.remarks === "Yes" && !form.damageReason.trim()) {
+      return alert("Please enter Damage Reason when Remarks is Yes.");
+    }
 
     try {
       if (editingId) {
         await axios.put(`${API_URL}/${editingId}`, form);
-        alert("✅Updated successfully");
+        alert("Updated successfully");
       } else {
-        await axios.post(API_URL, form);
-        alert("✅Added successfully");
+        await axios.post(API_URL, form); // damageReason included
+        alert("Added successfully");
       }
+
       resetForm();
       fetchMobiles(page);
     } catch (err) {
@@ -176,6 +178,7 @@ export default function Mobiles() {
       networkType: m.networkType || "",
       location: m.location || "",
       remarks: m.remarks || "",
+      damageReason: "",
       lastServicedDate: m.lastServicedDate?.split("T")[0] || "",
     });
     setShowForm(true);
@@ -201,12 +204,14 @@ export default function Mobiles() {
   };
 
   const toggleSort = (field) => {
-    setSort((s) => (s.by === field ? { by: field, dir: s.dir === "asc" ? "desc" : "asc" } : { by: field, dir: "asc" }));
+    setSort((s) =>
+      s.by === field ? { by: field, dir: s.dir === "asc" ? "desc" : "asc" } : { by: field, dir: "asc" }
+    );
   };
 
-  // Export Helpers
-
-
+  // ===================================================================
+  // EXPORT
+  // ===================================================================
   const exportToPDF = () => {
     if (!mobiles.length) return alert("No data");
 
@@ -230,11 +235,14 @@ export default function Mobiles() {
     doc.save(`mobiles_${Date.now()}.pdf`);
   };
 
+  // ===================================================================
+  // UI
+  // ===================================================================
   return (
     <div className="mobiles-page container-fluid mt-4 mb-5 px-2">
       <h3 className="text-center mb-4">📱 Mobiles</h3>
 
-      {/* Filters/Search */}
+      {/* FILTERS */}
       <div className="card p-3 mb-3">
         <div className="row g-2">
           <div className="col-md-3">
@@ -245,6 +253,7 @@ export default function Mobiles() {
               onChange={(e) => setSearchInput(e.target.value)}
             />
           </div>
+
           {/* Brand */}
           <div className="col-auto">
             <select
@@ -281,9 +290,9 @@ export default function Mobiles() {
               onChange={(e) => setFilters((p) => ({ ...p, storage: e.target.value }))}
             >
               <option value="">All Storage</option>
-              {allOptions.storages.map((s) => (
+              {allOptions.storages.map((s) =>
                 <option key={s}>{s}</option>
-              ))}
+              )}
             </select>
           </div>
 
@@ -313,7 +322,6 @@ export default function Mobiles() {
               Reset
             </button>
 
-
             <button className="btn btn-outline-danger" onClick={exportToPDF}>
               Export PDF
             </button>
@@ -329,24 +337,95 @@ export default function Mobiles() {
         </div>
       )}
 
-      {/* Form */}
+      {/* ========================================================= */}
+      {/* FORM */}
+      {/* ========================================================= */}
       {showForm && (
         <form className="card p-3 mb-3" onSubmit={handleSubmit}>
-          <h5 className="text-center mb-3">{editingId ? "✏️ Edit Mobile" : "🆕 Add Mobile"}</h5>
-          <div className="row">
-            {Object.keys(form).map((key) => (
-              <div className="col-md-4 mb-2" key={key}>
-                <label className="form-label small text-capitalize">{key}</label>
+          <h5 className="text-center mb-3">
+            {editingId ? "✏️ Edit Mobile" : "🆕 Add Mobile"}
+          </h5>
+
+          <div className="row g-3">
+
+            {/* Standard fields */}
+            {[
+              ["brand", "Brand *"],
+              ["model", "Model *"],
+              ["IMEINumber", "IMEI Number"],
+              ["assetTag", "Asset Tag *"],
+              ["purchaseDate", "Purchase Date *", "date"],
+              ["processor", "Processor *"],
+              ["ram", "RAM *"],
+              ["storage", "Storage *"],
+              ["batteryCapacity", "Battery Capacity"],
+              ["displaySize", "Display Size"],
+              ["SIMType", "SIM Type"],
+              ["networkType", "Network Type"],
+              ["location", "Location *"],
+              ["lastServicedDate", "Last Serviced Date", "date"],
+            ].map(([name, label, type = "text"]) => (
+              <div key={name} className="col-md-4">
+                <label className="form-label small fw-semibold">{label}</label>
+
                 <input
-                  type={key.toLowerCase().includes("date") ? "date" : "text"}
-                  name={key}
-                  value={form[key]}
+                  type={type}
+                  name={name}
+                  value={form[name]}
                   onChange={handleChange}
-                  className={`form-control ${key === "assetTag" && assetError ? "is-invalid" : ""}`}
+                  className={`form-control ${
+                    name === "assetTag" && assetError ? "is-invalid" : ""
+                  }`}
+                  required={label.includes("*")}
                 />
-                {key === "assetTag" && assetError && <div className="invalid-feedback">{assetError}</div>}
+
+                {name === "assetTag" && assetError && (
+                  <div className="invalid-feedback">{assetError}</div>
+                )}
               </div>
             ))}
+
+            {/* ===================== */}
+            {/* Remarks Dropdown */}
+            {/* ===================== */}
+            <div className="col-md-4">
+              <label className="form-label small fw-semibold">Remarks *</label>
+              <select
+                name="remarks"
+                value={form.remarks}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setForm((p) => ({
+                    ...p,
+                    remarks: v,
+                    damageReason: v === "Yes" ? p.damageReason : ""
+                  }));
+                }}
+                className="form-select"
+                required
+              >
+                <option value="">Select</option>
+                <option value="No">No</option>
+                <option value="Yes">Yes</option>
+              </select>
+            </div>
+
+            {/* ===================== */}
+            {/* Damage Reason */}
+            {/* ===================== */}
+            {form.remarks === "Yes" && (
+              <div className="col-md-4">
+                <label className="form-label small fw-semibold">Damage Reason *</label>
+                <input
+                  type="text"
+                  name="damageReason"
+                  value={form.damageReason}
+                  onChange={handleChange}
+                  className="form-control"
+                  required
+                />
+              </div>
+            )}
           </div>
 
           <div className="text-center mt-3">
@@ -360,7 +439,9 @@ export default function Mobiles() {
         </form>
       )}
 
-      {/* Table */}
+      {/* ========================================================= */}
+      {/* TABLE */}
+      {/* ========================================================= */}
       <div className="card p-2">
         {loading ? (
           <div className="text-center py-4">
@@ -370,7 +451,7 @@ export default function Mobiles() {
           <p className="text-center my-3">No mobiles found.</p>
         ) : (
           <div className="table-responsive">
-            <table className="table table-bordered table-striped text-center align-middle">
+            <table className="table table-bordered text-center table-striped align-middle">
               <thead className="table-dark">
                 <tr>
                   <th onClick={() => toggleSort("id")} style={{ cursor: "pointer" }}>
@@ -421,23 +502,13 @@ export default function Mobiles() {
       </div>
 
       {/* Pagination */}
-      <div className="d-flex justify-content-center align-items-center mt-3 gap-3">
-        <Button
-          variant="dark"
-          disabled={page === 1}
-          onClick={() => setPage((p) => Math.max(1, p - 1))}
-        >
-          ◀️ Prev
+      <div className="d-flex justify-content-center mt-3 gap-3">
+        <Button variant="dark" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
+          ◀ Prev
         </Button>
-        <span>
-          Page {page} of {totalPages}
-        </span>
-        <Button
-          variant="dark"
-          disabled={page === totalPages}
-          onClick={() => setPage((p) => p + 1)}
-        >
-          Next ▶️
+        <span>Page {page} of {totalPages}</span>
+        <Button variant="dark" disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>
+          Next ▶
         </Button>
       </div>
 
@@ -447,25 +518,20 @@ export default function Mobiles() {
           <Modal.Title>Mobile Details</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {selectedMobile &&
-            Object.entries(selectedMobile).map(([k, v]) => (
-              <p key={k}>
-                <strong className="text-capitalize">{k}: </strong>
-                {typeof v === "object" ? JSON.stringify(v) : v || "-"}
-              </p>
-            ))}
+          {selectedMobile && Object.entries(selectedMobile).map(([k, v]) => (
+            <p key={k}>
+              <strong className="text-capitalize">{k}: </strong>
+              {typeof v === "object" ? JSON.stringify(v) : v || "-"}
+            </p>
+          ))}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Close
-          </Button>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>Close</Button>
         </Modal.Footer>
       </Modal>
 
       <div className="text-center mt-4">
-        <Link to="/adminpanel" className="btn btn-outline-dark">
-          ⬅ Back to Admin Panel
-        </Link>
+        <Link to="/adminpanel" className="btn btn-outline-dark">⬅ Back to Admin Panel</Link>
       </div>
     </div>
   );

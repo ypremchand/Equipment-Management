@@ -5,22 +5,25 @@ using Microsoft.EntityFrameworkCore;
 
 namespace backend_app.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class UserDeleteHistoriesController : ControllerBase
     {
         private readonly AppDbContext _context;
+
         public UserDeleteHistoriesController(AppDbContext context)
         {
             _context = context;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<UserDeleteHistory>>> GetHistory()
+        public async Task<IActionResult> GetHistory()
         {
-            return await _context.UserDeleteHistories
-                .OrderByDescending(h => h.DeletedAt)
+            var logs = await _context.UserDeleteHistories
+                .OrderByDescending(x => x.DeletedAt)
                 .ToListAsync();
+
+            return Ok(logs);
         }
     }
 }

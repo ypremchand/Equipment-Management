@@ -34,7 +34,7 @@ function Navbar({ user, onLogout }) {
                 <li className="nav-item">
                   <Link
                     className="nav-link"
-                    to="/adminpanel"
+                    to="/admin-panel"
                     onClick={() => setIsOpen(false)}
                   >
                     AdminPanel
@@ -54,6 +54,16 @@ function Navbar({ user, onLogout }) {
                   </Link>
                 </li>
 
+                  <li className="nav-item">
+                  <Link
+                    className="nav-link"
+                    to="/damaged-assets"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    DamagedAssets
+                  </Link>
+                </li>
+
                 {/* 🗑️ Delete History Dropdown */}
                 <li className="nav-item hover-dropdown">
                   <span className="nav-link dropdown-toggle-link no-caret">
@@ -63,7 +73,7 @@ function Navbar({ user, onLogout }) {
                     <button
                       className="dropdown-item"
                       onClick={() => {
-                        navigate("/admindeletehistory");
+                        navigate("/admin-delete-history");
                         setIsOpen(false);
                       }}
                     >
@@ -72,7 +82,7 @@ function Navbar({ user, onLogout }) {
                     <button
                       className="dropdown-item"
                       onClick={() => {
-                        navigate("/userdeletehistory");
+                        navigate("/user-delete-history");
                         setIsOpen(false);
                       }}
                     >
@@ -106,9 +116,9 @@ function Navbar({ user, onLogout }) {
                 <li className="nav-item">
                   <Link
                     className="nav-link"
-                    to="/returnassets"
+                    to="/requested-assets"
                     onClick={() => setIsOpen(false)}
-                  >
+                  > 
                     RequestedAssets
                   </Link>
                 </li>

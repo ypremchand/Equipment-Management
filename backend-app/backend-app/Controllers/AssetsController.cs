@@ -45,6 +45,12 @@ namespace backend_app.Controllers
             var mobiles = await _context.Mobiles.ToListAsync();
             var tablets = await _context.Tablets.ToListAsync();
 
+            // Load damaged laptop IDs once
+            var damagedLaptops = await _context.DamagedAssets
+                .Where(d => d.AssetType.ToLower() == "laptop")
+                .Select(d => d.AssetTypeItemId)
+                .ToListAsync();
+
             var result = assets.Select(a =>
             {
                 var type = NormalizeType(a.Name);
@@ -54,25 +60,58 @@ namespace backend_app.Controllers
 
                 if (type == "laptop")
                 {
-                    total = laptops.Count(x => x.AssetId == a.Id);
-                    assigned = laptops.Count(x => x.AssetId == a.Id && x.IsAssigned);
+                    total = laptops.Count(x =>
+                        (x.AssetId == a.Id || x.AssetId == null) &&
+                        !damagedLaptops.Contains(x.Id)
+                    );
+
+                    assigned = laptops.Count(x =>
+                        (x.AssetId == a.Id || x.AssetId == null) &&
+                        x.IsAssigned &&
+                        !damagedLaptops.Contains(x.Id)
+                    );
                 }
                 else if (type == "mobile")
                 {
-                    total = mobiles.Count(x => x.AssetId == a.Id);
-                    assigned = mobiles.Count(x => x.AssetId == a.Id && x.IsAssigned);
+                    var damagedMobiles = _context.DamagedAssets
+                        .Where(d => d.AssetType.ToLower() == "mobile")
+                        .Select(d => d.AssetTypeItemId)
+                        .ToList();
+
+                    total = mobiles.Count(x =>
+                        (x.AssetId == a.Id || x.AssetId == null) &&
+                        !damagedMobiles.Contains(x.Id)
+                    );
+
+                    assigned = mobiles.Count(x =>
+                        (x.AssetId == a.Id || x.AssetId == null) &&
+                        x.IsAssigned &&
+                        !damagedMobiles.Contains(x.Id)
+                    );
                 }
                 else if (type == "tablet")
                 {
-                    total = tablets.Count(x => x.AssetId == a.Id);
-                    assigned = tablets.Count(x => x.AssetId == a.Id && x.IsAssigned);
+                    var damagedTablets = _context.DamagedAssets
+                        .Where(d => d.AssetType.ToLower() == "tablet")
+                        .Select(d => d.AssetTypeItemId) 
+                        .ToList();
+
+                    total = tablets.Count(x =>
+                        (x.AssetId == a.Id || x.AssetId == null) &&
+                        !damagedTablets.Contains(x.Id)
+                    );
+
+                    assigned = tablets.Count(x =>
+                        (x.AssetId == a.Id || x.AssetId == null) &&
+                        x.IsAssigned &&
+                        !damagedTablets.Contains(x.Id)
+                    );
                 }
+
                 else
                 {
-                    // For Desktops / Printers / Scanners (no item table yet),
-                    // fallback to the manual quantity field.
                     total = a.Quantity;
-                    assigned = 0; // you can extend this later with AssignedAssets if needed
+                    assigned = 0;
                 }
 
                 int available = Math.Max(0, total - assigned);
@@ -83,12 +122,13 @@ namespace backend_app.Controllers
                     name = a.Name,
                     totalQuantity = total,
                     assignedQuantity = assigned,
-                    quantity = available   // Admin panel uses this as "Available Qty"
+                    quantity = available
                 };
             });
 
             return Ok(result);
         }
+
 
         // ============================================================
         // GET SINGLE ASSET
@@ -167,7 +207,7 @@ namespace backend_app.Controllers
                 AdminName = "Admin",
                 DeletedAt = DateTime.Now,
                 Reason = body?.Reason ?? "No reason provided",
-                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? ""
+                //IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? ""
             };
 
             _context.AdminDeleteHistories.Add(history);
@@ -177,7 +217,6 @@ namespace backend_app.Controllers
 
             return NoContent();
         }
-
 
     }
 }

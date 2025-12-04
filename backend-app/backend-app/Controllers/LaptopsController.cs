@@ -19,6 +19,11 @@ namespace backend_app.Controllers
             _context = context;
         }
 
+        // Payload class to accept extra damageReason in request body (not stored in Laptops table)
+        public class LaptopPayload : Laptop
+        {
+            public string? DamageReason { get; set; }
+        }
         // ============================================================
         // GET ALL LAPTOPS (Search + Filters + Sorting + Pagination)
         // ============================================================
@@ -43,11 +48,10 @@ namespace backend_app.Controllers
                 .Include(l => l.Asset)
                 .AsQueryable();
 
-            // 1️⃣ SEARCH (null-safe)
+            // 🔍 SEARCH
             if (!string.IsNullOrWhiteSpace(search))
             {
                 var s = search.Trim().ToLower().Replace(" ", "");
-
                 query = query.Where(l =>
                     ((l.Brand ?? "").ToLower().Replace(" ", "")).Contains(s) ||
                     ((l.ModelNumber ?? "").ToLower().Replace(" ", "")).Contains(s) ||
@@ -60,26 +64,23 @@ namespace backend_app.Controllers
                 );
             }
 
-            // 2️⃣ FILTERS
+            // 🎯 FILTERS (brand, ram, storage, location, os)
             if (!string.IsNullOrWhiteSpace(brand))
             {
                 var b = brand.Trim().ToLower().Replace(" ", "");
-                query = query.Where(l =>
-                    ((l.Brand ?? "").ToLower().Replace(" ", "")).Contains(b));
+                query = query.Where(l => ((l.Brand ?? "").ToLower().Replace(" ", "")).Contains(b));
             }
 
             if (!string.IsNullOrWhiteSpace(ram))
             {
                 var r = ram.Trim().ToLower().Replace(" ", "");
-                query = query.Where(l =>
-                    ((l.Ram ?? "").ToLower().Replace(" ", "")).Contains(r));
+                query = query.Where(l => ((l.Ram ?? "").ToLower().Replace(" ", "")).Contains(r));
             }
 
             if (!string.IsNullOrWhiteSpace(storage))
             {
                 var st = storage.Trim().ToLower().Replace(" ", "");
-                query = query.Where(l =>
-                    ((l.Storage ?? "").ToLower().Replace(" ", "")).Contains(st));
+                query = query.Where(l => ((l.Storage ?? "").ToLower().Replace(" ", "")).Contains(st));
             }
 
             if (!string.IsNullOrWhiteSpace(location))
@@ -97,7 +98,7 @@ namespace backend_app.Controllers
                     ((l.OperatingSystem ?? "").ToLower().Replace(" ", "")).Contains(os));
             }
 
-            // 3️⃣ EXCLUDE ASSIGNED LAPTOPS
+            // 🚫 EXCLUDE ASSIGNED LAPTOPS
             var assignedLaptopIds = await _context.AssignedAssets
                 .Where(a =>
                     a.AssetType != null &&
@@ -108,7 +109,13 @@ namespace backend_app.Controllers
 
             query = query.Where(l => !assignedLaptopIds.Contains(l.Id));
 
-            // 4️⃣ SORTING
+            // 🚫 EXCLUDE DAMAGED LAPTOPS (Remarks = "Yes")
+            query = query.Where(l =>
+                string.IsNullOrEmpty(l.Remarks) ||
+                l.Remarks.ToLower() != "yes"
+            );
+
+            // 🔽 SORTING
             bool desc = sortDir?.ToLower() == "desc";
 
             query = sortBy?.ToLower() switch
@@ -123,7 +130,7 @@ namespace backend_app.Controllers
                 _ => desc ? query.OrderByDescending(l => l.Id) : query.OrderBy(l => l.Id),
             };
 
-            // 5️⃣ PAGINATION
+            // 📄 PAGINATION
             var totalItems = await query.CountAsync();
             var laptops = await query
                 .Skip((page - 1) * pageSize)
@@ -142,9 +149,8 @@ namespace backend_app.Controllers
             });
         }
 
-        // ============================================================
+
         // OPTIONS for dropdowns (brand/ram/storage/location)
-        // ============================================================
         [HttpGet("options")]
         public async Task<IActionResult> GetOptions()
         {
@@ -191,9 +197,7 @@ namespace backend_app.Controllers
             });
         }
 
-        // ============================================================
         // GET SINGLE LAPTOP
-        // ============================================================
         [HttpGet("{id}")]
         public async Task<ActionResult<Laptop>> GetLaptop(int id)
         {
@@ -207,17 +211,15 @@ namespace backend_app.Controllers
             return laptop;
         }
 
-        // ============================================================
         // CREATE LAPTOP
-        // ============================================================
         [HttpPost]
-        public async Task<ActionResult<Laptop>> PostLaptop([FromBody] Laptop laptop)
+        public async Task<ActionResult<Laptop>> PostLaptop([FromBody] LaptopPayload payload)
         {
-            if (laptop.AssetTag == null)
+            if (payload.AssetTag == null)
                 return BadRequest(new { message = "AssetTag is required" });
 
             bool exists = await _context.Laptops
-                .AnyAsync(l => (l.AssetTag ?? "").ToLower() == laptop.AssetTag.ToLower());
+                .AnyAsync(l => (l.AssetTag ?? "").ToLower() == payload.AssetTag.ToLower());
 
             if (exists)
                 return BadRequest(new { message = "Asset number already exists" });
@@ -232,36 +234,62 @@ namespace backend_app.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            laptop.AssetId = asset.Id;
-            _context.Laptops.Add(laptop);
+            // payload is subclass of Laptop, safe to use directly when adding
+            payload.AssetId = asset.Id;
+            _context.Laptops.Add(payload);
             await _context.SaveChangesAsync();
 
             asset.Quantity = await _context.Laptops.CountAsync(l => l.AssetId == asset.Id);
             _context.Entry(asset).State = EntityState.Modified;
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetLaptop), new { id = laptop.Id }, laptop);
+            // If Remarks == Yes, create DamagedAssets entry (store reason only in DamagedAssets)
+            if (!string.IsNullOrWhiteSpace(payload.Remarks) && payload.Remarks.Trim().ToLower() == "yes")
+            {
+                if (string.IsNullOrWhiteSpace(payload.DamageReason))
+                {
+                    // rollback: remove inserted laptop and return error OR choose to allow - here we return BadRequest
+                    // remove saved laptop to keep DB consistent
+                    _context.Laptops.Remove(payload);
+                    await _context.SaveChangesAsync();
+                    return BadRequest(new { message = "Damage reason is required when Remarks = Yes" });
+                }
+
+                var damaged = new DamagedAsset
+                {
+                    AssetType = "Laptop",
+                    AssetTypeItemId = payload.Id,
+                    AssetTag = payload.AssetTag,
+                    Reason = payload.DamageReason,
+                    ReportedAt = DateTime.Now
+                };
+
+                _context.DamagedAssets.Add(damaged);
+                await _context.SaveChangesAsync();
+            }
+
+            return CreatedAtAction(nameof(GetLaptop), new { id = payload.Id }, payload);
         }
 
-        // ============================================================
         // UPDATE LAPTOP
-        // ============================================================
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutLaptop(int id, [FromBody] Laptop laptop)
+        public async Task<IActionResult> PutLaptop(int id, [FromBody] LaptopPayload payload)
         {
-            if (id != laptop.Id && laptop.Id != 0)
-                laptop.Id = id;
+            // Ensure id set
+            if (id != payload.Id && payload.Id != 0)
+                payload.Id = id;
 
-            if (laptop.AssetTag == null)
+            if (payload.AssetTag == null)
                 return BadRequest(new { message = "AssetTag is required" });
 
             bool exists = await _context.Laptops
-                .AnyAsync(l => l.Id != id && (l.AssetTag ?? "").ToLower() == laptop.AssetTag.ToLower());
+                .AnyAsync(l => l.Id != id && (l.AssetTag ?? "").ToLower() == payload.AssetTag.ToLower());
 
             if (exists)
                 return BadRequest(new { message = "Another laptop with the same AssetTag exists" });
 
-            _context.Entry(laptop).State = EntityState.Modified;
+            // Update laptop entity - payload inherits Laptop so can be used directly
+            _context.Entry(payload).State = EntityState.Modified;
 
             try
             {
@@ -275,9 +303,30 @@ namespace backend_app.Controllers
                 throw;
             }
 
-            if (laptop.AssetId.HasValue)
+            // If Remarks == Yes, create DamagedAssets entry (store reason only in DamagedAssets)
+            if (!string.IsNullOrWhiteSpace(payload.Remarks) && payload.Remarks.Trim().ToLower() == "yes")
             {
-                var asset = await _context.Assets.FindAsync(laptop.AssetId.Value);
+                if (string.IsNullOrWhiteSpace(payload.DamageReason))
+                {
+                    return BadRequest(new { message = "Damage reason is required when Remarks = Yes" });
+                }
+
+                var damaged = new DamagedAsset
+                {
+                    AssetType = "Laptop",
+                    AssetTypeItemId = payload.Id,
+                    AssetTag = payload.AssetTag,
+                    Reason = payload.DamageReason,
+                    ReportedAt = DateTime.Now
+                };
+
+                _context.DamagedAssets.Add(damaged);
+                await _context.SaveChangesAsync();
+            }
+
+            if (payload.AssetId.HasValue)
+            {
+                var asset = await _context.Assets.FindAsync(payload.AssetId.Value);
                 if (asset != null)
                 {
                     asset.Quantity = await _context.Laptops.CountAsync(l => l.AssetId == asset.Id);
@@ -289,9 +338,7 @@ namespace backend_app.Controllers
             return NoContent();
         }
 
-        // ============================================================
         // DELETE LAPTOP
-        // ============================================================
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteLaptop(int id)
         {
@@ -328,9 +375,7 @@ namespace backend_app.Controllers
             return NoContent();
         }
 
-        // ============================================================
         // CHECK DUPLICATE ASSET TAG
-        // ============================================================
         [HttpGet("check-duplicate")]
         public async Task<IActionResult> CheckDuplicate([FromQuery] string assetTag)
         {
@@ -342,6 +387,7 @@ namespace backend_app.Controllers
 
             return Ok(new { exists });
         }
+
         public class DeleteRequest
         {
             public string? Reason { get; set; }
