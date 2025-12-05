@@ -47,6 +47,8 @@ export default function Tablets() {
 
   const searchDebounceRef = useRef(null);
 
+  const admin = JSON.parse(localStorage.getItem("user") || "{}");
+
   function getEmptyForm() {
     return {
       brand: "",
@@ -195,14 +197,28 @@ export default function Tablets() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this tablet?")) return;
+    const reason = prompt("Please enter the reason for deleting this tablet:");
+
+    if (!reason || reason.trim() === "") {
+      alert("Deletion cancelled — reason is required.");
+      return;
+    }
+
+    if (!window.confirm("Are you sure you want to delete this tablet?")) return;
 
     try {
-      await axios.delete(`${API_URL}/${id}`);
-      alert("Deleted.");
+      await axios.delete(`${API_URL}/${id}`, {
+        data: {
+          reason,
+          adminName: admin?.name || "Unknown Admin"
+        }
+      });
+
+
+      alert("Tablet deleted successfully");
       fetchTablets(page);
     } catch (err) {
-      alert("Delete failed");
+      alert("Failed to delete tablet");
     }
   };
 

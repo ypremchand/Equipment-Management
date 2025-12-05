@@ -25,6 +25,7 @@ namespace backend_app.Controllers
                 if (model == null)
                     return BadRequest(new { message = "Invalid request." });
 
+                // Required fields
                 if (string.IsNullOrWhiteSpace(model.Name) ||
                     string.IsNullOrWhiteSpace(model.Email) ||
                     string.IsNullOrWhiteSpace(model.PhoneNumber) ||
@@ -37,21 +38,39 @@ namespace backend_app.Controllers
                 if (model.Password != model.ConfirmPassword)
                     return BadRequest(new { message = "Passwords do not match." });
 
-                // Password strength validation
-                var strongPassword =
-                    System.Text.RegularExpressions.Regex.IsMatch(
-                        model.Password,
-                        @"^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$");
+                // Strong password check
+                var strongPassword = System.Text.RegularExpressions.Regex.IsMatch(
+                    model.Password,
+                    @"^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$");
 
                 if (!strongPassword)
-                    return BadRequest(new { message = "Password must contain at least 1 letter, 1 number, 1 special character and be 8+ characters long." });
+                    return BadRequest(new { message = "Weak password" });
 
-                if (await _context.Users.AnyAsync(u => u.Email == model.Email))
+                // ❗ Check if already exists in User or Admin table
+                if (await _context.Users.AnyAsync(u => u.Email == model.Email) ||
+                    await _context.Admins.AnyAsync(a => a.Email == model.Email))
+                {
                     return BadRequest(new { message = "Email already registered." });
+                }
 
-                if (await _context.Users.AnyAsync(u => u.PhoneNumber == model.PhoneNumber))
-                    return BadRequest(new { message = "Phone number already registered." });
+                // IF EMAIL CONTAINS ADMIN → REGISTER AS ADMIN
+                if (model.Email.ToLower().Contains("@admin"))
+                {
+                    var admin = new Admin
+                    {
+                        Name = model.Name,
+                        Email = model.Email,
+                        PhoneNumber=model.PhoneNumber,
+                        Password = HashPassword(model.Password)
+                    };
 
+                    _context.Admins.Add(admin);
+                    await _context.SaveChangesAsync();
+
+                    return Ok(new { message = "Admin registered successfully." });
+                }
+
+                // OTHERWISE REGISTER AS NORMAL USER
                 var user = new User
                 {
                     Name = model.Name,
@@ -63,7 +82,7 @@ namespace backend_app.Controllers
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
 
-                return Ok(new { message = "Registration successful." });
+                return Ok(new { message = "User registered successfully." });
             }
             catch (Exception ex)
             {
@@ -79,22 +98,46 @@ namespace backend_app.Controllers
 
 
 
+
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginModel login)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == login.Email);
-            if (user == null || user.Password != HashPassword(login.Password))
-                return Unauthorized(new { message = "Invalid email or password" });
+            var hashedPwd = HashPassword(login.Password);
 
-            return Ok(new
+            // Check Admin first
+            var admin = await _context.Admins
+                .FirstOrDefaultAsync(a => a.Email == login.Email && a.Password == hashedPwd);
+
+            if (admin != null)
             {
-                message = "Login successful",
-                user = new { user.Id, user.Name, user.Email,user.PhoneNumber }
-            });
+                return Ok(new
+                {
+                    message = "Admin login successful",
+                    role = "Admin",
+                    user = new { admin.Id, admin.Name, admin.Email }
+                });
+            }
+
+            // Check User table
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email == login.Email && u.Password == hashedPwd);
+
+            if (user != null)
+            {
+                return Ok(new
+                {
+                    message = "User login successful",
+                    role = "User",
+                    user = new { user.Id, user.Name, user.Email, user.PhoneNumber }
+                });
+            }
+
+            return Unauthorized(new { message = "Invalid login credentials" });
         }
+
 
 
         // ✅ Hash password using SHA256
@@ -103,6 +146,24 @@ namespace backend_app.Controllers
             var bytes = Encoding.UTF8.GetBytes(password);
             return Convert.ToBase64String(SHA256.HashData(bytes));
         }
+
+        // GET: api/user
+        [HttpGet]
+        public async Task<IActionResult> GetUsers()
+        {
+            var users = await _context.Users
+                .Select(u => new
+                {
+                    u.Id,
+                    u.Name,
+                    u.Email,
+                    u.PhoneNumber
+                })
+                .ToListAsync();
+
+            return Ok(users);
+        }
+
         public class RegisterDto
         {
             public string Name { get; set; } = "";

@@ -153,7 +153,7 @@ function Register() {
 
                 {/* PASSWORD */}
                 <input
-                  type="password"
+                  type="password"  
                   name="password"
                   placeholder="Password"
                   className="form-control mb-3"

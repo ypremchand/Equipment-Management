@@ -67,11 +67,13 @@ namespace backend_app.Controllers
             {
                 DeletedItemName = location.Name,
                 ItemType = "Location",
-                AdminName = "AdminUser",
+                AdminName = body?.AdminName ?? "Unknown Admin",
                 DeletedAt = DateTime.Now,
                 Reason = body?.Reason ?? "No reason provided",
                 //IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? ""
             };
+
+           
 
             _context.AdminDeleteHistories.Add(history);
             _context.Locations.Remove(location);
@@ -80,12 +82,6 @@ namespace backend_app.Controllers
 
             return NoContent();
         }
-
-        public class DeleteRequest
-        {
-            public string? Reason { get; set; }
-        }
-
 
     }
 }

@@ -10,6 +10,7 @@ namespace backend_app.Data
             : base(options) { }
 
         public DbSet<User> Users => Set<User>();
+        public DbSet<Admin> Admins { get; set; }
         public DbSet<Asset> Assets { get; set; }
         public DbSet<Laptop> Laptops { get; set; }
         public DbSet<Mobile> Mobiles { get; set; }

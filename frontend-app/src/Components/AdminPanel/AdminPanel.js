@@ -19,6 +19,10 @@ function AdminPanel() {
   const ASSETS_API = "http://localhost:5083/api/assets";
   const LOCATIONS_API = "http://localhost:5083/api/locations";
 
+
+  // GET LOGGED-IN ADMIN
+const admin = JSON.parse(localStorage.getItem("user") || "{}");
+
   const fetchAssets = async () => {
     setLoadingAssets(true);
     try {
@@ -109,14 +113,20 @@ const handleDeleteAsset = async (id) => {
 
   try {
     await axios.delete(`${ASSETS_API}/${id}`, {
-      data: { reason }  // <-- send reason in request body
-    });
+  data: { 
+    reason,
+    adminName: admin?.name || "Unknown Admin"
+  }
+});
+
+
     fetchAssets();
   } catch (err) {
     console.error(err);
     alert("Failed to delete asset");
   }
 };
+
 
 
   const handleLocationSubmit = async (e) => {
@@ -153,9 +163,14 @@ const handleDeleteLocation = async (id) => {
   if (!window.confirm("Are you sure you want to delete this location?")) return;
 
   try {
-    await axios.delete(`${LOCATIONS_API}/${id}`, {
-      data: { reason } // <-- send reason
-    });
+   await axios.delete(`${LOCATIONS_API}/${id}`, {
+  data: { 
+    reason,
+    adminName: admin?.name || "Unknown Admin"
+  }
+});
+
+
     fetchLocations();
   } catch (err) {
     console.error(err);

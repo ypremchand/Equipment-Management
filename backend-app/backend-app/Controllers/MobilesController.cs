@@ -316,22 +316,25 @@ namespace backend_app.Controllers
         // DELETE MOBILE
         // ============================================================
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteMobile(int id)
+        public async Task<IActionResult> DeleteMobile(int id, [FromBody] DeleteRequest req)
         {
             var mobile = await _context.Mobiles.FindAsync(id);
             if (mobile == null) return NotFound();
 
+            var adminName = req?.AdminName ?? "Unknown Admin";
+
             var history = new AdminDeleteHistory
             {
-                DeletedItemName = mobile.AssetTag,
+                DeletedItemName = mobile.AssetTag ?? "Unknown",
                 ItemType = "Mobile",
-                AdminName = "AdminUser",
-                DeletedAt = DateTime.Now
+                AdminName = adminName,
+                DeletedAt = DateTime.Now,
+                Reason = req?.Reason ?? "No reason provided"
             };
 
             _context.AdminDeleteHistories.Add(history);
 
-            var assetId = mobile.AssetId;
+            int? assetId = mobile.AssetId;
 
             _context.Mobiles.Remove(mobile);
             await _context.SaveChangesAsync();
@@ -339,8 +342,12 @@ namespace backend_app.Controllers
             if (assetId.HasValue)
             {
                 var asset = await _context.Assets.FindAsync(assetId.Value);
-                asset.Quantity = await _context.Mobiles.CountAsync(m => m.AssetId == asset.Id);
-                await _context.SaveChangesAsync();
+                if (asset != null)
+                {
+                    asset.Quantity = await _context.Mobiles.CountAsync(l => l.AssetId == asset.Id);
+                    _context.Entry(asset).State = EntityState.Modified;
+                    await _context.SaveChangesAsync();
+                }
             }
 
             return NoContent();

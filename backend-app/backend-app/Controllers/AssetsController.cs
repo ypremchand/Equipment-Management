@@ -2,8 +2,8 @@
 using backend_app.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Linq;
-using static backend_app.Controllers.LocationsController;
 
 namespace backend_app.Controllers
 {
@@ -19,7 +19,7 @@ namespace backend_app.Controllers
         }
 
         // ---- same logic as in React normalizeType ----
-        private string NormalizeType(string? name)
+        private static string NormalizeType(string? name)
         {
             if (string.IsNullOrWhiteSpace(name)) return string.Empty;
 
@@ -93,7 +93,7 @@ namespace backend_app.Controllers
                 {
                     var damagedTablets = _context.DamagedAssets
                         .Where(d => d.AssetType.ToLower() == "tablet")
-                        .Select(d => d.AssetTypeItemId) 
+                        .Select(d => d.AssetTypeItemId)
                         .ToList();
 
                     total = tablets.Count(x =>
@@ -107,7 +107,6 @@ namespace backend_app.Controllers
                         !damagedTablets.Contains(x.Id)
                     );
                 }
-
                 else
                 {
                     total = a.Quantity;
@@ -128,7 +127,6 @@ namespace backend_app.Controllers
 
             return Ok(result);
         }
-
 
         // ============================================================
         // GET SINGLE ASSET
@@ -179,14 +177,15 @@ namespace backend_app.Controllers
         // DELETE ASSET
         // ============================================================
 
-        private async Task LogDelete(string itemName, string itemType)
+        private async Task LogDelete(string itemName, string itemType, string adminName, string? reason)
         {
             var log = new AdminDeleteHistory
             {
                 DeletedItemName = itemName,
                 ItemType = itemType,
-                AdminName = "Admin", // TODO -> Replace with actual logged-in admin if available
-                DeletedAt = DateTime.Now
+                AdminName = adminName,
+                DeletedAt = DateTime.Now,
+                Reason = reason ?? "No reason provided"
             };
 
             _context.AdminDeleteHistories.Add(log);
@@ -194,19 +193,22 @@ namespace backend_app.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteAsset(int id, [FromBody] DeleteRequest body)
+        public async Task<IActionResult> DeleteAsset(int id, [FromBody] DeleteRequest req)
         {
             var asset = await _context.Assets.FindAsync(id);
             if (asset == null)
                 return NotFound();
 
+            var adminName = req?.AdminName ?? "Unknown Admin";
+
+            // log history
             var history = new AdminDeleteHistory
             {
                 DeletedItemName = asset.Name,
                 ItemType = "Asset",
-                AdminName = "Admin",
+                AdminName = adminName,
                 DeletedAt = DateTime.Now,
-                Reason = body?.Reason ?? "No reason provided",
+                Reason =req?.Reason ?? "No reason provided",
                 //IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? ""
             };
 
@@ -217,6 +219,5 @@ namespace backend_app.Controllers
 
             return NoContent();
         }
-
     }
 }

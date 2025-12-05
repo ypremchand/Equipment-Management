@@ -36,6 +36,12 @@ export default function Laptops() {
   // debounce ref
   const searchDebounceRef = useRef(null);
 
+
+
+  const admin = JSON.parse(localStorage.getItem("user") || "{}");
+
+
+
   // Fetch data from backend with server-side filtering/sorting/pagination
   const fetchLaptops = useCallback(async (currentPage = 1) => {
     setLoading(true);
@@ -189,13 +195,16 @@ export default function Laptops() {
 
     try {
       await axios.delete(`${API_URL}/${id}`, {
-        data: { reason }   // <-- send reason to backend
+        data: {
+          reason,
+          adminName: admin?.name || "Unknown Admin"
+        }
       });
+
 
       alert("Laptop deleted successfully");
       fetchLaptops(page);
     } catch (err) {
-      console.error("delete error", err);
       alert("Failed to delete laptop");
     }
   };

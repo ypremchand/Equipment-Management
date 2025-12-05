@@ -33,6 +33,9 @@ function Requests() {
     locations: []
   });
 
+  const admin = JSON.parse(localStorage.getItem("user") || "{}");
+
+
   // Load all requests
   const fetchRequests = async () => {
     try {
@@ -126,9 +129,20 @@ function Requests() {
   };
 
   const handleDelete = async (id) => {
+    const reason = prompt("Please enter the reason for deleting this tablet:");
+
+    if (!reason || reason.trim() === "") {
+      alert("Deletion cancelled — reason is required.");
+      return;
+    }
     try {
       if (!window.confirm("Delete this request permanently?")) return;
-      await axios.delete(`${API_URL}/${id}`);
+      await axios.delete(`${API_URL}/${id}`, {
+        data: {
+          reason,
+          adminName: admin?.name || "Unknown Admin"
+        }
+      });
       fetchRequests();
     } catch (err) {
       console.error("Delete error:", err);
@@ -247,13 +261,12 @@ function Requests() {
 
                   <td>
                     <span
-                      className={`badge ${
-                        req.status?.toLowerCase() === "pending"
+                      className={`badge ${req.status?.toLowerCase() === "pending"
                           ? "bg-warning text-dark"
                           : req.status?.toLowerCase() === "approved"
-                          ? "bg-success"
-                          : "bg-danger"
-                      }`}
+                            ? "bg-success"
+                            : "bg-danger"
+                        }`}
                     >
                       {req.status}
                     </span>
@@ -378,18 +391,18 @@ function AssignApproveModal({ show, onHide, request, fetchRequests }) {
     return n;
   }
 
- const categoryFields = {
-  laptop: ["brand", "processor", "storage", "ram", "operatingSystem"],
-  mobile: ["brand", "processor", "storage", "ram", "networkType", "simType"],
-  tablet: ["brand", "processor", "storage", "ram", "networkType", "simSupport"],
-  scanner: ["scannerType", "scanSpeed"],
-  printer: ["printerType", "paperSize", "dpi"],
-  default: []
-};
+  const categoryFields = {
+    laptop: ["brand", "processor", "storage", "ram", "operatingSystem"],
+    mobile: ["brand", "processor", "storage", "ram", "networkType", "simType"],
+    tablet: ["brand", "processor", "storage", "ram", "networkType", "simSupport"],
+    scanner: ["scannerType", "scanSpeed"],
+    printer: ["printerType", "paperSize", "dpi"],
+    default: []
+  };
 
 
-const shouldShowFilter = (assetName, field) =>
-  categoryFields[normalizeType(assetName)]?.includes(field);
+  const shouldShowFilter = (assetName, field) =>
+    categoryFields[normalizeType(assetName)]?.includes(field);
 
 
 
@@ -578,28 +591,28 @@ const shouldShowFilter = (assetName, field) =>
                                   toggleSelect(item.id, a.id, item.requestedQuantity)
                                 }
                               />
-                             <label className="form-check-label ms-2">
+                              <label className="form-check-label ms-2">
 
-  {/* Primary Line */}
-  {a.assetTag || a.imeiNumber || a.serialNumber}{" "}
-  ({a.brand} - {a.modelNumber || a.model || a.processor})
+                                {/* Primary Line */}
+                                {a.assetTag || a.imeiNumber || a.serialNumber}{" "}
+                                ({a.brand} - {a.modelNumber || a.model || a.processor})
 
-  {/* Actual item details */}
-  <div style={{ fontSize: "0.75rem", color: "#444" }}>
-    {a.processor && <span className="me-2"><strong>Processor:</strong> {a.processor}</span>}
-    {a.ram && <span className="me-2"><strong>RAM:</strong> {a.ram}</span>}
-    {a.storage && <span className="me-2"><strong>Storage:</strong> {a.storage}</span>}
-    {a.operatingSystem && <span className="me-2"><strong>OS:</strong> {a.operatingSystem}</span>}
-    {a.networkType && <span className="me-2"><strong>Network:</strong> {a.networkType}</span>}
-    {a.simType && <span className="me-2"><strong>SIM Type:</strong> {a.simType}</span>}
-    {a.simSupport && <span className="me-2"><strong>SIM Support:</strong> {a.simSupport}</span>}
-    {a.scannerType && <span className="me-2"><strong>Scanner:</strong> {a.scannerType}</span>}
-    {a.scanSpeed && <span className="me-2"><strong>Speed:</strong> {a.scanSpeed}</span>}
-    {a.printerType && <span className="me-2"><strong>Printer:</strong> {a.printerType}</span>}
-    {a.paperSize && <span className="me-2"><strong>Paper:</strong> {a.paperSize}</span>}
-    {a.dpi && <span className="me-2"><strong>DPI:</strong> {a.dpi}</span>}
-  </div>
-</label>
+                                {/* Actual item details */}
+                                <div style={{ fontSize: "0.75rem", color: "#444" }}>
+                                  {a.processor && <span className="me-2"><strong>Processor:</strong> {a.processor}</span>}
+                                  {a.ram && <span className="me-2"><strong>RAM:</strong> {a.ram}</span>}
+                                  {a.storage && <span className="me-2"><strong>Storage:</strong> {a.storage}</span>}
+                                  {a.operatingSystem && <span className="me-2"><strong>OS:</strong> {a.operatingSystem}</span>}
+                                  {a.networkType && <span className="me-2"><strong>Network:</strong> {a.networkType}</span>}
+                                  {a.simType && <span className="me-2"><strong>SIM Type:</strong> {a.simType}</span>}
+                                  {a.simSupport && <span className="me-2"><strong>SIM Support:</strong> {a.simSupport}</span>}
+                                  {a.scannerType && <span className="me-2"><strong>Scanner:</strong> {a.scannerType}</span>}
+                                  {a.scanSpeed && <span className="me-2"><strong>Speed:</strong> {a.scanSpeed}</span>}
+                                  {a.printerType && <span className="me-2"><strong>Printer:</strong> {a.printerType}</span>}
+                                  {a.paperSize && <span className="me-2"><strong>Paper:</strong> {a.paperSize}</span>}
+                                  {a.dpi && <span className="me-2"><strong>DPI:</strong> {a.dpi}</span>}
+                                </div>
+                              </label>
 
 
 

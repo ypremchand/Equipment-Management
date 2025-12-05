@@ -657,14 +657,13 @@ namespace backend_app.Controllers
         // 5) DELETE REQUEST
         // --------------------------
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteRequest(int id)
+        public async Task<IActionResult> DeleteRequest(int id, [FromBody] DeleteRequest req)
         {
             var request = await _context.AssetRequests
                 .Include(r => r.AssetRequestItems)
                     .ThenInclude(i => i.Asset)
                 .Include(r => r.AssetRequestItems)
                     .ThenInclude(i => i.AssignedAssets)
-                .Include(r => r.User)  // ← Needed to log user name
                 .FirstOrDefaultAsync(r => r.Id == id);
 
             if (request == null)
@@ -674,21 +673,22 @@ namespace backend_app.Controllers
             try
             {
                 // =====================================================
-                // 1) LOG USER DELETE HISTORY (NEW)
+                // 1) LOG ADMIN DELETE HISTORY  (MATCHING TABLET STYLE)
                 // =====================================================
-                var history = new UserDeleteHistory
+                var history = new AdminDeleteHistory
                 {
                     DeletedItemName = $"Request #{request.Id}",
                     ItemType = "AssetRequest",
-                    UserName = request.User?.Name ?? "Unknown User",
+                    AdminName = req?.AdminName ?? "Unknown Admin",
+                    Reason = req?.Reason ?? "No reason provided",
                     DeletedAt = DateTime.Now
                 };
 
-                _context.UserDeleteHistories.Add(history);
+                _context.AdminDeleteHistories.Add(history);
 
 
                 // =====================================================
-                // 2) RESTORE STOCK (EXACT CODE YOU PROVIDED)
+                // 2) RESTORE STOCK (YOUR ORIGINAL LOGIC)
                 // =====================================================
                 foreach (var item in request.AssetRequestItems ?? Enumerable.Empty<AssetRequestItem>())
                 {
@@ -699,29 +699,24 @@ namespace backend_app.Controllers
                         if (type == "laptop")
                         {
                             var lap = await _context.Laptops.FindAsync(assigned.AssetTypeItemId);
-
                             if (lap != null && lap.IsAssigned == true)
                             {
                                 lap.IsAssigned = false;
                                 lap.AssignedDate = null;
                             }
                         }
-
                         else if (type == "mobile")
                         {
                             var mob = await _context.Mobiles.FindAsync(assigned.AssetTypeItemId);
-
                             if (mob != null && mob.IsAssigned == true)
                             {
                                 mob.IsAssigned = false;
                                 mob.AssignedDate = null;
                             }
                         }
-
                         else if (type == "tablet")
                         {
                             var tab = await _context.Tablets.FindAsync(assigned.AssetTypeItemId);
-
                             if (tab != null && tab.IsAssigned == true)
                             {
                                 tab.IsAssigned = false;
@@ -732,7 +727,7 @@ namespace backend_app.Controllers
                 }
 
                 // =====================================================
-                // 3) DELETE THE REQUEST (YOUR ORIGINAL CODE)
+                // 3) DELETE REQUEST + ITEMS (YOUR ORIGINAL CODE)
                 // =====================================================
                 _context.AssignedAssets.RemoveRange(
                     request.AssetRequestItems.SelectMany(i => i.AssignedAssets)
@@ -752,6 +747,7 @@ namespace backend_app.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
+
 
 
         [HttpGet("{id}")]

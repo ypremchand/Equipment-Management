@@ -32,6 +32,9 @@ export default function Mobiles() {
 
   const searchDebounceRef = useRef(null);
 
+  const admin = JSON.parse(localStorage.getItem("user") || "{}");
+
+
   const [form, setForm] = useState(getEmptyForm());
 
   function getEmptyForm() {
@@ -185,14 +188,26 @@ export default function Mobiles() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure?")) return;
+    const reason = prompt("Please enter the reason for deleting this mobile:");
+
+    if (!reason || reason.trim() === "") {
+      alert("Deletion cancelled — reason is required.");
+      return;
+    }
+
+    if (!window.confirm("Are you sure you want to delete this mobile?")) return;
+
     try {
-      await axios.delete(`${API_URL}/${id}`);
-      alert("Deleted");
+      await axios.delete(`${API_URL}/${id}`, {
+        data: {
+          reason,
+          adminName: admin?.name || "Unknown Admin"
+        }
+      });
+      alert("Mobile deleted successfully");
       fetchMobiles(page);
     } catch (err) {
-      console.error("Delete error", err);
-      alert("Failed to delete");
+      alert("Failed to delete Mobile");
     }
   };
 
@@ -373,9 +388,8 @@ export default function Mobiles() {
                   name={name}
                   value={form[name]}
                   onChange={handleChange}
-                  className={`form-control ${
-                    name === "assetTag" && assetError ? "is-invalid" : ""
-                  }`}
+                  className={`form-control ${name === "assetTag" && assetError ? "is-invalid" : ""
+                    }`}
                   required={label.includes("*")}
                 />
 

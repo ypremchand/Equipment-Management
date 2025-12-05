@@ -1,5 +1,15 @@
 [
   {
+    "ContainingType": "backend_app.Controllers.AdminController",
+    "Method": "GetAdmins",
+    "RelativePath": "api/Admin",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "backend_app.Controllers.AdminDeleteHistoriesController",
     "Method": "GetHistory",
     "RelativePath": "api/AdminDeleteHistories",
@@ -98,6 +108,11 @@
       {
         "Name": "id",
         "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "backend_app.Models.DeleteRequest",
         "IsRequired": true
       }
     ],
@@ -280,8 +295,8 @@
         "IsRequired": true
       },
       {
-        "Name": "body",
-        "Type": "backend_app.Controllers.LocationsController\u002BDeleteRequest",
+        "Name": "req",
+        "Type": "backend_app.Models.DeleteRequest",
         "IsRequired": true
       }
     ],
@@ -528,6 +543,11 @@
         "Name": "id",
         "Type": "System.Int32",
         "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "backend_app.Models.DeleteRequest",
+        "IsRequired": true
       }
     ],
     "ReturnTypes": []
@@ -640,7 +660,7 @@
       },
       {
         "Name": "body",
-        "Type": "backend_app.Controllers.LocationsController\u002BDeleteRequest",
+        "Type": "backend_app.Models.DeleteRequest",
         "IsRequired": true
       }
     ],
@@ -791,6 +811,11 @@
       {
         "Name": "id",
         "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "backend_app.Models.DeleteRequest",
         "IsRequired": true
       }
     ],
@@ -968,6 +993,11 @@
         "Name": "id",
         "Type": "System.Int32",
         "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "backend_app.Models.DeleteRequest",
+        "IsRequired": true
       }
     ],
     "ReturnTypes": []
@@ -992,6 +1022,16 @@
     "ContainingType": "backend_app.Controllers.TabletsController",
     "Method": "GetOptions",
     "RelativePath": "api/Tablets/options",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_app.Controllers.UserController",
+    "Method": "GetUsers",
+    "RelativePath": "api/User",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,

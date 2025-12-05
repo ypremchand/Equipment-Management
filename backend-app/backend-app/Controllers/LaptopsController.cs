@@ -338,20 +338,24 @@ namespace backend_app.Controllers
             return NoContent();
         }
 
-        // DELETE LAPTOP
+
+        //Delete Laptop
+
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteLaptop(int id)
+        public async Task<IActionResult> DeleteLaptop(int id, [FromBody] DeleteRequest req)
         {
             var laptop = await _context.Laptops.FindAsync(id);
             if (laptop == null)
                 return NotFound();
+            var adminName = req?.AdminName ?? "Unknown Admin";
 
             var history = new AdminDeleteHistory
             {
-                DeletedItemName = laptop.AssetTag,
+                DeletedItemName = laptop.AssetTag ?? "Unknown",
                 ItemType = "Laptop",
-                AdminName = "AdminUser",
-                DeletedAt = DateTime.Now
+                AdminName = adminName,
+                DeletedAt = DateTime.Now,
+                Reason = req?.Reason ?? "No reason provided"
             };
 
             _context.AdminDeleteHistories.Add(history);
@@ -375,6 +379,8 @@ namespace backend_app.Controllers
             return NoContent();
         }
 
+
+
         // CHECK DUPLICATE ASSET TAG
         [HttpGet("check-duplicate")]
         public async Task<IActionResult> CheckDuplicate([FromQuery] string assetTag)
@@ -388,10 +394,7 @@ namespace backend_app.Controllers
             return Ok(new { exists });
         }
 
-        public class DeleteRequest
-        {
-            public string? Reason { get; set; }
-        }
+       
 
     }
 }

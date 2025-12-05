@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace backend_app.Controllers
@@ -340,23 +341,27 @@ namespace backend_app.Controllers
         // DELETE TABLET
         // ============================================================
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteTablet(int id)
+        public async Task<IActionResult> DeleteTablet(int id, [FromBody] DeleteRequest req)
         {
             var tablet = await _context.Tablets.FindAsync(id);
             if (tablet == null)
                 return NotFound();
 
+            var adminName = req?.AdminName ?? "Unknown Admin";
+
+
             var history = new AdminDeleteHistory
             {
-                DeletedItemName = tablet.AssetTag,
+                DeletedItemName = tablet.AssetTag ?? "Unknown",
                 ItemType = "Tablet",
-                AdminName = "AdminUser",
-                DeletedAt = DateTime.Now
+                AdminName = adminName,
+                DeletedAt = DateTime.Now,
+                Reason = req?.Reason ?? "No reason provided"
             };
 
             _context.AdminDeleteHistories.Add(history);
 
-            var assetId = tablet.AssetId;
+            int? assetId = tablet.AssetId;
 
             _context.Tablets.Remove(tablet);
             await _context.SaveChangesAsync();
@@ -366,7 +371,7 @@ namespace backend_app.Controllers
                 var asset = await _context.Assets.FindAsync(assetId.Value);
                 if (asset != null)
                 {
-                    asset.Quantity = await _context.Tablets.CountAsync(t => t.AssetId == asset.Id);
+                    asset.Quantity = await _context.Tablets.CountAsync(l => l.AssetId == asset.Id);
                     _context.Entry(asset).State = EntityState.Modified;
                     await _context.SaveChangesAsync();
                 }

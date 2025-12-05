@@ -97,10 +97,10 @@ function DamagedAssets() {
                   <tr key={item.id}>
                     <td>{(page - 1) * pageSize + i + 1}</td>
                     <td>
-  {item.assetType
-    ? item.assetType.charAt(0).toUpperCase() + item.assetType.slice(1).toLowerCase()
-    : "-"}
-</td>
+                      {item.assetType
+                        ? item.assetType.charAt(0).toUpperCase() + item.assetType.slice(1).toLowerCase()
+                        : "-"}
+                    </td>
 
                     <td>{item.assetTag}</td>
                     <td>{item.reason}</td>
