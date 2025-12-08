@@ -33,7 +33,7 @@ namespace backend_app.Controllers
                 query = query.Where(x =>
                     x.DeletedItemName.Contains(search) ||
                     x.ItemType.Contains(search) ||
-                    x.AdminName.Contains(search));
+                    x.AdminName.StartsWith(search));
 
             if (!string.IsNullOrWhiteSpace(admin))
                 query = query.Where(x => x.AdminName == admin);

@@ -382,23 +382,31 @@ function AssignApproveModal({ show, onHide, request, fetchRequests }) {
 
 
   function normalizeType(name) {
-    if (!name) return "";
+  if (!name) return "";
 
-    const n = name.trim().toLowerCase();
-    if (n.includes("laptop")) return "laptop";
-    if (n.includes("mobile")) return "mobile";
-    if (n.includes("tablet")) return "tablet";
-    return n;
-  }
+  const n = name.trim().toLowerCase();
 
-  const categoryFields = {
-    laptop: ["brand", "processor", "storage", "ram", "operatingSystem"],
-    mobile: ["brand", "processor", "storage", "ram", "networkType", "simType"],
-    tablet: ["brand", "processor", "storage", "ram", "networkType", "simSupport"],
-    scanner: ["scannerType", "scanSpeed"],
-    printer: ["printerType", "paperSize", "dpi"],
-    default: []
-  };
+  if (n.includes("laptop")) return "laptop";
+  if (n.includes("mobile")) return "mobile";
+  if (n.includes("tablet")) return "tablet";
+  if (n.includes("desktop")) return "desktop";
+  if (n.includes("printer")) return "printer";
+  if (n.includes("scanner")) return "scanner";
+
+  return n;
+}
+
+
+ const categoryFields = {
+  laptop: ["brand", "processor", "storage", "ram", "operatingSystem"],
+  desktop: ["brand", "processor", "storage", "ram", "operatingSystem"], // ⭐ add this
+  mobile: ["brand", "processor", "storage", "ram", "networkType", "simType"],
+  tablet: ["brand", "processor", "storage", "ram", "networkType", "simSupport"],
+  scanner: ["scannerType", "scanSpeed"],
+  printer: ["printerType", "paperSize", "dpi"],
+  default: []
+};
+
 
 
   const shouldShowFilter = (assetName, field) =>

@@ -25,6 +25,7 @@ export default function Tablets() {
   const [selectedTablet, setSelectedTablet] = useState(null);
 
   const [assetError, setAssetError] = useState("");
+  const [errors, setErrors] = useState({});
 
   const [form, setForm] = useState(getEmptyForm());
   const [searchInput, setSearchInput] = useState("");
@@ -70,45 +71,90 @@ export default function Tablets() {
     };
   }
 
+  // ------------------------------------------------------------
+  // 🔎 Manual validation (like Laptops / Mobiles)
+  // ------------------------------------------------------------
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!form.brand.trim()) {
+      newErrors.brand = "Brand is required";
+    }else if(form.brand.trim().length<2){
+      newErrors.brand = "Brand must be at least 2 characters";
+    }
+    if (!form.model.trim()) newErrors.model = "Model is required";
+    if (!form.assetTag.trim()) newErrors.assetTag = "Asset Tag is required";
+    if (!form.purchaseDate.trim())
+      newErrors.purchaseDate = "Purchase Date is required";
+    if (!form.processor.trim())
+      newErrors.processor = "Processor is required";
+    if (!form.ram.trim()) newErrors.ram = "RAM is required";
+    if (!form.storage.trim()) newErrors.storage = "Storage is required";
+    if (!form.location.trim()) newErrors.location = "Location is required";
+
+    if (!form.simSupport.trim())
+      newErrors.simSupport = "SIM Support is required";
+    else if (form.simSupport === "Yes" && !form.imeiNumber.trim()) {
+      newErrors.imeiNumber =
+        "IMEI Number is required when SIM Support is Yes";
+    }
+
+    if (!form.remarks.trim()) newErrors.remarks = "Remarks is required";
+    else if (form.remarks === "Yes" && !form.damageReason.trim()) {
+      newErrors.damageReason =
+        "Damage Reason is required when Remarks is Yes";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // ------------------------------------------------------------
   // Load dropdown options
+  // ------------------------------------------------------------
   useEffect(() => {
-    axios.get(API_URL + "/options")
+    axios
+      .get(API_URL + "/options")
       .then((res) => setAllOptions(res.data))
       .catch((err) => console.error("options error", err));
   }, []);
 
   //------------------------------------------------------------
-  // Fetch Tablets
+  // Fetch Tablets (search + filters + sort + pagination)
   //------------------------------------------------------------
-  const fetchTablets = useCallback(async (currentPage = 1) => {
-    setLoading(true);
-    try {
-      const params = {
-        page: currentPage,
-        pageSize,
-        search: searchInput || undefined,
-        sortBy: sort.by,
-        sortDir: sort.dir,
-        brand: filters.brand || undefined,
-        ram: filters.ram || undefined,
-        storage: filters.storage || undefined,
-        location: filters.location || undefined,
-      };
+  const fetchTablets = useCallback(
+    async (currentPage = 1) => {
+      setLoading(true);
+      try {
+        const params = {
+          page: currentPage,
+          pageSize,
+          search: searchInput || undefined,
+          sortBy: sort.by,
+          sortDir: sort.dir,
+          brand: filters.brand || undefined,
+          ram: filters.ram || undefined,
+          storage: filters.storage || undefined,
+          location: filters.location || undefined,
+        };
 
-      const res = await axios.get(API_URL, { params });
-      const data = res.data;
+        const res = await axios.get(API_URL, { params });
+        const data = res.data;
 
-      setTablets(data.data || []);
-      setTotalPages(data.totalPages ?? 1);
-      setPage(data.currentPage ?? currentPage);
-    } catch (err) {
-      console.error("Fetch Tablets Error:", err);
-    }
-    setLoading(false);
-  }, [searchInput, filters, sort]);
+        setTablets(data.data || []);
+        setTotalPages(data.totalPages ?? 1);
+        setPage(data.currentPage ?? currentPage);
+      } catch (err) {
+        console.error("Fetch Tablets Error:", err);
+      }
+      setLoading(false);
+    },
+    [searchInput, filters, sort]
+  );
 
   useEffect(() => {
-    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    if (searchDebounceRef.current)
+      clearTimeout(searchDebounceRef.current);
 
     searchDebounceRef.current = setTimeout(() => fetchTablets(1), 300);
 
@@ -125,6 +171,7 @@ export default function Tablets() {
   const handleChange = async (e) => {
     const { name, value } = e.target;
     setForm((p) => ({ ...p, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: "" }));
 
     if (name === "assetTag") {
       if (!value.trim()) return setAssetError("");
@@ -133,7 +180,9 @@ export default function Tablets() {
         const res = await axios.get(`${API_URL}/check-duplicate`, {
           params: { assetTag: value },
         });
-        setAssetError(res.data.exists ? "Asset number already exists" : "");
+        setAssetError(
+          res.data.exists ? "Asset number already exists" : ""
+        );
       } catch (err) {
         console.error("dup check error", err);
       }
@@ -143,15 +192,11 @@ export default function Tablets() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (assetError) return alert("Fix asset tag error first.");
+    if (!validateForm()) return;
 
-    const required = ["brand", "model", "assetTag", "purchaseDate", "processor", "ram", "storage", "location"];
-    if (required.some((f) => !form[f]?.trim())) {
-      return alert("Please fill all required fields.");
-    }
-
-    if (form.remarks === "Yes" && !form.damageReason.trim()) {
-      return alert("Damage reason is required when Remarks = Yes.");
+    if (assetError) {
+      alert("Fix asset tag error first.");
+      return;
     }
 
     try {
@@ -193,27 +238,31 @@ export default function Tablets() {
       lastServicedDate: t.lastServicedDate?.split("T")[0] || "",
     });
 
+    setErrors({});
+    setAssetError("");
     setShowForm(true);
   };
 
   const handleDelete = async (id) => {
-    const reason = prompt("Please enter the reason for deleting this tablet:");
+    const reason = prompt(
+      "Please enter the reason for deleting this tablet:"
+    );
 
     if (!reason || reason.trim() === "") {
       alert("Deletion cancelled — reason is required.");
       return;
     }
 
-    if (!window.confirm("Are you sure you want to delete this tablet?")) return;
+    if (!window.confirm("Are you sure you want to delete this tablet?"))
+      return;
 
     try {
       await axios.delete(`${API_URL}/${id}`, {
         data: {
           reason,
-          adminName: admin?.name || "Unknown Admin"
-        }
+          adminName: admin?.name || "Unknown Admin",
+        },
       });
-
 
       alert("Tablet deleted successfully");
       fetchTablets(page);
@@ -226,7 +275,24 @@ export default function Tablets() {
     setEditingId(null);
     setForm(getEmptyForm());
     setAssetError("");
+    setErrors({});
     setShowForm(false);
+  };
+
+  //------------------------------------------------------------
+  // Sorting helpers
+  //------------------------------------------------------------
+  const toggleSort = (field) => {
+    setSort((prev) =>
+      prev.by === field
+        ? { by: field, dir: prev.dir === "asc" ? "desc" : "asc" }
+        : { by: field, dir: "asc" }
+    );
+  };
+
+  const renderSortIcon = (field) => {
+    if (sort.by !== field) return "";
+    return sort.dir === "asc" ? " ▲" : " ▼";
   };
 
   //------------------------------------------------------------
@@ -238,8 +304,20 @@ export default function Tablets() {
     const doc = new jsPDF({ orientation: "landscape" });
 
     autoTable(doc, {
-      head: [["Brand", "Model", "AssetTag", "Processor", "RAM", "Storage", "Location"]],
-      body: tablets.map((t) => [
+      head: [
+        [
+          "#",
+          "Brand",
+          "Model",
+          "AssetTag",
+          "Processor",
+          "RAM",
+          "Storage",
+          "Location",
+        ],
+      ],
+      body: tablets.map((t, index) => [
+        (page - 1) * pageSize + index + 1,
         t.brand,
         t.model,
         t.assetTag,
@@ -248,6 +326,8 @@ export default function Tablets() {
         t.storage,
         t.location,
       ]),
+      startY: 18,
+      styles: { fontSize: 8 },
     });
 
     doc.save(`tablets_${Date.now()}.pdf`);
@@ -273,38 +353,84 @@ export default function Tablets() {
           </div>
 
           <div className="col-auto">
-            <select className="form-select" value={filters.brand} onChange={(e) => setFilters((p) => ({ ...p, brand: e.target.value }))}>
+            <select
+              className="form-select"
+              value={filters.brand}
+              onChange={(e) =>
+                setFilters((p) => ({ ...p, brand: e.target.value }))
+              }
+            >
               <option value="">All Brands</option>
-              {allOptions.brands.map((b) => <option key={b}>{b}</option>)}
+              {allOptions.brands.map((b) => (
+                <option key={b}>{b}</option>
+              ))}
             </select>
           </div>
 
           <div className="col-auto">
-            <select className="form-select" value={filters.ram} onChange={(e) => setFilters((p) => ({ ...p, ram: e.target.value }))}>
+            <select
+              className="form-select"
+              value={filters.ram}
+              onChange={(e) =>
+                setFilters((p) => ({ ...p, ram: e.target.value }))
+              }
+            >
               <option value="">All RAM</option>
-              {allOptions.rams.map((r) => <option key={r}>{r}</option>)}
+              {allOptions.rams.map((r) => (
+                <option key={r}>{r}</option>
+              ))}
             </select>
           </div>
 
           <div className="col-auto">
-            <select className="form-select" value={filters.storage} onChange={(e) => setFilters((p) => ({ ...p, storage: e.target.value }))}>
+            <select
+              className="form-select"
+              value={filters.storage}
+              onChange={(e) =>
+                setFilters((p) => ({ ...p, storage: e.target.value }))
+              }
+            >
               <option value="">All Storage</option>
-              {allOptions.storages.map((s) => <option key={s}>{s}</option>)}
+              {allOptions.storages.map((s) => (
+                <option key={s}>{s}</option>
+              ))}
             </select>
           </div>
 
           <div className="col-auto">
-            <select className="form-select" value={filters.location} onChange={(e) => setFilters((p) => ({ ...p, location: e.target.value }))}>
+            <select
+              className="form-select"
+              value={filters.location}
+              onChange={(e) =>
+                setFilters((p) => ({ ...p, location: e.target.value }))
+              }
+            >
               <option value="">All Locations</option>
-              {allOptions.locations.map((l) => <option key={l}>{l}</option>)}
+              {allOptions.locations.map((l) => (
+                <option key={l}>{l}</option>
+              ))}
             </select>
           </div>
 
           <div className="col ms-auto d-flex gap-2 justify-content-end">
-            <button className="btn btn-outline-secondary" onClick={() => { setFilters({ brand: "", ram: "", storage: "", location: "" }); setSearchInput(""); }}>
+            <button
+              className="btn btn-outline-secondary"
+              onClick={() => {
+                setFilters({
+                  brand: "",
+                  ram: "",
+                  storage: "",
+                  location: "",
+                });
+                setSearchInput("");
+              }}
+            >
               Reset
             </button>
-            <button className="btn btn-outline-danger" onClick={exportToPDF}>
+            <button
+              className="btn btn-outline-danger"
+              onClick={exportToPDF}
+            >
               Export PDF
             </button>
           </div>
@@ -314,7 +440,12 @@ export default function Tablets() {
       {/* ---------------- ADD BUTTON ---------------- */}
       {!showForm && (
         <div className="text-center mb-3">
-          <button className="btn btn-success" onClick={() => setShowForm(true)}>➕ Add New Tablet</button>
+          <button
+            className="btn btn-success"
+            onClick={() => setShowForm(true)}
+          >
+            ➕ Add New Tablet
+          </button>
         </div>
       )}
 
@@ -326,7 +457,6 @@ export default function Tablets() {
           </h5>
 
           <div className="row g-3">
-
             {/* Basic Fields */}
             {[
               ["brand", "Brand *"],
@@ -343,28 +473,44 @@ export default function Tablets() {
               ["lastServicedDate", "Last Serviced Date", "date"],
             ].map(([name, label, type = "text"]) => (
               <div key={name} className="col-md-4">
-                <label className="form-label small fw-semibold">{label}</label>
+                <label className="form-label small fw-semibold">
+                  {label}
+                </label>
                 <input
                   type={type}
                   name={name}
                   value={form[name]}
                   onChange={handleChange}
-                  className={`form-control ${name === "assetTag" && assetError ? "is-invalid" : ""}`}
-                  required={label.includes("*")}
+                  className={`form-control ${
+                    errors[name] ? "is-invalid" : ""
+                  } ${
+                    name === "assetTag" && assetError ? "is-invalid" : ""
+                  }`}
                 />
+                {errors[name] && (
+                  <div className="invalid-feedback d-block">
+                    {errors[name]}
+                  </div>
+                )}
                 {name === "assetTag" && assetError && (
-                  <div className="invalid-feedback">{assetError}</div>
+                  <div className="invalid-feedback d-block">
+                    {assetError}
+                  </div>
                 )}
               </div>
             ))}
 
             {/* SIM Support */}
             <div className="col-md-4">
-              <label className="form-label small fw-semibold">SIM Support *</label>
+              <label className="form-label small fw-semibold">
+                SIM Support *
+              </label>
               <select
                 name="simSupport"
                 value={form.simSupport}
-                className="form-select"
+                className={`form-select ${
+                  errors.simSupport ? "is-invalid" : ""
+                }`}
                 onChange={(e) => {
                   const value = e.target.value;
                   setForm((prev) => ({
@@ -372,74 +518,121 @@ export default function Tablets() {
                     simSupport: value,
                     imeiNumber: value === "Yes" ? prev.imeiNumber : "",
                   }));
+                  setErrors((prev) => ({
+                    ...prev,
+                    simSupport: "",
+                    imeiNumber: "",
+                  }));
                 }}
-                required
               >
                 <option value="">Select</option>
                 <option value="Yes">Yes</option>
                 <option value="No">No</option>
               </select>
+              {errors.simSupport && (
+                <div className="invalid-feedback d-block">
+                  {errors.simSupport}
+                </div>
+              )}
             </div>
 
             {/* IMEI */}
             {form.simSupport === "Yes" && (
               <div className="col-md-4">
-                <label className="form-label small fw-semibold">IMEI Number *</label>
+                <label className="form-label small fw-semibold">
+                  IMEI Number *
+                </label>
                 <input
                   type="text"
                   name="imeiNumber"
                   value={form.imeiNumber}
                   onChange={handleChange}
-                  className="form-control"
-                  required
+                  className={`form-control ${
+                    errors.imeiNumber ? "is-invalid" : ""
+                  }`}
                 />
+                {errors.imeiNumber && (
+                  <div className="invalid-feedback d-block">
+                    {errors.imeiNumber}
+                  </div>
+                )}
               </div>
             )}
 
             {/* Remarks */}
             <div className="col-md-4">
-              <label className="form-label small fw-semibold">Remarks *</label>
+              <label className="form-label small fw-semibold">
+                Remarks *
+              </label>
               <select
                 name="remarks"
-                className="form-select"
+                className={`form-select ${
+                  errors.remarks ? "is-invalid" : ""
+                }`}
                 value={form.remarks}
                 onChange={(e) => {
                   const v = e.target.value;
                   setForm((prev) => ({
                     ...prev,
                     remarks: v,
-                    damageReason: v === "Yes" ? prev.damageReason : "",
+                    damageReason:
+                      v === "Yes" ? prev.damageReason : "",
+                  }));
+                  setErrors((prev) => ({
+                    ...prev,
+                    remarks: "",
+                    damageReason: "",
                   }));
                 }}
-                required
               >
                 <option value="">Select</option>
                 <option value="No">No</option>
                 <option value="Yes">Yes</option>
               </select>
+              {errors.remarks && (
+                <div className="invalid-feedback d-block">
+                  {errors.remarks}
+                </div>
+              )}
             </div>
 
             {/* Damage Reason */}
             {form.remarks === "Yes" && (
               <div className="col-md-4">
-                <label className="form-label small fw-semibold">Damage Reason *</label>
+                <label className="form-label small fw-semibold">
+                  Damage Reason *
+                </label>
                 <input
                   type="text"
                   name="damageReason"
                   value={form.damageReason}
                   onChange={handleChange}
-                  className="form-control"
-                  required
+                  className={`form-control ${
+                    errors.damageReason ? "is-invalid" : ""
+                  }`}
                 />
+                {errors.damageReason && (
+                  <div className="invalid-feedback d-block">
+                    {errors.damageReason}
+                  </div>
+                )}
               </div>
             )}
           </div>
 
           <div className="text-center mt-3">
-            <button type="submit" className="btn btn-primary me-2" disabled={!!assetError}>
+            <button
+              type="submit"
+              className="btn btn-primary me-2"
+              disabled={!!assetError}
+            >
               {editingId ? "Update Tablet" : "Save Tablet"}
             </button>
-            <button type="button" className="btn btn-secondary" onClick={resetForm}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={resetForm}
+            >
               Cancel
             </button>
           </div>
@@ -449,7 +642,9 @@ export default function Tablets() {
       {/* ---------------- TABLE ---------------- */}
       <div className="card p-2">
         {loading ? (
-          <div className="text-center py-4"><Spinner animation="border" /></div>
+          <div className="text-center py-4">
+            <Spinner animation="border" />
+          </div>
         ) : tablets.length === 0 ? (
           <p className="text-center my-3">No tablets found.</p>
         ) : (
@@ -457,15 +652,33 @@ export default function Tablets() {
             <table className="table table-bordered text-center table-striped">
               <thead className="table-dark">
                 <tr>
-                  <th onClick={() => setSort({ by: "id", dir: sort.dir === "asc" ? "desc" : "asc" })} style={{ cursor: "pointer" }}>
-                    # {sort.by === "id" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                  <th
+                    onClick={() => toggleSort("id")}
+                    style={{ cursor: "pointer" }}
+                  >
+                    # {renderSortIcon("id")}
                   </th>
-                  <th>Brand</th>
+                  <th
+                    onClick={() => toggleSort("brand")}
+                    style={{ cursor: "pointer" }}
+                  >
+                    Brand {renderSortIcon("brand")}
+                  </th>
                   <th>Model</th>
                   <th>Asset Tag</th>
                   <th>Processor</th>
-                  <th>RAM</th>
-                  <th>Storage</th>
+                  <th
+                    onClick={() => toggleSort("ram")}
+                    style={{ cursor: "pointer" }}
+                  >
+                    RAM {renderSortIcon("ram")}
+                  </th>
+                  <th
+                    onClick={() => toggleSort("storage")}
+                    style={{ cursor: "pointer" }}
+                  >
+                    Storage {renderSortIcon("storage")}
+                  </th>
                   <th>Location</th>
                   <th>Actions</th>
                 </tr>
@@ -483,9 +696,27 @@ export default function Tablets() {
                     <td>{t.storage}</td>
                     <td>{t.location}</td>
                     <td className="d-flex justify-content-center gap-2">
-                      <button className="btn btn-info btn-sm" onClick={() => { setSelectedTablet(t); setShowModal(true); }}>View</button>
-                      <button className="btn btn-warning btn-sm" onClick={() => handleEdit(t)}>Edit</button>
-                      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(t.id)}>Delete</button>
+                      <button
+                        className="btn btn-info btn-sm"
+                        onClick={() => {
+                          setSelectedTablet(t);
+                          setShowModal(true);
+                        }}
+                      >
+                        View
+                      </button>
+                      <button
+                        className="btn btn-warning btn-sm"
+                        onClick={() => handleEdit(t)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleDelete(t.id)}
+                      >
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -497,13 +728,32 @@ export default function Tablets() {
 
       {/* ---------------- PAGINATION ---------------- */}
       <div className="d-flex justify-content-center gap-3 mt-3">
-        <Button variant="dark" disabled={page === 1} onClick={() => setPage(page - 1)}>◀ Prev</Button>
-        <span>Page {page} of {totalPages}</span>
-        <Button variant="dark" disabled={page === totalPages} onClick={() => setPage(page + 1)}>Next ▶</Button>
+        <Button
+          variant="dark"
+          disabled={page === 1}
+          onClick={() => setPage(page - 1)}
+        >
+          ◀ Prev
+        </Button>
+        <span>
+          Page {page} of {totalPages}
+        </span>
+        <Button
+          variant="dark"
+          disabled={page === totalPages}
+          onClick={() => setPage(page + 1)}
+        >
+          Next ▶
+        </Button>
       </div>
 
       {/* ---------------- MODAL ---------------- */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered scrollable>
+      <Modal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        centered
+        scrollable
+      >
         <Modal.Header closeButton>
           <Modal.Title>Tablet Details</Modal.Title>
         </Modal.Header>
@@ -517,12 +767,16 @@ export default function Tablets() {
             ))}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>Close</Button>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>
+            Close
+          </Button>
         </Modal.Footer>
       </Modal>
 
       <div className="text-center mt-4">
-        <Link to="/adminpanel" className="btn btn-outline-dark">⬅ Back</Link>
+        <Link to="/adminpanel" className="btn btn-outline-dark">
+          ⬅ Back
+        </Link>
       </div>
     </div>
   );

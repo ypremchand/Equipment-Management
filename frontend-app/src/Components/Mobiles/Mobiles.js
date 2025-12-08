@@ -11,9 +11,9 @@ import autoTable from "jspdf-autotable";
 export default function Mobiles() {
   const API_URL = "http://localhost:5083/api/mobiles";
 
+  // ===== State =====
   const [mobiles, setMobiles] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 10;
@@ -22,18 +22,29 @@ export default function Mobiles() {
   const [editingId, setEditingId] = useState(null);
   const [selectedMobile, setSelectedMobile] = useState(null);
   const [showModal, setShowModal] = useState(false);
+
   const [assetError, setAssetError] = useState("");
+  const [errors, setErrors] = useState({});
 
   const [searchInput, setSearchInput] = useState("");
-  const [filters, setFilters] = useState({ brand: "", ram: "", storage: "", location: "" });
+  const [filters, setFilters] = useState({
+    brand: "",
+    ram: "",
+    storage: "",
+    location: "",
+  });
+
   const [sort, setSort] = useState({ by: "id", dir: "asc" });
 
-  const [allOptions, setAllOptions] = useState({ brands: [], rams: [], storages: [], locations: [] });
+  const [allOptions, setAllOptions] = useState({
+    brands: [],
+    rams: [],
+    storages: [],
+    locations: [],
+  });
 
   const searchDebounceRef = useRef(null);
-
   const admin = JSON.parse(localStorage.getItem("user") || "{}");
-
 
   const [form, setForm] = useState(getEmptyForm());
 
@@ -53,14 +64,44 @@ export default function Mobiles() {
       networkType: "",
       location: "",
       remarks: "",
-      damageReason: "",   // NEW
+      damageReason: "",
       lastServicedDate: "",
     };
   }
 
-  // ===================================================================
-  // FETCH MOBILES
-  // ===================================================================
+  // ================================================================
+  // 🔎 Manual Validation (Same as Laptops.js)
+  // ================================================================
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!form.brand.trim()) {
+      newErrors.brand = "Brand is required";
+    }else if(form.brand.trim().length<2){
+      newErrors.brand = "Brand must be at least 2 characters";
+    }
+    if (!form.model.trim()) newErrors.model = "Model is required";
+    if (!form.assetTag.trim()) newErrors.assetTag = "Asset Tag is required";
+    if (!form.purchaseDate.trim())
+      newErrors.purchaseDate = "Purchase Date is required";
+    if (!form.processor.trim()) newErrors.processor = "Processor is required";
+    if (!form.ram.trim()) newErrors.ram = "RAM is required";
+    if (!form.storage.trim()) newErrors.storage = "Storage is required";
+    if (!form.location.trim()) newErrors.location = "Location is required";
+
+    if (!form.remarks.trim()) newErrors.remarks = "Remarks is required";
+    else if (form.remarks === "Yes" && !form.damageReason.trim()) {
+      newErrors.damageReason =
+        "Damage Reason is required when Remarks is Yes";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // ================================================================
+  // 📥 Fetch Mobiles
+  // ================================================================
   const fetchMobiles = useCallback(
     async (currentPage = 1) => {
       setLoading(true);
@@ -93,7 +134,8 @@ export default function Mobiles() {
   );
 
   useEffect(() => {
-    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    if (searchDebounceRef.current)
+      clearTimeout(searchDebounceRef.current);
 
     searchDebounceRef.current = setTimeout(() => {
       fetchMobiles(1);
@@ -107,17 +149,19 @@ export default function Mobiles() {
   }, [page, fetchMobiles]);
 
   useEffect(() => {
-    axios.get(API_URL + "/options")
+    axios
+      .get(API_URL + "/options")
       .then((res) => setAllOptions(res.data))
-      .catch((err) => console.error("Options load error", err));
+      .catch((err) => console.error("Options Load Error", err));
   }, []);
 
-  // ===================================================================
-  // FORM HANDLERS
-  // ===================================================================
+  // ================================================================
+  // ✏️ Form Handlers
+  // ================================================================
   const handleChange = async (e) => {
     const { name, value } = e.target;
     setForm((p) => ({ ...p, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: "" }));
 
     if (name === "assetTag") {
       if (!value.trim()) return setAssetError("");
@@ -126,7 +170,9 @@ export default function Mobiles() {
         const res = await axios.get(`${API_URL}/check-duplicate`, {
           params: { assetTag: value },
         });
-        setAssetError(res.data.exists ? "Asset number already exists" : "");
+        setAssetError(
+          res.data.exists ? "Asset number already exists" : ""
+        );
       } catch (err) {
         console.error("Asset check error", err);
       }
@@ -136,24 +182,17 @@ export default function Mobiles() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (assetError) return alert("Please fix asset tag issue.");
+    if (!validateForm()) return;
 
-    const required = ["brand", "model", "assetTag", "purchaseDate", "processor", "ram", "storage", "location"];
-    if (required.some((f) => !form[f]?.trim())) {
-      return alert("Please fill all required fields.");
-    }
-
-    if (form.remarks === "Yes" && !form.damageReason.trim()) {
-      return alert("Please enter Damage Reason when Remarks is Yes.");
-    }
+    if (assetError) return alert("Fix Asset Tag before saving.");
 
     try {
       if (editingId) {
         await axios.put(`${API_URL}/${editingId}`, form);
-        alert("Updated successfully");
+        alert("Mobile updated successfully");
       } else {
-        await axios.post(API_URL, form); // damageReason included
-        alert("Added successfully");
+        await axios.post(API_URL, form);
+        alert("Mobile added successfully");
       }
 
       resetForm();
@@ -184,56 +223,77 @@ export default function Mobiles() {
       damageReason: "",
       lastServicedDate: m.lastServicedDate?.split("T")[0] || "",
     });
+    setErrors({});
+    setAssetError("");
     setShowForm(true);
   };
 
   const handleDelete = async (id) => {
-    const reason = prompt("Please enter the reason for deleting this mobile:");
+    const reason = prompt("Reason for deletion:");
 
-    if (!reason || reason.trim() === "") {
-      alert("Deletion cancelled — reason is required.");
-      return;
+    if (!reason?.trim()) {
+      return alert("Deletion cancelled — reason is required.");
     }
 
-    if (!window.confirm("Are you sure you want to delete this mobile?")) return;
+    if (!window.confirm("Confirm delete?")) return;
 
     try {
       await axios.delete(`${API_URL}/${id}`, {
-        data: {
-          reason,
-          adminName: admin?.name || "Unknown Admin"
-        }
+        data: { reason, adminName: admin?.name || "Unknown Admin" },
       });
+
       alert("Mobile deleted successfully");
       fetchMobiles(page);
     } catch (err) {
-      alert("Failed to delete Mobile");
+      alert("Failed to delete mobile");
     }
   };
 
   const resetForm = () => {
     setEditingId(null);
     setForm(getEmptyForm());
+    setErrors({});
     setAssetError("");
     setShowForm(false);
   };
 
   const toggleSort = (field) => {
-    setSort((s) =>
-      s.by === field ? { by: field, dir: s.dir === "asc" ? "desc" : "asc" } : { by: field, dir: "asc" }
+    setSort((prev) =>
+      prev.by === field
+        ? { by: field, dir: prev.dir === "asc" ? "desc" : "asc" }
+        : { by: field, dir: "asc" }
     );
   };
 
-  // ===================================================================
-  // EXPORT
-  // ===================================================================
+  const renderSortIcon = (field) => {
+    if (sort.by !== field) return "";
+    return sort.dir === "asc" ? " ▲" : " ▼";
+  };
+
+  // ================================================================
+  // 📄 Export
+  // ================================================================
   const exportToPDF = () => {
-    if (!mobiles.length) return alert("No data");
+    if (!mobiles.length) return alert("No data available");
 
     const doc = new jsPDF({ orientation: "landscape" });
+
     autoTable(doc, {
-      head: [["Brand", "Model", "IMEI", "AssetTag", "Processor", "RAM", "Storage", "Location"]],
-      body: mobiles.map((m) => [
+      head: [
+        [
+          "#",
+          "Brand",
+          "Model",
+          "IMEI",
+          "AssetTag",
+          "Processor",
+          "RAM",
+          "Storage",
+          "Location",
+        ],
+      ],
+      body: mobiles.map((m, index) => [
+        (page - 1) * pageSize + index + 1,
         m.brand,
         m.model,
         m.imeiNumber || m.IMEINumber,
@@ -250,9 +310,9 @@ export default function Mobiles() {
     doc.save(`mobiles_${Date.now()}.pdf`);
   };
 
-  // ===================================================================
+  // ================================================================
   // UI
-  // ===================================================================
+  // ================================================================
   return (
     <div className="mobiles-page container-fluid mt-4 mb-5 px-2">
       <h3 className="text-center mb-4">📱 Mobiles</h3>
@@ -260,6 +320,7 @@ export default function Mobiles() {
       {/* FILTERS */}
       <div className="card p-3 mb-3">
         <div className="row g-2">
+          {/* SEARCH */}
           <div className="col-md-3">
             <input
               className="form-control"
@@ -269,12 +330,14 @@ export default function Mobiles() {
             />
           </div>
 
-          {/* Brand */}
+          {/* BRAND FILTER */}
           <div className="col-auto">
             <select
               className="form-select"
               value={filters.brand}
-              onChange={(e) => setFilters((p) => ({ ...p, brand: e.target.value }))}
+              onChange={(e) =>
+                setFilters((p) => ({ ...p, brand: e.target.value }))
+              }
             >
               <option value="">All Brands</option>
               {allOptions.brands.map((b) => (
@@ -283,12 +346,14 @@ export default function Mobiles() {
             </select>
           </div>
 
-          {/* RAM */}
+          {/* RAM FILTER */}
           <div className="col-auto">
             <select
               className="form-select"
               value={filters.ram}
-              onChange={(e) => setFilters((p) => ({ ...p, ram: e.target.value }))}
+              onChange={(e) =>
+                setFilters((p) => ({ ...p, ram: e.target.value }))
+              }
             >
               <option value="">All RAM</option>
               {allOptions.rams.map((r) => (
@@ -297,26 +362,30 @@ export default function Mobiles() {
             </select>
           </div>
 
-          {/* Storage */}
+          {/* STORAGE FILTER */}
           <div className="col-auto">
             <select
               className="form-select"
               value={filters.storage}
-              onChange={(e) => setFilters((p) => ({ ...p, storage: e.target.value }))}
+              onChange={(e) =>
+                setFilters((p) => ({ ...p, storage: e.target.value }))
+              }
             >
               <option value="">All Storage</option>
-              {allOptions.storages.map((s) =>
+              {allOptions.storages.map((s) => (
                 <option key={s}>{s}</option>
-              )}
+              ))}
             </select>
           </div>
 
-          {/* Location */}
+          {/* LOCATION FILTER */}
           <div className="col-auto">
             <select
               className="form-select"
               value={filters.location}
-              onChange={(e) => setFilters((p) => ({ ...p, location: e.target.value }))}
+              onChange={(e) =>
+                setFilters((p) => ({ ...p, location: e.target.value }))
+              }
             >
               <option value="">All Locations</option>
               {allOptions.locations.map((loc) => (
@@ -325,12 +394,17 @@ export default function Mobiles() {
             </select>
           </div>
 
-          {/* Reset + Export */}
+          {/* BUTTONS */}
           <div className="col ms-auto d-flex gap-2 justify-content-end">
             <button
               className="btn btn-outline-secondary"
               onClick={() => {
-                setFilters({ brand: "", ram: "", storage: "", location: "" });
+                setFilters({
+                  brand: "",
+                  ram: "",
+                  storage: "",
+                  location: "",
+                });
                 setSearchInput("");
               }}
             >
@@ -344,17 +418,19 @@ export default function Mobiles() {
         </div>
       </div>
 
+      {/* ADD NEW BUTTON */}
       {!showForm && (
         <div className="text-center mb-3">
-          <button className="btn btn-success" onClick={() => setShowForm(true)}>
+          <button
+            className="btn btn-success"
+            onClick={() => setShowForm(true)}
+          >
             ➕ Add New Mobile
           </button>
         </div>
       )}
 
-      {/* ========================================================= */}
       {/* FORM */}
-      {/* ========================================================= */}
       {showForm && (
         <form className="card p-3 mb-3" onSubmit={handleSubmit}>
           <h5 className="text-center mb-3">
@@ -362,8 +438,7 @@ export default function Mobiles() {
           </h5>
 
           <div className="row g-3">
-
-            {/* Standard fields */}
+            {/* FIELD GROUP */}
             {[
               ["brand", "Brand *"],
               ["model", "Model *"],
@@ -388,74 +463,107 @@ export default function Mobiles() {
                   name={name}
                   value={form[name]}
                   onChange={handleChange}
-                  className={`form-control ${name === "assetTag" && assetError ? "is-invalid" : ""
-                    }`}
-                  required={label.includes("*")}
+                  className={`form-control ${
+                    errors[name] ? "is-invalid" : ""
+                  } ${name === "assetTag" && assetError ? "is-invalid" : ""}`}
                 />
 
+                {/* Field Errors */}
+                {errors[name] && (
+                  <div className="invalid-feedback d-block">
+                    {errors[name]}
+                  </div>
+                )}
+
+                {/* Asset Tag Duplicate Error */}
                 {name === "assetTag" && assetError && (
-                  <div className="invalid-feedback">{assetError}</div>
+                  <div className="invalid-feedback d-block">
+                    {assetError}
+                  </div>
                 )}
               </div>
             ))}
 
-            {/* ===================== */}
-            {/* Remarks Dropdown */}
-            {/* ===================== */}
+            {/* REMARKS */}
             <div className="col-md-4">
               <label className="form-label small fw-semibold">Remarks *</label>
               <select
                 name="remarks"
                 value={form.remarks}
                 onChange={(e) => {
-                  const v = e.target.value;
+                  const value = e.target.value;
                   setForm((p) => ({
                     ...p,
-                    remarks: v,
-                    damageReason: v === "Yes" ? p.damageReason : ""
+                    remarks: value,
+                    damageReason:
+                      value === "Yes" ? p.damageReason : "",
+                  }));
+                  setErrors((prev) => ({
+                    ...prev,
+                    remarks: "",
+                    damageReason: "",
                   }));
                 }}
-                className="form-select"
-                required
+                className={`form-select ${
+                  errors.remarks ? "is-invalid" : ""
+                }`}
               >
                 <option value="">Select</option>
                 <option value="No">No</option>
                 <option value="Yes">Yes</option>
               </select>
+              {errors.remarks && (
+                <div className="invalid-feedback d-block">
+                  {errors.remarks}
+                </div>
+              )}
             </div>
 
-            {/* ===================== */}
-            {/* Damage Reason */}
-            {/* ===================== */}
+            {/* DAMAGE REASON */}
             {form.remarks === "Yes" && (
               <div className="col-md-4">
-                <label className="form-label small fw-semibold">Damage Reason *</label>
+                <label className="form-label small fw-semibold">
+                  Damage Reason *
+                </label>
                 <input
                   type="text"
                   name="damageReason"
                   value={form.damageReason}
                   onChange={handleChange}
-                  className="form-control"
-                  required
+                  className={`form-control ${
+                    errors.damageReason ? "is-invalid" : ""
+                  }`}
                 />
+                {errors.damageReason && (
+                  <div className="invalid-feedback d-block">
+                    {errors.damageReason}
+                  </div>
+                )}
               </div>
             )}
           </div>
 
+          {/* BUTTONS */}
           <div className="text-center mt-3">
-            <button type="submit" disabled={!!assetError} className="btn btn-primary me-2">
+            <button
+              type="submit"
+              disabled={!!assetError}
+              className="btn btn-primary me-2"
+            >
               {editingId ? "Update Mobile" : "Save Mobile"}
             </button>
-            <button type="button" className="btn btn-secondary" onClick={resetForm}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={resetForm}
+            >
               Cancel
             </button>
           </div>
         </form>
       )}
 
-      {/* ========================================================= */}
       {/* TABLE */}
-      {/* ========================================================= */}
       <div className="card p-2">
         {loading ? (
           <div className="text-center py-4">
@@ -469,16 +577,29 @@ export default function Mobiles() {
               <thead className="table-dark">
                 <tr>
                   <th onClick={() => toggleSort("id")} style={{ cursor: "pointer" }}>
-                    # {sort.by === "id" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                    # {renderSortIcon("id")}
                   </th>
-                  <th onClick={() => toggleSort("brand")} style={{ cursor: "pointer" }}>
-                    Brand {sort.by === "brand" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                  <th
+                    onClick={() => toggleSort("brand")}
+                    style={{ cursor: "pointer" }}
+                  >
+                    Brand {renderSortIcon("brand")}
                   </th>
                   <th>Model</th>
                   <th>Asset Tag</th>
                   <th>Processor</th>
-                  <th>RAM</th>
-                  <th>Storage</th>
+                  <th
+                    onClick={() => toggleSort("ram")}
+                    style={{ cursor: "pointer" }}
+                  >
+                    RAM {renderSortIcon("ram")}
+                  </th>
+                  <th
+                    onClick={() => toggleSort("storage")}
+                    style={{ cursor: "pointer" }}
+                  >
+                    Storage {renderSortIcon("storage")}
+                  </th>
                   <th>Location</th>
                   <th>Actions</th>
                 </tr>
@@ -496,56 +617,88 @@ export default function Mobiles() {
                     <td>{m.storage}</td>
                     <td>{m.location}</td>
                     <td className="d-flex justify-content-center gap-2">
-                      <button className="btn btn-info btn-sm" onClick={() => { setSelectedMobile(m); setShowModal(true); }}>
+                      <button
+                        className="btn btn-info btn-sm"
+                        onClick={() => {
+                          setSelectedMobile(m);
+                          setShowModal(true);
+                        }}
+                      >
                         View
                       </button>
-                      <button className="btn btn-warning btn-sm" onClick={() => handleEdit(m)}>
+                      <button
+                        className="btn btn-warning btn-sm"
+                        onClick={() => handleEdit(m)}
+                      >
                         Edit
                       </button>
-                      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(m.id)}>
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleDelete(m.id)}
+                      >
                         Delete
                       </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
-
             </table>
           </div>
         )}
       </div>
 
-      {/* Pagination */}
+      {/* PAGINATION */}
       <div className="d-flex justify-content-center mt-3 gap-3">
-        <Button variant="dark" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
+        <Button
+          variant="dark"
+          disabled={page === 1}
+          onClick={() => setPage((p) => p - 1)}
+        >
           ◀ Prev
         </Button>
-        <span>Page {page} of {totalPages}</span>
-        <Button variant="dark" disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>
+        <span>
+          Page {page} of {totalPages}
+        </span>
+        <Button
+          variant="dark"
+          disabled={page === totalPages}
+          onClick={() => setPage((p) => p + 1)}
+        >
           Next ▶
         </Button>
       </div>
 
-      {/* View Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered scrollable>
+      {/* VIEW MODAL */}
+      <Modal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        centered
+        scrollable
+      >
         <Modal.Header closeButton>
           <Modal.Title>Mobile Details</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {selectedMobile && Object.entries(selectedMobile).map(([k, v]) => (
-            <p key={k}>
-              <strong className="text-capitalize">{k}: </strong>
-              {typeof v === "object" ? JSON.stringify(v) : v || "-"}
-            </p>
-          ))}
+          {selectedMobile &&
+            Object.entries(selectedMobile).map(([k, v]) => (
+              <p key={k}>
+                <strong className="text-capitalize">{k}: </strong>
+                {typeof v === "object" ? JSON.stringify(v) : v || "-"}
+              </p>
+            ))}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>Close</Button>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>
+            Close
+          </Button>
         </Modal.Footer>
       </Modal>
 
+      {/* BACK BUTTON */}
       <div className="text-center mt-4">
-        <Link to="/adminpanel" className="btn btn-outline-dark">⬅ Back to Admin Panel</Link>
+        <Link to="/adminpanel" className="btn btn-outline-dark">
+          ⬅ Back to Admin Panel
+        </Link>
       </div>
     </div>
   );

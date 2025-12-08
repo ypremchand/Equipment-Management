@@ -28,6 +28,8 @@ namespace backend_app.Controllers
             if (n.Contains("laptop")) return "laptop";
             if (n.Contains("mobile")) return "mobile";
             if (n.Contains("tablet")) return "tablet";
+            if (n.Contains("desktop")) return "desktop";
+            if (n.Contains("printer")) return "printer";
 
             return n;
         }
@@ -44,6 +46,8 @@ namespace backend_app.Controllers
             var laptops = await _context.Laptops.ToListAsync();
             var mobiles = await _context.Mobiles.ToListAsync();
             var tablets = await _context.Tablets.ToListAsync();
+            var desktops = await _context.Desktops.ToListAsync();
+            var printers = await _context.Printers.ToListAsync();
 
             // Load damaged laptop IDs once
             var damagedLaptops = await _context.DamagedAssets
@@ -105,6 +109,43 @@ namespace backend_app.Controllers
                         (x.AssetId == a.Id || x.AssetId == null) &&
                         x.IsAssigned &&
                         !damagedTablets.Contains(x.Id)
+                    );
+                }
+                else if (type == "desktop")
+                {
+                    var damagedDesktops = _context.DamagedAssets
+                        .Where(d => d.AssetType.ToLower() == "desktop")
+                        .Select(d => d.AssetTypeItemId)
+                        .ToList();
+
+                    total = desktops.Count(x =>
+                        (x.AssetId == a.Id || x.AssetId == null) &&
+                        !damagedDesktops.Contains(x.Id)
+                    );
+
+                    assigned = desktops.Count(x =>
+                        (x.AssetId == a.Id || x.AssetId == null) &&
+                        x.IsAssigned &&
+                        !damagedDesktops.Contains(x.Id)
+                    );
+                }
+
+                else if (type == "printer")
+                {
+                    var damagedPrinters = _context.DamagedAssets
+                        .Where(d => d.AssetType.ToLower() == "printer")
+                        .Select(d => d.AssetTypeItemId)
+                        .ToList();
+
+                    total = printers.Count(x =>
+                        (x.AssetId == a.Id || x.AssetId == null) &&
+                        !damagedPrinters.Contains(x.Id)
+                    );
+
+                    assigned = printers.Count(x =>
+                        (x.AssetId == a.Id || x.AssetId == null) &&
+                        x.IsAssigned &&
+                        !damagedPrinters.Contains(x.Id)
                     );
                 }
                 else

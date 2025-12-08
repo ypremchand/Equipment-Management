@@ -90,11 +90,13 @@ function AssignedItems() {
   const laptops = groupBy("laptop");
   const mobiles = groupBy("mobile");
   const tablets = groupBy("tablet");
+  const desktops = groupBy("desktop");
 
   const tabs = [
     { key: "laptop", label: "Laptops", data: laptops },
     { key: "mobile", label: "Mobiles", data: mobiles },
     { key: "tablet", label: "Tablets", data: tablets },
+    { key: "desktop", label: "Desktops", data: desktops },
   ].filter((t) => t.data.length > 0);
 
   const firstTab = tabs.length > 0 ? tabs[0].key : null;

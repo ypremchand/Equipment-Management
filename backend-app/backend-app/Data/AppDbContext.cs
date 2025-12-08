@@ -15,6 +15,9 @@ namespace backend_app.Data
         public DbSet<Laptop> Laptops { get; set; }
         public DbSet<Mobile> Mobiles { get; set; }
         public DbSet<Tablet> Tablets { get; set; }
+        public DbSet<Desktop> Desktops { get; set; }
+        public DbSet<Printer> Printers { get; set; }
+
         public DbSet<DamagedAsset> DamagedAssets { get; set; }
         public DbSet<RepairHistory> RepairHistories { get; set; }
 
@@ -25,9 +28,6 @@ namespace backend_app.Data
 
         public DbSet<AdminDeleteHistory> AdminDeleteHistories { get; set; }
         public DbSet<UserDeleteHistory> UserDeleteHistories { get; set; }
-
-
-
 
     }
 }

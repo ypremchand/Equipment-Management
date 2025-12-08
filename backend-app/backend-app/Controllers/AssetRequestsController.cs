@@ -82,9 +82,28 @@ namespace backend_app.Controllers
                 .ToList();
 
 
+            var allDesktopIds = requests
+           .SelectMany(r => r.AssetRequestItems ?? Enumerable.Empty<AssetRequestItem>())
+           .SelectMany(i => i.AssignedAssets ?? Enumerable.Empty<AssignedAsset>())
+           .Where(a => a.AssetType?.ToLower() == "desktop")
+           .Select(a => a.AssetTypeItemId)
+           .Distinct()
+           .ToList();
+
+
+            var allPrinterIds = requests
+          .SelectMany(r => r.AssetRequestItems ?? Enumerable.Empty<AssetRequestItem>())
+          .SelectMany(i => i.AssignedAssets ?? Enumerable.Empty<AssignedAsset>())
+          .Where(a => a.AssetType?.ToLower() == "printer")
+          .Select(a => a.AssetTypeItemId)
+          .Distinct()
+          .ToList();
+
             var laptops = await _context.Laptops.Where(l => allLaptopIds.Contains(l.Id)).ToDictionaryAsync(l => l.Id);
             var mobiles = await _context.Mobiles.Where(m => allMobileIds.Contains(m.Id)).ToDictionaryAsync(m => m.Id);
             var tablets = await _context.Tablets.Where(t => allTabletIds.Contains(t.Id)).ToDictionaryAsync(t => t.Id);
+            var desktops = await _context.Desktops.Where(d => allDesktopIds.Contains(d.Id)).ToDictionaryAsync(d => d.Id);
+            var printers = await _context.Printers.Where(p => allPrinterIds.Contains(p.Id)).ToDictionaryAsync(p => p.Id);
 
             // Project into a serializable DTO that includes assigned item detail object
             var result = requests.Select(r => new
@@ -154,6 +173,25 @@ namespace backend_app.Controllers
                                 tab.AssetTag,
                                 tab.PurchaseDate
                             };
+                        else if (type == "desktop" && desktops.TryGetValue(a.AssetTypeItemId, out var desk))
+                            detail = new
+                            {
+                                desk.Id,
+                                desk.Brand,
+                                desk.ModelNumber,
+                                desk.AssetTag,
+                                desk.PurchaseDate
+                            };
+
+                        else if (type == "printer" && printers.TryGetValue(a.AssetTypeItemId, out var prin))
+                            detail = new
+                            {
+                                prin.Id,
+                                prin.Brand,
+                                prin.Model,
+                                prin.AssetTag,
+                                prin.PurchaseDate
+                            };
 
                         return new
                         {
@@ -216,6 +254,24 @@ namespace backend_app.Controllers
                 .Distinct()
                 .ToList();
 
+
+            var allDesktopIds = requests
+               .SelectMany(r => r.AssetRequestItems ?? Enumerable.Empty<AssetRequestItem>())
+               .SelectMany(i => i.AssignedAssets ?? Enumerable.Empty<AssignedAsset>())
+               .Where(a => a.AssetType?.ToLower() == "desktop")
+               .Select(a => a.AssetTypeItemId)
+               .Distinct()
+               .ToList();
+
+            var allPrinterIds = requests
+              .SelectMany(r => r.AssetRequestItems ?? Enumerable.Empty<AssetRequestItem>())
+              .SelectMany(i => i.AssignedAssets ?? Enumerable.Empty<AssignedAsset>())
+              .Where(a => a.AssetType?.ToLower() == "printer")
+              .Select(a => a.AssetTypeItemId)
+              .Distinct()
+              .ToList();
+
+
             // --- Load lookup tables
             var laptops = await _context.Laptops
                 .Where(l => allLaptopIds.Contains(l.Id))
@@ -228,6 +284,14 @@ namespace backend_app.Controllers
             var tablets = await _context.Tablets
                 .Where(t => allTabletIds.Contains(t.Id))
                 .ToDictionaryAsync(t => t.Id);
+
+            var desktops = await _context.Desktops
+             .Where(d => allDesktopIds.Contains(d.Id))
+             .ToDictionaryAsync(d => d.Id);
+
+            var printers = await _context.Printers
+        .Where(p => allPrinterIds.Contains(p.Id))
+        .ToDictionaryAsync(p => p.Id);
 
             // --- Final DTO Projection (corrected!)
             var result = requests.Select(r => new
@@ -297,6 +361,26 @@ namespace backend_app.Controllers
                                 tab.PurchaseDate
                             };
 
+
+                        else if (type == "desktop" && desktops.TryGetValue(a.AssetTypeItemId, out var desk))
+                            detail = new
+                            {
+                                desk.Id,
+                                desk.Brand,
+                                desk.ModelNumber,
+                                desk.AssetTag,
+                                desk.PurchaseDate
+                            };
+
+                        else if (type == "printer" && printers.TryGetValue(a.AssetTypeItemId, out var prin))
+                            detail = new
+                            {
+                                prin.Id,
+                                prin.Brand,
+                                prin.Model,
+                                prin.AssetTag,
+                                prin.PurchaseDate
+                            };
                         return new
                         {
                             a.Id,
@@ -382,6 +466,26 @@ namespace backend_app.Controllers
                                 tab.AssignedDate = null;
                             }
                         }
+
+                        else if (type == "desktop")
+                        {
+                            var desk = await _context.Desktops.FindAsync(old.AssetTypeItemId);
+                            if (desk != null)
+                            {
+                                desk.IsAssigned = false;
+                                desk.AssignedDate = null;
+                            }
+                        }
+
+                        else if (type == "printer")
+                        {
+                            var prin = await _context.Printers.FindAsync(old.AssetTypeItemId);
+                            if (prin != null)
+                            {
+                                prin.IsAssigned = false;
+                                prin.AssignedDate = null;
+                            }
+                        }
                     }
 
                     // Remove old assignments
@@ -431,6 +535,26 @@ namespace backend_app.Controllers
                             {
                                 tab.IsAssigned = true;
                                 tab.AssignedDate = DateTime.Now;
+                            }
+                        }
+
+                        else if (type == "desktop")
+                        {
+                            var desk = await _context.Desktops.FindAsync(assetTypeItemId);
+                            if (desk != null)
+                            {
+                                desk.IsAssigned = true;
+                                desk.AssignedDate = DateTime.Now;
+                            }
+                        }
+
+                        else if (type == "printer")
+                        {
+                            var prin = await _context.Printers.FindAsync(assetTypeItemId);
+                            if (prin != null)
+                            {
+                                prin.IsAssigned = true;
+                                prin.AssignedDate = DateTime.Now;
                             }
                         }
                         else
@@ -532,6 +656,25 @@ namespace backend_app.Controllers
                                 tab.AssignedDate = null;
                             }
                         }
+                        else if (type == "desktop")
+                        {
+                            var desk = await _context.Desktops.FindAsync(assigned.AssetTypeItemId);
+                            if (desk != null)
+                            {
+                                desk.IsAssigned = false;
+                                desk.AssignedDate = null;
+                            }
+                        }
+
+                        else if (type == "printer")
+                        {
+                            var prin = await _context.Printers.FindAsync(assigned.AssetTypeItemId);
+                            if (prin != null)
+                            {
+                                prin.IsAssigned = false;
+                                prin.AssignedDate = null;
+                            }
+                        }
                     }
                 }
 
@@ -626,6 +769,33 @@ namespace backend_app.Controllers
                 }
             }
 
+            else if (type == "desktop")
+            {
+                var desk = await _context.Desktops.FindAsync(assigned.AssetTypeItemId);
+                if (desk != null)
+                {
+                    assetTag = desk.AssetTag;
+                    desk.IsAssigned = false;
+                    desk.AssignedDate = null;
+
+                    if (payload.IsDamaged)
+                        desk.Remarks = "Yes";
+                }
+            }
+
+            else if (type == "printer")
+            {
+                var prin = await _context.Printers.FindAsync(assigned.AssetTypeItemId);
+                if (prin != null)
+                {
+                    assetTag = prin.AssetTag;
+                    prin.IsAssigned = false;
+                    prin.AssignedDate = null;
+
+                    if (payload.IsDamaged)
+                        prin.Remarks = "Yes";
+                }
+            }
             // -------------------------------------------
             // ADD TO DAMAGED TABLE IF DAMAGED
             // -------------------------------------------
@@ -721,6 +891,26 @@ namespace backend_app.Controllers
                             {
                                 tab.IsAssigned = false;
                                 tab.AssignedDate = null;
+                            }
+                        }
+
+                        else if (type == "desktop")
+                        {
+                            var desk = await _context.Desktops.FindAsync(assigned.AssetTypeItemId);
+                            if (desk != null && desk.IsAssigned == true)
+                            {
+                                desk.IsAssigned = false;
+                                desk.AssignedDate = null;
+                            }
+                        }
+
+                        else if (type == "printer")
+                        {
+                            var prin = await _context.Printers.FindAsync(assigned.AssetTypeItemId);
+                            if (prin != null && prin.IsAssigned == true)
+                            {
+                                prin.IsAssigned = false;
+                                prin.AssignedDate = null;
                             }
                         }
                     }

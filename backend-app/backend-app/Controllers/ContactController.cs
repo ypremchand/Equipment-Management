@@ -26,7 +26,7 @@ namespace backend_app.Controllers
             if (assetName.Contains("laptop")) return "Laptop";
             if (assetName.Contains("mobile")) return "Mobile";
             if (assetName.Contains("tablet")) return "Tablet";
-            if (assetName.Contains("scanner")) return "Scanner";
+            if (assetName.Contains("desktop")) return "Desktop";
             if (assetName.Contains("printer")) return "Printer";
 
             return "Unknown";
@@ -94,6 +94,18 @@ namespace backend_app.Controllers
                 item.ScannerType = null;
                 item.ScanSpeed = null;
             }
+            else if (category == "Desktop")
+            {
+                item.NetworkType = null;
+                item.SimType = null;
+                item.SimSupport = null;
+                item.ScannerType = null;
+                item.ScanSpeed = null;
+                item.PrinterType = null;
+                item.PaperSize = null;
+                item.Dpi = null;
+            }
+
         }
 
 

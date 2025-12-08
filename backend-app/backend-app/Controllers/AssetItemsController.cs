@@ -127,6 +127,55 @@ namespace backend_app.Controllers
 
                 return Ok(data);
             }
+            if (type == "desktop")
+            {
+                var data = await _context.Desktops
+                    .Where(x => !x.IsAssigned && !damagedIds.Contains(x.Id))
+                    .Select(x => new
+                    {
+                        x.Id,
+                        x.Brand,
+                        x.ModelNumber,
+                        x.AssetTag,
+                        x.PurchaseDate,
+                        x.Processor,
+                        x.Ram,
+                        x.Storage,
+                        x.Location,
+                        x.Remarks,
+                        x.LastServicedDate,
+                        x.IsAssigned,
+                        x.AssignedDate,
+                        x.AssetId
+                    })
+                    .ToListAsync();
+
+                return Ok(data);
+            }
+            if (type == "printer")
+            {
+                var data = await _context.Printers
+                    .Where(x => !x.IsAssigned && !damagedIds.Contains(x.Id))
+                    .Select(x => new
+                    {
+                        x.Id,
+                        x.Brand,
+                        x.Model,
+                        x.PrinterType,
+                        x.PaperSize,
+                        x.Dpi,
+                        x.AssetTag,
+                        x.PurchaseDate,
+                        x.Location,
+                        x.Remarks,
+                        x.IsAssigned,
+                        x.AssignedDate,
+                        x.AssetId
+                    })
+                    .ToListAsync();
+
+                return Ok(data);
+            }
 
             return BadRequest("Unknown asset type.");
         }

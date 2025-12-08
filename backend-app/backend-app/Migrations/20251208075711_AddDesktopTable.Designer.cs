@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using backend_app.Data;
 
@@ -11,9 +12,11 @@ using backend_app.Data;
 namespace backend_app.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251208075711_AddDesktopTable")]
+    partial class AddDesktopTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -525,63 +528,6 @@ namespace backend_app.Migrations
                     b.ToTable("Mobiles");
                 });
 
-            modelBuilder.Entity("backend_app.Models.Printer", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("AssetId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("AssetTag")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("AssignedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Brand")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Dpi")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsAssigned")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Location")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Model")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PaperSize")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PrinterType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("PurchaseDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Remarks")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AssetId");
-
-                    b.ToTable("Printers");
-                });
-
             modelBuilder.Entity("backend_app.Models.RepairHistory", b =>
                 {
                     b.Property<int>("Id")
@@ -817,15 +763,6 @@ namespace backend_app.Migrations
                 });
 
             modelBuilder.Entity("backend_app.Models.Mobile", b =>
-                {
-                    b.HasOne("backend_app.Models.Asset", "Asset")
-                        .WithMany()
-                        .HasForeignKey("AssetId");
-
-                    b.Navigation("Asset");
-                });
-
-            modelBuilder.Entity("backend_app.Models.Printer", b =>
                 {
                     b.HasOne("backend_app.Models.Asset", "Asset")
                         .WithMany()

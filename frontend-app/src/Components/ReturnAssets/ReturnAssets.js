@@ -60,22 +60,30 @@ function ReturnAssets() {
   }, [fetchRequests]);
 
   // DELETE handler
-  const handleDelete = async (id) => {
-    if (!id) return;
+ const handleDelete = async (id) => {
+  if (!id) return;
 
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this request? This action cannot be undone."
-    );
-    if (!confirmed) return;
+  const confirmed = window.confirm(
+    "Are you sure you want to delete this request? This action cannot be undone."
+  );
+  if (!confirmed) return;
 
-    try {
-      await axios.delete(`${API}/${id}`);
-      setRequests((prev) => prev.filter((r) => get(r, "id", "Id") !== id));
-    } catch (err) {
-      console.error("Error deleting request:", err);
-      alert("Failed to delete the request. Please try again.");
-    }
-  };
+  try {
+    await axios.delete(`${API}/${id}`, {
+      headers: { "Content-Type": "application/json" },
+      data: {
+        adminName: user?.name || "User",
+        reason: "User deleted their request"
+      }
+    });
+
+    setRequests((prev) => prev.filter((r) => get(r, "id", "Id") !== id));
+  } catch (err) {
+    console.error("Error deleting request:", err);
+    alert("Failed to delete the request. Please try again.");
+  }
+};
+
 
   return (
     <div className="return-asset-page container mt-4">
@@ -186,7 +194,7 @@ function ReturnAssets() {
                         </div>
                       ))}
                     </div>
-                    {/*             BUTTONS            */}
+                    {/*BUTTONS*/}
                     <div className="mt-3 d-flex justify-content-between">
                       <button
                         className="btn btn-sm btn-outline-primary"
@@ -194,6 +202,12 @@ function ReturnAssets() {
                       >
                         View Assigned Items
                       </button>
+
+                       {/* <button
+                        className="btn btn-sm btn-outline-success"
+                      >
+                        Recieved
+                      </button> */}
 
                       {status === "Pending" && (
                         <div>

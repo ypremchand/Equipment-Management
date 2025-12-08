@@ -293,27 +293,22 @@
               "type": "integer",
               "format": "int32"
             }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DeleteRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DeleteRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/DeleteRequest"
-              }
+          },
+          {
+            "name": "adminName",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reason",
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           }
-        },
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -651,6 +646,295 @@
             "schema": {
               "type": "integer",
               "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Desktops": {
+      "get": {
+        "tags": [
+          "Desktops"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "id"
+            }
+          },
+          {
+            "name": "sortDir",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "asc"
+            }
+          },
+          {
+            "name": "brand",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ram",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "storage",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "location",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "operatingSystem",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Desktops"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DesktopPayload"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DesktopPayload"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DesktopPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Desktop"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Desktop"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Desktop"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Desktops/options": {
+      "get": {
+        "tags": [
+          "Desktops"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Desktops/{id}": {
+      "get": {
+        "tags": [
+          "Desktops"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Desktop"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Desktop"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Desktop"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Desktops"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DesktopPayload"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DesktopPayload"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DesktopPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Desktops"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Desktops/check-duplicate": {
+      "get": {
+        "tags": [
+          "Desktops"
+        ],
+        "parameters": [
+          {
+            "name": "assetTag",
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -1405,6 +1689,254 @@
         }
       }
     },
+    "/api/Printers": {
+      "get": {
+        "tags": [
+          "Printers"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "id"
+            }
+          },
+          {
+            "name": "sortDir",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "asc"
+            }
+          },
+          {
+            "name": "brand",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "printerType",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "paperSize",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "location",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Printers"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrinterPayload"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrinterPayload"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrinterPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Printers/options": {
+      "get": {
+        "tags": [
+          "Printers"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Printers/{id}": {
+      "get": {
+        "tags": [
+          "Printers"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Printers"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrinterPayload"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrinterPayload"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrinterPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Printers"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Printers/check-duplicate": {
+      "get": {
+        "tags": [
+          "Printers"
+        ],
+        "parameters": [
+          {
+            "name": "assetTag",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Tablets": {
       "get": {
         "tags": [
@@ -1772,6 +2304,66 @@
       "get": {
         "tags": [
           "UserDeleteHistories"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          },
+          {
+            "name": "user",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -2180,6 +2772,190 @@
             "nullable": true
           },
           "adminName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Desktop": {
+        "required": [
+          "assetTag",
+          "brand",
+          "location",
+          "modelNumber",
+          "operatingSystem",
+          "processor",
+          "purchaseDate",
+          "ram",
+          "storage"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "brand": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "modelNumber": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "assetTag": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "purchaseDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "processor": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "ram": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "storage": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "graphicsCard": {
+            "type": "string",
+            "nullable": true
+          },
+          "operatingSystem": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "location": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "remarks": {
+            "type": "string",
+            "nullable": true
+          },
+          "damageReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastServicedDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "isAssigned": {
+            "type": "boolean"
+          },
+          "assignedDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "assetId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "asset": {
+            "$ref": "#/components/schemas/Asset"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DesktopPayload": {
+        "required": [
+          "assetTag",
+          "brand",
+          "location",
+          "modelNumber",
+          "operatingSystem",
+          "processor",
+          "purchaseDate",
+          "ram",
+          "storage"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "brand": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "modelNumber": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "assetTag": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "purchaseDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "processor": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "ram": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "storage": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "graphicsCard": {
+            "type": "string",
+            "nullable": true
+          },
+          "operatingSystem": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "location": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "remarks": {
+            "type": "string",
+            "nullable": true
+          },
+          "damageReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastServicedDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "isAssigned": {
+            "type": "boolean"
+          },
+          "assignedDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "assetId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "asset": {
+            "$ref": "#/components/schemas/Asset"
+          },
+          "damageReasonInput": {
             "type": "string",
             "nullable": true
           }
@@ -2623,6 +3399,81 @@
             "$ref": "#/components/schemas/Asset"
           },
           "damageReason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PrinterPayload": {
+        "required": [
+          "assetTag",
+          "brand",
+          "dpi",
+          "location",
+          "model",
+          "paperSize",
+          "printerType"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "brand": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "model": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "printerType": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "paperSize": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "dpi": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "assetTag": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "purchaseDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "location": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "remarks": {
+            "type": "string",
+            "nullable": true
+          },
+          "isAssigned": {
+            "type": "boolean"
+          },
+          "assignedDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "assetId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "asset": {
+            "$ref": "#/components/schemas/Asset"
+          },
+          "damageReasonInput": {
             "type": "string",
             "nullable": true
           }

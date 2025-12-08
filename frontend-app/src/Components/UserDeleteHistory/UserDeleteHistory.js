@@ -6,18 +6,50 @@ import "./style.css"
 function UserDeleteHistory() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+   const [search, setSearch] = useState("");   // used
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+   const pageSize = 10;  // used
+
 
   useEffect(() => {
     axios
-      .get("http://localhost:5083/api/UserDeleteHistories")
-      .then((res) => setLogs(res.data))
-      .catch((err) => console.error("Error fetching history:", err))
+      .get("http://localhost:5083/api/UserDeleteHistories", {
+        params: {
+          page,
+          pageSize,
+          search
+        },
+      })
+      .then((res) => {
+        console.log("Delete history:",res.data);
+        setLogs(res.data.data || []);
+      setTotalPages(res.data.totalPages || 1);
+      }) 
+
+      .catch((err) => {console.error("Error fetching history:", err);
+        setLogs([]);
+      })
       .finally(() => setLoading(false));
-  }, []);
+  }, [page,search]);
 
   return (
     <div className="user-delete-history-page container mt-4">
       <h3 className="text-center mb-4">🧑‍💻 User Delete History</h3>
+      
+      {/* 🔍 Search */}
+      <div className="mb-3 d-flex justify-content-center">
+        <input
+          type="text"
+          className="form-control w-50"
+          placeholder="Search by item item, type, or user..."
+          value={search}
+          onChange={(e) => {
+            setPage(1);       // reset to page 1 after search
+            setSearch(e.target.value);
+          }}
+        />
+      </div>
       {loading ? (
         <div className="text-center"><div className="spinner-border"></div></div>
       ) : logs.length === 0 ? (
@@ -46,6 +78,28 @@ function UserDeleteHistory() {
           </tbody>
         </table>
       )}
+      {/* Pagination */}
+      <div className="d-flex justify-content-center mt-3 gap-2">
+        <button
+          className="btn btn-dark"
+          disabled={page === 1}
+          onClick={() => setPage((prev) => prev - 1)}
+        >
+          Prev
+        </button>
+
+        <span className="align-self-center">
+          Page {page} of {totalPages}
+        </span>
+
+        <button
+          className="btn btn-dark"
+          disabled={page === totalPages}
+          onClick={() => setPage((prev) => prev + 1)}
+        >
+          Next
+        </button>
+      </div>
     </div>
   );
 }

@@ -60,14 +60,16 @@ function Contact() {
   // CATEGORY FIELD MAP (dropdown visibility)
   // ============================================================
 
-  const categoryFields = {
-    Laptops: ["brand", "processor", "storage", "ram", "operatingSystem"],
-    Mobiles: ["brand", "processor", "storage", "ram", "networkType", "simType"],
-    Tablets: ["brand", "processor", "storage", "ram", "networkType", "simSupport"],
-    Scanners: ["scannerType", "scanSpeed"],
-    Printers: ["printerType", "paperSize", "dpi"],
-    default: []
-  };
+ const categoryFields = {
+  Laptops: ["brand", "processor", "storage", "ram", "operatingSystem"],
+  Mobiles: ["brand", "processor", "storage", "ram", "networkType", "simType"],
+  Tablets: ["brand", "processor", "storage", "ram", "networkType", "simSupport"],
+  Desktops: ["brand", "processor", "storage", "ram", "operatingSystem"],
+  Scanners: ["scannerType", "scanSpeed"],
+  Printers: ["printerType", "paperSize", "dpi"],
+  default: []
+};
+
 
   const shouldShowField = (assetName, field) =>
     categoryFields[assetName]?.includes(field);

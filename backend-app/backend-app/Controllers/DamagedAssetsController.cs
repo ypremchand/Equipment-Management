@@ -123,6 +123,30 @@ namespace backend_app.Controllers
                 }
             }
 
+            else if (item.AssetType.ToLower() == "desktop")
+            {
+                var desktop = await _context.Desktops
+                    .FirstOrDefaultAsync(x => x.Id == item.AssetTypeItemId);
+
+                if (desktop != null)
+                {
+                    desktop.Remarks = "No";
+                    _context.Entry(desktop).State = EntityState.Modified;
+                }
+            }
+
+            else if (item.AssetType.ToLower() == "printer")
+            {
+                var printer = await _context.Printers
+                    .FirstOrDefaultAsync(x => x.Id == item.AssetTypeItemId);
+
+                if (printer != null)
+                {
+                    printer.Remarks = "No";
+                    _context.Entry(printer).State = EntityState.Modified;
+                }
+            }
+
             // 3️⃣ REMOVE FROM DAMAGED LIST
             _context.DamagedAssets.Remove(item);
 
