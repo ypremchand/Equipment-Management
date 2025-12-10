@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using backend_app.Data;
 
@@ -11,9 +12,11 @@ using backend_app.Data;
 namespace backend_app.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251210063857_UpdatedScanner1")]
+    partial class UpdatedScanner1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -65,12 +68,6 @@ namespace backend_app.Migrations
 
                     b.Property<int>("RequestedQuantity")
                         .HasColumnType("int");
-
-                    b.Property<string>("Scanner1Resolution")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Scanner1Type")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SimSupport")
                         .HasColumnType("nvarchar(max)");
@@ -610,60 +607,6 @@ namespace backend_app.Migrations
                     b.ToTable("RepairHistories");
                 });
 
-            modelBuilder.Entity("backend_app.Models.Scanner1", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("AssetId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("AssignedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsAssigned")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime>("PurchaseDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Remarks")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Scanner1AssetTag")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Scanner1Brand")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Scanner1Location")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Scanner1Model")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Scanner1Resolution")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Scanner1Type")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AssetId");
-
-                    b.ToTable("Scanner1");
-                });
-
             modelBuilder.Entity("backend_app.Models.Tablet", b =>
                 {
                     b.Property<int>("Id")
@@ -880,15 +823,6 @@ namespace backend_app.Migrations
                 });
 
             modelBuilder.Entity("backend_app.Models.Printer", b =>
-                {
-                    b.HasOne("backend_app.Models.Asset", "Asset")
-                        .WithMany()
-                        .HasForeignKey("AssetId");
-
-                    b.Navigation("Asset");
-                });
-
-            modelBuilder.Entity("backend_app.Models.Scanner1", b =>
                 {
                     b.HasOne("backend_app.Models.Asset", "Asset")
                         .WithMany()

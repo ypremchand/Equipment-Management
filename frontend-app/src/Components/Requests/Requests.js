@@ -262,10 +262,10 @@ function Requests() {
                   <td>
                     <span
                       className={`badge ${req.status?.toLowerCase() === "pending"
-                          ? "bg-warning text-dark"
-                          : req.status?.toLowerCase() === "approved"
-                            ? "bg-success"
-                            : "bg-danger"
+                        ? "bg-warning text-dark"
+                        : req.status?.toLowerCase() === "approved"
+                          ? "bg-success"
+                          : "bg-danger"
                         }`}
                     >
                       {req.status}
@@ -382,30 +382,30 @@ function AssignApproveModal({ show, onHide, request, fetchRequests }) {
 
 
   function normalizeType(name) {
-  if (!name) return "";
+    if (!name) return "";
 
-  const n = name.trim().toLowerCase();
+    const n = name.trim().toLowerCase();
 
-  if (n.includes("laptop")) return "laptop";
-  if (n.includes("mobile")) return "mobile";
-  if (n.includes("tablet")) return "tablet";
-  if (n.includes("desktop")) return "desktop";
-  if (n.includes("printer")) return "printer";
-  if (n.includes("scanner")) return "scanner";
+    if (n.includes("laptop")) return "laptop";
+    if (n.includes("mobile")) return "mobile";
+    if (n.includes("tablet")) return "tablet";
+    if (n.includes("desktop")) return "desktop";
+    if (n.includes("printer")) return "printer";
+    if (n.includes("scanner1")) return "scanner1";
 
-  return n;
-}
+    return n;
+  }
 
 
- const categoryFields = {
-  laptop: ["brand", "processor", "storage", "ram", "operatingSystem"],
-  desktop: ["brand", "processor", "storage", "ram", "operatingSystem"], // ⭐ add this
-  mobile: ["brand", "processor", "storage", "ram", "networkType", "simType"],
-  tablet: ["brand", "processor", "storage", "ram", "networkType", "simSupport"],
-  scanner: ["scannerType", "scanSpeed"],
-  printer: ["printerType", "paperSize", "dpi"],
-  default: []
-};
+  const categoryFields = {
+    laptop: ["brand", "processor", "storage", "ram", "operatingSystem"],
+    desktop: ["brand", "processor", "storage", "ram", "operatingSystem"], // ⭐ add this
+    mobile: ["brand", "processor", "storage", "ram", "networkType", "simType"],
+    tablet: ["brand", "processor", "storage", "ram", "networkType", "simSupport"],
+    printer: ["printerType", "paperSize", "dpi"],
+    scanner1: ["scanner1Type", "scanner1Resolution"],
+    default: []
+  };
 
 
 
@@ -520,7 +520,7 @@ function AssignApproveModal({ show, onHide, request, fetchRequests }) {
   if (!request) return null;
 
   return (
-    <Modal show={show} onHide={onHide} size="lg">
+    <Modal show={show} onHide={onHide} size="xl">
       <Modal.Header closeButton>
         <Modal.Title>Assign Items & Approve</Modal.Title>
       </Modal.Header>
@@ -559,11 +559,11 @@ function AssignApproveModal({ show, onHide, request, fetchRequests }) {
                           ["networkType", item.networkType],
                           ["simType", item.simType],
                           ["simSupport", item.simSupport],
-                          ["scannerType", item.scannerType],
-                          ["scanSpeed", item.scanSpeed],
                           ["printerType", item.printerType],
                           ["paperSize", item.paperSize],
-                          ["dpi", item.dpi]
+                          ["dpi", item.dpi],
+                          ["scanner1Type", item.scanner1Type],
+                          ["scanner1Resolution", item.scanner1Resolution],
                         ]
                           .filter(([field, value]) => shouldShowFilter(item.asset?.name, field) && value)
                           .map(([field, value]) => (
@@ -576,69 +576,113 @@ function AssignApproveModal({ show, onHide, request, fetchRequests }) {
 
 
                     <td>
-                      {loading ? (
-                        "Loading..."
-                      ) : list.length === 0 ? (
-                        <em>No available items</em>
-                      ) : (
-                        <div
-                          style={{
-                            maxHeight: 180,
-                            overflowY: "auto",
-                            border: "1px solid #ddd",
-                            padding: 8,
-                          }}
-                        >
-                          {list.map((a) => (
-                            <div key={a.id} className="form-check mb-1">
-                              <input
-                                type="checkbox"
-                                className="form-check-input"
-                                checked={selectedIdsForItem[item.id]?.includes(a.id)}
-                                onChange={() =>
-                                  toggleSelect(item.id, a.id, item.requestedQuantity)
-                                }
-                              />
-                              <label className="form-check-label ms-2">
+  {loading ? (
+    "Loading..."
+  ) : list.length === 0 ? (
+    <em>No available items</em>
+  ) : (
+    <div
+      style={{
+        maxHeight: 180,
+        overflowY: "auto",
+        border: "1px solid #ddd",
+        padding: 8,
+      }}
+    >
 
-                                {/* Primary Line */}
-                                {a.assetTag || a.imeiNumber || a.serialNumber}{" "}
-                                ({a.brand} - {a.modelNumber || a.model || a.processor})
+      {/* ✅ Titles placed INSIDE the scroll box */}
+      <div className="mb-2">
+  <div className="form-check">
+    <input
+      type="checkbox"
+      className="form-check-input"
+      id={`selectAll-${item.id}`}
+      onChange={(e) => {
+        if (e.target.checked) {
+          // Select ALL items up to requested quantity
+          const firstN = list.slice(0, item.requestedQuantity).map(x => x.id);
+          setSelectedIdsForItem(prev => ({ ...prev, [item.id]: firstN }));
+        } else {
+          // Remove all
+          setSelectedIdsForItem(prev => ({ ...prev, [item.id]: [] }));
+        }
+      }}
+    />
+    <label className="form-check-label" htmlFor={`selectAll-${item.id}`}>
+      Select all requested quantity
+    </label>
+  </div>
 
-                                {/* Actual item details */}
-                                <div style={{ fontSize: "0.75rem", color: "#444" }}>
-                                  {a.processor && <span className="me-2"><strong>Processor:</strong> {a.processor}</span>}
-                                  {a.ram && <span className="me-2"><strong>RAM:</strong> {a.ram}</span>}
-                                  {a.storage && <span className="me-2"><strong>Storage:</strong> {a.storage}</span>}
-                                  {a.operatingSystem && <span className="me-2"><strong>OS:</strong> {a.operatingSystem}</span>}
-                                  {a.networkType && <span className="me-2"><strong>Network:</strong> {a.networkType}</span>}
-                                  {a.simType && <span className="me-2"><strong>SIM Type:</strong> {a.simType}</span>}
-                                  {a.simSupport && <span className="me-2"><strong>SIM Support:</strong> {a.simSupport}</span>}
-                                  {a.scannerType && <span className="me-2"><strong>Scanner:</strong> {a.scannerType}</span>}
-                                  {a.scanSpeed && <span className="me-2"><strong>Speed:</strong> {a.scanSpeed}</span>}
-                                  {a.printerType && <span className="me-2"><strong>Printer:</strong> {a.printerType}</span>}
-                                  {a.paperSize && <span className="me-2"><strong>Paper:</strong> {a.paperSize}</span>}
-                                  {a.dpi && <span className="me-2"><strong>DPI:</strong> {a.dpi}</span>}
-                                </div>
-                              </label>
+  <div className="form-check">
+    <input
+      type="checkbox"
+      className="form-check-input"
+      id={`partial-${item.id}`}
+    />
+    <label className="form-check-label" htmlFor={`partial-${item.id}`}>
+      Select partial requested quantity
+    </label>
+  </div>
+</div>
 
 
+      {list.map((a) => (
+        <div key={a.id} className="form-check mb-1">
+          <input
+            type="checkbox"
+            className="form-check-input"
+            checked={selectedIdsForItem[item.id]?.includes(a.id)}
+            onChange={() =>
+              toggleSelect(item.id, a.id, item.requestedQuantity)
+            }
+          />
 
-                            </div>
-                          ))}
-                        </div>
-                      )}
+          <label className="form-check-label ms-2">
+            {a.scanner1AssetTag || a.assetTag || a.imeiNumber || a.serialNumber}
 
-                      <div className="mt-2">
-                        {selectedIdsForItem[item.id]?.length === item.requestedQuantity ? (
-                          <span className="text-success fw-bold">✔ Exact quantity selected</span>
-                        ) : (
-                          <span className="text-danger fw-bold">
-                            {(selectedIdsForItem[item.id]?.length || 0)} / {item.requestedQuantity} selected
-                          </span>
-                        )}
-                      </div>
-                    </td>
+            {" "}
+
+            {a.assetType === "scanner1" ? (
+              <>({a.scanner1Brand} - {a.scanner1Model})</>
+            ) : (
+              <>({a.brand} - {a.modelNumber || a.model || a.processor})</>
+            )}
+
+            {/* Extra details */}
+            <div style={{ fontSize: "0.75rem", color: "#444" }}>
+              {a.processor && <span className="me-2"><strong>Processor:</strong> {a.processor}</span>}
+              {a.ram && <span className="me-2"><strong>RAM:</strong> {a.ram}</span>}
+              {a.storage && <span className="me-2"><strong>Storage:</strong> {a.storage}</span>}
+
+              {a.printerType && <span className="me-2"><strong>Printer:</strong> {a.printerType}</span>}
+              {a.paperSize && <span className="me-2"><strong>Paper:</strong> {a.paperSize}</span>}
+              {a.dpi && <span className="me-2"><strong>DPI:</strong> {a.dpi}</span>}
+
+              {a.scanner1Type && <span className="me-2"><strong>Type:</strong> {a.scanner1Type}</span>}
+              {a.scanner1Resolution && (
+                <span className="me-2"><strong>Resolution:</strong> {a.scanner1Resolution}</span>
+              )}
+              {a.scanner1Location && (
+                <span><strong>Location:</strong> {a.scanner1Location}</span>
+              )}
+            </div>
+          </label>
+        </div>
+      ))}
+    </div>
+  )}
+
+  <div className="mt-2">
+    {selectedIdsForItem[item.id]?.length === item.requestedQuantity ? (
+      <span className="text-success fw-bold">✔ Exact quantity selected</span>
+    ) : (
+      <span className="text-danger fw-bold">
+        {(selectedIdsForItem[item.id]?.length || 0)} / {item.requestedQuantity} selected
+      </span>
+    )}
+  </div>
+</td>
+
                   </tr>
                 );
               })}

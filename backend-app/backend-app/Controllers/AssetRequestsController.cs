@@ -99,11 +99,20 @@ namespace backend_app.Controllers
           .Distinct()
           .ToList();
 
+            var allScanner1Ids = requests
+       .SelectMany(r => r.AssetRequestItems ?? Enumerable.Empty<AssetRequestItem>())
+       .SelectMany(i => i.AssignedAssets ?? Enumerable.Empty<AssignedAsset>())
+       .Where(a => a.AssetType?.ToLower() == "scanner1")
+       .Select(a => a.AssetTypeItemId)
+       .Distinct()
+       .ToList();
+
             var laptops = await _context.Laptops.Where(l => allLaptopIds.Contains(l.Id)).ToDictionaryAsync(l => l.Id);
             var mobiles = await _context.Mobiles.Where(m => allMobileIds.Contains(m.Id)).ToDictionaryAsync(m => m.Id);
             var tablets = await _context.Tablets.Where(t => allTabletIds.Contains(t.Id)).ToDictionaryAsync(t => t.Id);
             var desktops = await _context.Desktops.Where(d => allDesktopIds.Contains(d.Id)).ToDictionaryAsync(d => d.Id);
             var printers = await _context.Printers.Where(p => allPrinterIds.Contains(p.Id)).ToDictionaryAsync(p => p.Id);
+            var scanner1s = await _context.Scanner1.Where(s1 => allScanner1Ids.Contains(s1.Id)).ToDictionaryAsync(s1 => s1.Id);
 
             // Project into a serializable DTO that includes assigned item detail object
             var result = requests.Select(r => new
@@ -131,11 +140,11 @@ namespace backend_app.Controllers
                     NetworkType = i.NetworkType,
                     SimType = i.SimType,
                     SimSupport = i.SimSupport,
-                    ScannerType = i.ScannerType,
-                    ScanSpeed = i.ScanSpeed,
                     PrinterType = i.PrinterType,
                     PaperSize = i.PaperSize,
                     Dpi = i.Dpi,
+                    Scanner1Type= i.Scanner1Type,
+                    Scanner1Resolution=i.Scanner1Resolution,
 
                     // Assigned items with details
                     AssignedAssets = i.AssignedAssets.Select(a =>
@@ -191,6 +200,18 @@ namespace backend_app.Controllers
                                 prin.Model,
                                 prin.AssetTag,
                                 prin.PurchaseDate
+                            };
+
+                        if (type == "scanner1" && scanner1s.TryGetValue(a.AssetTypeItemId, out var sc1))
+                            detail = new
+                            {
+                                sc1.Id,
+                                sc1.Scanner1Brand,
+                                sc1.Scanner1Model,
+                                sc1.Scanner1Type,
+                                sc1.Scanner1Resolution,
+                                sc1.Scanner1AssetTag,
+                                sc1.PurchaseDate
                             };
 
                         return new
@@ -271,6 +292,14 @@ namespace backend_app.Controllers
               .Distinct()
               .ToList();
 
+            var allScanner1Ids = requests
+              .SelectMany(r => r.AssetRequestItems ?? Enumerable.Empty<AssetRequestItem>())
+              .SelectMany(i => i.AssignedAssets ?? Enumerable.Empty<AssignedAsset>())
+              .Where(a => a.AssetType?.ToLower() == "scanner1")
+              .Select(a => a.AssetTypeItemId)
+              .Distinct()
+              .ToList();
+
 
             // --- Load lookup tables
             var laptops = await _context.Laptops
@@ -292,6 +321,10 @@ namespace backend_app.Controllers
             var printers = await _context.Printers
         .Where(p => allPrinterIds.Contains(p.Id))
         .ToDictionaryAsync(p => p.Id);
+
+            var scanner1 = await _context.Scanner1
+    .Where(s1 => allScanner1Ids.Contains(s1.Id))
+    .ToDictionaryAsync(s1 => s1.Id);
 
             // --- Final DTO Projection (corrected!)
             var result = requests.Select(r => new
@@ -319,11 +352,11 @@ namespace backend_app.Controllers
                     NetworkType = i.NetworkType,
                     SimType = i.SimType,
                     SimSupport = i.SimSupport,
-                    ScannerType = i.ScannerType,
-                    ScanSpeed = i.ScanSpeed,
                     PrinterType = i.PrinterType,
                     PaperSize = i.PaperSize,
                     Dpi = i.Dpi,
+                    Scanner1Type = i.Scanner1Type,
+                    Scanner1Resolution = i.Scanner1Resolution,
 
                     AssignedAssets = i.AssignedAssets.Select(a =>
                     {
@@ -381,6 +414,18 @@ namespace backend_app.Controllers
                                 prin.AssetTag,
                                 prin.PurchaseDate
                             };
+
+                        else if (type == "scanner1" && scanner1.TryGetValue(a.AssetTypeItemId, out var scan1))
+                            detail = new
+                            {
+                                scan1.Id,
+                                scan1.Scanner1Brand,
+                                scan1.Scanner1Model,
+                                scan1.Scanner1AssetTag,
+                                scan1.PurchaseDate
+                            };
+
+
                         return new
                         {
                             a.Id,
@@ -486,6 +531,16 @@ namespace backend_app.Controllers
                                 prin.AssignedDate = null;
                             }
                         }
+
+                        else if (type == "scanner1")
+                        {
+                            var scan1 = await _context.Scanner1.FindAsync(old.AssetTypeItemId);
+                            if (scan1 != null)
+                            {
+                                scan1.IsAssigned = false;
+                                scan1.AssignedDate = null;
+                            }
+                        }
                     }
 
                     // Remove old assignments
@@ -555,6 +610,16 @@ namespace backend_app.Controllers
                             {
                                 prin.IsAssigned = true;
                                 prin.AssignedDate = DateTime.Now;
+                            }
+                        }
+
+                        else if (type == "scanner1")
+                        {
+                            var scan1 = await _context.Scanner1.FindAsync(assetTypeItemId);
+                            if (scan1 != null)
+                            {
+                                scan1.IsAssigned = true;
+                                scan1.AssignedDate = DateTime.Now;
                             }
                         }
                         else
@@ -673,6 +738,16 @@ namespace backend_app.Controllers
                             {
                                 prin.IsAssigned = false;
                                 prin.AssignedDate = null;
+                            }
+                        }
+
+                        else if (type == "scanner1")
+                        {
+                            var scan1 = await _context.Scanner1.FindAsync(assigned.AssetTypeItemId);
+                            if (scan1 != null)
+                            {
+                                scan1.IsAssigned = false;
+                                scan1.AssignedDate = null;
                             }
                         }
                     }
@@ -796,6 +871,22 @@ namespace backend_app.Controllers
                         prin.Remarks = "Yes";
                 }
             }
+
+
+
+            else if (type == "scanner1")
+            {
+                var scan1 = await _context.Scanner1.FindAsync(assigned.AssetTypeItemId);
+                if (scan1 != null)
+                {
+                    assetTag = scan1.Scanner1AssetTag;
+                    scan1.IsAssigned = false;
+                    scan1.AssignedDate = null;
+
+                    if (payload.IsDamaged)
+                        scan1.Remarks = "Yes";
+                }
+            }
             // -------------------------------------------
             // ADD TO DAMAGED TABLE IF DAMAGED
             // -------------------------------------------
@@ -913,6 +1004,16 @@ namespace backend_app.Controllers
                                 prin.AssignedDate = null;
                             }
                         }
+
+                        else if (type == "scanner1")
+                        {
+                            var scan1 = await _context.Scanner1.FindAsync(assigned.AssetTypeItemId);
+                            if (scan1 != null && scan1.IsAssigned == true)
+                            {
+                                scan1.IsAssigned = false;
+                                scan1.AssignedDate = null;
+                            }
+                        }
                     }
                 }
 
@@ -936,6 +1037,38 @@ namespace backend_app.Controllers
                 await tx.RollbackAsync();
                 return StatusCode(500, ex.Message);
             }
+        }
+
+
+        [HttpDelete("user-delete/{id}")]
+        public async Task<IActionResult> DeleteRequestByUser(int id, [FromBody] DeleteRequest req)
+        {
+            var request = await _context.AssetRequests
+                .Include(r => r.AssetRequestItems)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (request == null)
+                return NotFound("Request not found.");
+
+            // lookup username from user table
+            var user = await _context.Users.FindAsync(request.UserId);
+
+            var entry = new UserDeleteHistory
+            {
+                DeletedItemName = $"Request #{request.Id}",
+                ItemType = "AssetRequest",
+                UserName = user?.Name ?? "Unknown User",
+                DeletedAt = DateTime.Now
+            };
+
+            _context.UserDeleteHistories.Add(entry);
+
+            _context.AssetRequestItems.RemoveRange(request.AssetRequestItems);
+            _context.AssetRequests.Remove(request);
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "User request deleted successfully." });
         }
 
 
@@ -977,14 +1110,16 @@ namespace backend_app.Controllers
                     SimType = i.SimType,
                     SimSupport = i.SimSupport,
 
-                    // Scanners
-                    ScannerType = i.ScannerType,
-                    ScanSpeed = i.ScanSpeed,
 
                     // Printers
                     PrinterType = i.PrinterType,
                     PaperSize = i.PaperSize,
-                    Dpi = i.Dpi
+                    Dpi = i.Dpi,
+
+                    //Sscanner1
+                    Scanner1Type=i.Scanner1Type,
+                    Scanner1Resolution=i.Scanner1Resolution,
+
                 })
 
             });

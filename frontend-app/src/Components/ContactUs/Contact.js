@@ -28,16 +28,16 @@ function Contact() {
       operatingSystem: "", // laptops only
       networkType: "", // mobiles/tablets
       simType: "", // mobiles
-      simSupport: "", // tablets
-
-      // Scanners
-      scannerType: "",
-      scanSpeed: "",
+      simSupport: "", // tablet
 
       // Printers
       printerType: "",
       paperSize: "",
-      dpi: ""
+      dpi: "",
+
+      //Scanner1
+      scanner1Type: "",
+      scanner1Resolution: "",
     }
   ]);
 
@@ -56,19 +56,29 @@ function Contact() {
   // Cache category items
   const categoryItemsCache = useRef({});
 
+
+  const normalizeAssetName = (name) => {
+    if (!name) return "";
+    if (name.startsWith("Scanner1")) return "Scanner1";
+    return name;
+  };
+
+
+
   // ============================================================
   // CATEGORY FIELD MAP (dropdown visibility)
   // ============================================================
 
- const categoryFields = {
-  Laptops: ["brand", "processor", "storage", "ram", "operatingSystem"],
-  Mobiles: ["brand", "processor", "storage", "ram", "networkType", "simType"],
-  Tablets: ["brand", "processor", "storage", "ram", "networkType", "simSupport"],
-  Desktops: ["brand", "processor", "storage", "ram", "operatingSystem"],
-  Scanners: ["scannerType", "scanSpeed"],
-  Printers: ["printerType", "paperSize", "dpi"],
-  default: []
-};
+  const categoryFields = {
+    Laptops: ["brand", "processor", "storage", "ram", "operatingSystem"],
+    Mobiles: ["brand", "processor", "storage", "ram", "networkType", "simType"],
+    Tablets: ["brand", "processor", "storage", "ram", "networkType", "simSupport"],
+    Desktops: ["brand", "processor", "storage", "ram", "operatingSystem"],
+    Printers: ["printerType", "paperSize", "dpi"],
+    Scanner1: ["scanner1Type", "scanner1Resolution"],
+    "Scanner1(DOCS Scanner)": ["scanner1Type", "scanner1Resolution"],  // ⭐ Needed because asset name has brackets
+    default: []
+  };
 
 
   const shouldShowField = (assetName, field) =>
@@ -78,40 +88,83 @@ function Contact() {
   // API ENDPOINT MAPPER
   // ============================================================
 
-  const categoryEndpoint = (assetName) => {
-    if (!assetName) return null;
-    return `http://localhost:5083/api/${assetName.toLowerCase()}`;
-  };
+ const categoryEndpoint = (assetName) => {
+  if (!assetName) return null;
+
+  const lower = assetName.toLowerCase();
+
+  // ⭐ Correct Scanner1 endpoint
+  if (lower.includes("scanner1"))
+    return "http://localhost:5083/api/asset-items/available?type=scanner1";
+
+  // Default endpoints
+  return `http://localhost:5083/api/${lower}`;
+};
+
 
   // Load category items for dropdowns
   const loadCategoryItems = useCallback(async (assetName) => {
-    if (!assetName) return [];
-    const key = assetName.toLowerCase();
+  if (!assetName) return [];
 
-    if (categoryItemsCache.current[key])
-      return categoryItemsCache.current[key];
+  const key = assetName.toLowerCase().includes("scanner1")
+    ? "scanner1"
+    : assetName.toLowerCase();
 
-    const url = categoryEndpoint(assetName);
-    if (!url) return [];
+  if (categoryItemsCache.current[key]) 
+    return categoryItemsCache.current[key];
 
-    try {
-      const res = await axios.get(url);
-      const items = res.data?.data ?? res.data ?? [];
-      categoryItemsCache.current[key] = items;
-      return items;
-    } catch (err) {
-      console.error("Error loading category items:", err);
-      return [];
-    }
-  }, []);
+  const url = categoryEndpoint(assetName);
+  if (!url) return [];
+
+  try {
+    const res = await axios.get(url);
+    const items = res.data?.data ?? res.data ?? [];
+    categoryItemsCache.current[key] = items;
+    return items;
+  } catch (err) {
+    console.error("Error loading category items:", err);
+    return [];
+  }
+}, []);
+
 
   // Extract dropdown values for a field
   const getOptionsFor = (assetName, field) => {
     if (!assetName) return [];
-    const items = categoryItemsCache.current[assetName.toLowerCase()] ?? [];
-    const vals = items.map((i) => i[field]).filter((v) => v);
-    return [...new Set(vals)];
+
+    // Normalize: "Scanner1(DOCS Scanner)" → "scanner1"
+    const key = assetName.toLowerCase().includes("scanner1")
+      ? "scanner1"
+      : assetName.toLowerCase();
+
+    const items = categoryItemsCache.current[key] ?? [];
+
+    // ⭐ Scanner1 TYPE dropdown (from DB: Scanner1Type)
+    if (field === "scanner1Type") {
+      return [
+        ...new Set(
+          items
+            .map((i) => i.type || i.scanner1Type) // backend returns "Type"
+            .filter(Boolean)
+        ),
+      ];
+    }
+
+    // ⭐ Scanner1 RESOLUTION dropdown (from DB: Scanner1Resolution)
+    if (field === "scanner1Resolution") {
+      return [
+        ...new Set(
+          items
+            .map((i) => i.resolution || i.scanner1Resolution) // backend returns "Resolution"
+            .filter(Boolean)
+        ),
+      ];
+    }
+
+    // ⭐ Default behavior for all other fields
+    return [...new Set(items.map((i) => i[field]).filter(Boolean))];
   };
+
 
   const totalRequested = assetRequests.reduce(
     (sum, req) => sum + Number(req.requestedQuantity || 0),
@@ -141,11 +194,11 @@ function Contact() {
           networkType: "",
           simType: "",
           simSupport: "",
-          scannerType: "",
-          scanSpeed: "",
           printerType: "",
           paperSize: "",
-          dpi: ""
+          dpi: "",
+          scanner1Type: "",
+          Scanner1Resolution: "",
         }
       ]);
 
@@ -250,11 +303,11 @@ function Contact() {
           networkType: item.networkType ?? "",
           simType: item.simType ?? "",
           simSupport: item.simSupport ?? "",
-          scannerType: item.scannerType ?? "",
-          scanSpeed: item.scanSpeed ?? "",
           printerType: item.printerType ?? "",
           paperSize: item.paperSize ?? "",
-          dpi: item.dpi ?? ""
+          dpi: item.dpi ?? "",
+          scanner1Type: item.scanner1Type ?? "",
+          scanner1Resolution: item.scanner1Resolution ?? "",
         };
       });
 
@@ -292,11 +345,11 @@ function Contact() {
         networkType: "",
         simType: "",
         simSupport: "",
-        scannerType: "",
-        scanSpeed: "",
         printerType: "",
         paperSize: "",
         dpi: "",
+        scanner1Type: "",
+        scanner1Resolution: "",
       };
       return updated;
     });
@@ -353,11 +406,11 @@ function Contact() {
         networkType: "",
         simType: "",
         simSupport: "",
-        scannerType: "",
-        scanSpeed: "",
         printerType: "",
         paperSize: "",
-        dpi: ""
+        dpi: "",
+        scanner1Type: "",
+        scanner1Resolution: "",
       }
     ]);
   };
@@ -391,11 +444,11 @@ function Contact() {
         networkType: r.networkType,
         simType: r.simType,
         simSupport: r.simSupport,
-        scannerType: r.scannerType,
-        scanSpeed: r.scanSpeed,
         printerType: r.printerType,
         paperSize: r.paperSize,
         dpi: r.dpi,
+        scanner1Type: r.scanner1Type,
+        scanner1Resolution: r.scanner1Resolution,
         requestedQuantity: Number(r.requestedQuantity || 0),
         availableQuantity: Number(r.quantity || 0)
       })),
@@ -488,6 +541,7 @@ function Contact() {
             const networkOptions = getOptionsFor(req.assetName, "networkType");
             const simTypeOptions = getOptionsFor(req.assetName, "simType");
             const simSupportOptions = getOptionsFor(req.assetName, "simSupport");
+
 
             return (
               <div key={index} className="border rounded p-3 mb-3 bg-light">
@@ -710,74 +764,96 @@ function Contact() {
                         </div>
                       )}
 
-                      {/* Scanner fields */}
-                      {shouldShowField(req.assetName, "scannerType") && (
+                      
+{/* Printer Fields */}
+
+{/* Printer Type Dropdown */}
+{shouldShowField(req.assetName, "printerType") && (
+  <div className="col-6">
+    <label className="form-label small">Printer Type</label>
+    <select
+      className="form-select"
+      value={req.printerType}
+      onChange={(e) => handleSpecChange(index, "printerType", e.target.value)}
+    >
+      <option value="">Any</option>
+      {getOptionsFor(req.assetName, "printerType").map((opt, i) => (
+        <option key={i} value={opt}>{opt}</option>
+      ))}
+    </select>
+  </div>
+)}
+
+{/* Paper Size Dropdown */}
+{shouldShowField(req.assetName, "paperSize") && (
+  <div className="col-6">
+    <label className="form-label small">Paper Size</label>
+    <select
+      className="form-select"
+      value={req.paperSize}
+      onChange={(e) => handleSpecChange(index, "paperSize", e.target.value)}
+    >
+      <option value="">Any</option>
+      {getOptionsFor(req.assetName, "paperSize").map((opt, i) => (
+        <option key={i} value={opt}>{opt}</option>
+      ))}
+    </select>
+  </div>
+)}
+
+{/* DPI Dropdown */}
+{shouldShowField(req.assetName, "dpi") && (
+  <div className="col-6">
+    <label className="form-label small">DPI</label>
+    <select
+      className="form-select"
+      value={req.dpi}
+      onChange={(e) => handleSpecChange(index, "dpi", e.target.value)}
+    >
+      <option value="">Any</option>
+      {getOptionsFor(req.assetName, "dpi").map((opt, i) => (
+        <option key={i} value={opt}>{opt}</option>
+      ))}
+    </select>
+  </div>
+)}
+
+                      {/* Scanner1 TYPE (Dropdown) */}
+                      {shouldShowField(normalizeAssetName(req.assetName), "scanner1Type") && (
                         <div className="col-6">
-                          <label className="form-label small">Scanner Type</label>
-                          <input
-                            className="form-control"
-                            value={req.scannerType}
-                            onChange={(e) =>
-                              handleSpecChange(index, "scannerType", e.target.value)
-                            }
-                          />
+                          <label className="form-label small">Scanner1 Type</label>
+                          <select
+                            className="form-select"
+                            value={req.scanner1Type}
+                            onChange={(e) => handleSpecChange(index, "scanner1Type", e.target.value)}
+                          >
+                            <option value="">Any</option>
+                            {getOptionsFor(req.assetName, "scanner1Type").map((opt, i) => (
+                              <option key={i} value={opt}>{opt}</option>
+                            ))}
+                          </select>
                         </div>
                       )}
 
-                      {shouldShowField(req.assetName, "scanSpeed") && (
+                      {/* Scanner1 RESOLUTION (Dropdown) */}
+                      {shouldShowField(normalizeAssetName(req.assetName), "scanner1Resolution") && (
                         <div className="col-6">
-                          <label className="form-label small">Scan Speed</label>
-                          <input
-                            type="number"
-                            className="form-control"
-                            value={req.scanSpeed}
+                          <label className="form-label small">Scanner1 Resolution</label>
+                          <select
+                            className="form-select"
+                            value={req.scanner1Resolution}
                             onChange={(e) =>
-                              handleSpecChange(index, "scanSpeed", e.target.value)
+                              handleSpecChange(index, "scanner1Resolution", e.target.value)
                             }
-                          />
+                          >
+                            <option value="">Any</option>
+                            {getOptionsFor(req.assetName, "scanner1Resolution").map((opt, i) => (
+                              <option key={i} value={opt}>{opt}</option>
+                            ))}
+                          </select>
                         </div>
                       )}
 
-                      {/* Printer fields */}
-                      {shouldShowField(req.assetName, "printerType") && (
-                        <div className="col-6">
-                          <label className="form-label small">Printer Type</label>
-                          <input
-                            className="form-control"
-                            value={req.printerType}
-                            onChange={(e) =>
-                              handleSpecChange(index, "printerType", e.target.value)
-                            }
-                          />
-                        </div>
-                      )}
-
-                      {shouldShowField(req.assetName, "paperSize") && (
-                        <div className="col-6">
-                          <label className="form-label small">Paper Size</label>
-                          <input
-                            className="form-control"
-                            value={req.paperSize}
-                            onChange={(e) =>
-                              handleSpecChange(index, "paperSize", e.target.value)
-                            }
-                          />
-                        </div>
-                      )}
-
-                      {shouldShowField(req.assetName, "dpi") && (
-                        <div className="col-6">
-                          <label className="form-label small">DPI</label>
-                          <input
-                            type="number"
-                            className="form-control"
-                            value={req.dpi}
-                            onChange={(e) =>
-                              handleSpecChange(index, "dpi", e.target.value)
-                            }
-                          />
-                        </div>
-                      )}
                     </div>
                   </div>
 

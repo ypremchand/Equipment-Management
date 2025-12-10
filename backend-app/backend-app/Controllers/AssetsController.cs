@@ -30,6 +30,7 @@ namespace backend_app.Controllers
             if (n.Contains("tablet")) return "tablet";
             if (n.Contains("desktop")) return "desktop";
             if (n.Contains("printer")) return "printer";
+            if (n.Contains("scanner1")) return "scanner1";
 
             return n;
         }
@@ -48,6 +49,7 @@ namespace backend_app.Controllers
             var tablets = await _context.Tablets.ToListAsync();
             var desktops = await _context.Desktops.ToListAsync();
             var printers = await _context.Printers.ToListAsync();
+            var scanner1 = await _context.Scanner1.ToListAsync();
 
             // Load damaged laptop IDs once
             var damagedLaptops = await _context.DamagedAssets
@@ -133,8 +135,8 @@ namespace backend_app.Controllers
                 else if (type == "printer")
                 {
                     var damagedPrinters = _context.DamagedAssets
-                        .Where(d => d.AssetType.ToLower() == "printer")
-                        .Select(d => d.AssetTypeItemId)
+                        .Where(p => p.AssetType.ToLower() == "printer")
+                        .Select(p => p.AssetTypeItemId)
                         .ToList();
 
                     total = printers.Count(x =>
@@ -148,6 +150,28 @@ namespace backend_app.Controllers
                         !damagedPrinters.Contains(x.Id)
                     );
                 }
+
+
+                else if (type == "scanner1")
+                {
+                    var damaged = _context.DamagedAssets
+                        .Where(s1 => s1.AssetType.ToLower() == "scanner1")
+                        .Select(s1 => s1.AssetTypeItemId)
+                        .ToList();
+
+                    total = scanner1.Count(x =>
+                        (x.AssetId == a.Id || x.AssetId == null) &&
+                        !damaged.Contains(x.Id)
+                    );
+
+                    assigned = scanner1.Count(x =>
+                        (x.AssetId == a.Id || x.AssetId == null) &&
+                        x.IsAssigned &&
+                        !damaged.Contains(x.Id)
+                    );
+                }
+
+
                 else
                 {
                     total = a.Quantity;

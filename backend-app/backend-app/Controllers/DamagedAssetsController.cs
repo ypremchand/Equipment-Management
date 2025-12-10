@@ -147,6 +147,17 @@ namespace backend_app.Controllers
                 }
             }
 
+            else if (item.AssetType.ToLower() == "scanner1")
+            {
+                var scanner1 = await _context.Scanner1
+                    .FirstOrDefaultAsync(x => x.Id == item.AssetTypeItemId);
+
+                if (scanner1 != null)
+                {
+                    scanner1.Remarks = "No";
+                    _context.Entry(scanner1).State = EntityState.Modified;
+                }
+            }
             // 3️⃣ REMOVE FROM DAMAGED LIST
             _context.DamagedAssets.Remove(item);
 

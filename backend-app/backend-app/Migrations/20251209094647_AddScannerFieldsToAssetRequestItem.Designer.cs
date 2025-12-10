@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using backend_app.Data;
 
@@ -11,9 +12,11 @@ using backend_app.Data;
 namespace backend_app.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251209094647_AddScannerFieldsToAssetRequestItem")]
+    partial class AddScannerFieldsToAssetRequestItem
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -42,6 +45,12 @@ namespace backend_app.Migrations
                     b.Property<string>("Brand")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ColorSupport")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Connectivity")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Dpi")
                         .HasColumnType("nvarchar(max)");
 
@@ -66,10 +75,16 @@ namespace backend_app.Migrations
                     b.Property<int>("RequestedQuantity")
                         .HasColumnType("int");
 
-                    b.Property<string>("Scanner1Resolution")
+                    b.Property<string>("ScanResolution")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Scanner1Type")
+                    b.Property<string>("ScanSpeed")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ScannerPaperSize")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ScannerType")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SimSupport")
@@ -621,11 +636,39 @@ namespace backend_app.Migrations
                     b.Property<int?>("AssetId")
                         .HasColumnType("int");
 
+                    b.Property<string>("AssetTag")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime?>("AssignedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Brand")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ColorSupport")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Connectivity")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("IsAssigned")
                         .HasColumnType("bit");
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PaperSize")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("PurchaseDate")
                         .HasColumnType("datetime2");
@@ -633,27 +676,15 @@ namespace backend_app.Migrations
                     b.Property<string>("Remarks")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Scanner1AssetTag")
+                    b.Property<string>("ScanResolution")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Scanner1Brand")
+                    b.Property<string>("ScanSpeed")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Scanner1Location")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Scanner1Model")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Scanner1Resolution")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Scanner1Type")
+                    b.Property<string>("ScannerType")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using backend_app.Data;
 
@@ -11,9 +12,11 @@ using backend_app.Data;
 namespace backend_app.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251210065051_AddedScanner1DocsTable")]
+    partial class AddedScanner1DocsTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -65,12 +68,6 @@ namespace backend_app.Migrations
 
                     b.Property<int>("RequestedQuantity")
                         .HasColumnType("int");
-
-                    b.Property<string>("Scanner1Resolution")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Scanner1Type")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SimSupport")
                         .HasColumnType("nvarchar(max)");

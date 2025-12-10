@@ -176,6 +176,30 @@ namespace backend_app.Controllers
 
                 return Ok(data);
             }
+            if (type == "scanner1")
+            {
+                var data = await _context.Scanner1
+                    .Where(x => !x.IsAssigned && !damagedIds.Contains(x.Id))
+                    .Select(x => new
+                    {
+                        id = x.Id,
+                        scanner1Brand = x.Scanner1Brand,
+                        scanner1Model = x.Scanner1Model,
+                        scanner1Type = x.Scanner1Type,
+                        scanner1Resolution = x.Scanner1Resolution,
+                        scanner1AssetTag = x.Scanner1AssetTag,
+
+                        purchaseDate = x.PurchaseDate,
+                        scanner1Location = x.Scanner1Location,
+                        remarks = x.Remarks,
+                        isAssigned = x.IsAssigned,
+                        assignedDate = x.AssignedDate,
+                        assetId = x.AssetId
+                    })
+                    .ToListAsync();
+
+                return Ok(data);
+            }
 
             return BadRequest("Unknown asset type.");
         }

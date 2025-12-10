@@ -17,7 +17,7 @@ public class AssetRequestItem
     public int? ApprovedQuantity { get; set; }
 
     // ========================
-    // NEW: Optional Specifications
+    // Optional Specs (Laptop / Mobile / Tablet)
     // ========================
     public string? Brand { get; set; }
     public string? Processor { get; set; }
@@ -28,12 +28,16 @@ public class AssetRequestItem
     public string? SimType { get; set; }
     public string? SimSupport { get; set; }
 
-    public string? ScannerType { get; set; }
-    public string? ScanSpeed { get; set; }
-
+    // ========================
+    // Printer Fields
+    // ========================
     public string? PrinterType { get; set; }
     public string? PaperSize { get; set; }
     public string? Dpi { get; set; }
+
+    // ⭐ Scanner1 fields (Required)
+    public string? Scanner1Type { get; set; }
+    public string? Scanner1Resolution { get; set; }
 
     public ICollection<AssignedAsset> AssignedAssets { get; set; } = new List<AssignedAsset>();
 }

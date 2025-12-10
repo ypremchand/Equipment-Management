@@ -293,22 +293,27 @@
               "type": "integer",
               "format": "int32"
             }
-          },
-          {
-            "name": "adminName",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "reason",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK"
@@ -330,6 +335,48 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/AssetRequests/user-delete/{id}": {
+      "delete": {
+        "tags": [
+          "AssetRequests"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK"
@@ -1937,6 +1984,254 @@
         }
       }
     },
+    "/api/Scanner1": {
+      "get": {
+        "tags": [
+          "Scanner1"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "id"
+            }
+          },
+          {
+            "name": "sortDir",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "asc"
+            }
+          },
+          {
+            "name": "brand",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "resolution",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "location",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Scanner1"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Scanner1Payload"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Scanner1Payload"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Scanner1Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Scanner1/options": {
+      "get": {
+        "tags": [
+          "Scanner1"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Scanner1/{id}": {
+      "get": {
+        "tags": [
+          "Scanner1"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Scanner1"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Scanner1Payload"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Scanner1Payload"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Scanner1Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Scanner1"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Scanner1/check-duplicate": {
+      "get": {
+        "tags": [
+          "Scanner1"
+        ],
+        "parameters": [
+          {
+            "name": "assetTag",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Tablets": {
       "get": {
         "tags": [
@@ -2604,14 +2899,6 @@
             "type": "string",
             "nullable": true
           },
-          "scannerType": {
-            "type": "string",
-            "nullable": true
-          },
-          "scanSpeed": {
-            "type": "string",
-            "nullable": true
-          },
           "printerType": {
             "type": "string",
             "nullable": true
@@ -2621,6 +2908,14 @@
             "nullable": true
           },
           "dpi": {
+            "type": "string",
+            "nullable": true
+          },
+          "scanner1Type": {
+            "type": "string",
+            "nullable": true
+          },
+          "scanner1Resolution": {
             "type": "string",
             "nullable": true
           },
@@ -2681,11 +2976,11 @@
             "type": "string",
             "nullable": true
           },
-          "scannerType": {
+          "scanner1Type": {
             "type": "string",
             "nullable": true
           },
-          "scanSpeed": {
+          "scanner1Resolution": {
             "type": "string",
             "nullable": true
           },
@@ -3513,6 +3808,76 @@
             "type": "boolean"
           },
           "damageReason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Scanner1Payload": {
+        "required": [
+          "scanner1AssetTag",
+          "scanner1Brand",
+          "scanner1Location",
+          "scanner1Model",
+          "scanner1Resolution",
+          "scanner1Type"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "scanner1Brand": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "scanner1Model": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "scanner1Type": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "scanner1Resolution": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "scanner1AssetTag": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "purchaseDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "scanner1Location": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "remarks": {
+            "type": "string",
+            "nullable": true
+          },
+          "isAssigned": {
+            "type": "boolean"
+          },
+          "assignedDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "assetId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "asset": {
+            "$ref": "#/components/schemas/Asset"
+          },
+          "damageReasonInput": {
             "type": "string",
             "nullable": true
           }

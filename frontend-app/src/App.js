@@ -107,7 +107,7 @@ function App() {
             <Route
               path="/scanner3"
               element={user?.email?.includes("@admin") ? <Scanner3 /> : <Navigate to="/" />}
-            />
+            />  
             <Route
               path="/requests"
               element={user?.email?.includes("@admin") ? <Requests /> : <Navigate to="/" />}

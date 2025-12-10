@@ -60,29 +60,29 @@ function ReturnAssets() {
   }, [fetchRequests]);
 
   // DELETE handler
- const handleDelete = async (id) => {
-  if (!id) return;
+  const handleDelete = async (id) => {
+    if (!id) return;
 
-  const confirmed = window.confirm(
-    "Are you sure you want to delete this request? This action cannot be undone."
-  );
-  if (!confirmed) return;
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this request? This action cannot be undone."
+    );
+    if (!confirmed) return;
 
-  try {
-    await axios.delete(`${API}/${id}`, {
-      headers: { "Content-Type": "application/json" },
-      data: {
-        adminName: user?.name || "User",
-        reason: "User deleted their request"
-      }
-    });
+    try {
+      await axios.delete(`${API}/user-delete/${id}`, {
+        headers: { "Content-Type": "application/json" },
+        data: {
+          adminName: user?.name || "User",
+          reason: "User deleted their request"
+        }
+      });
 
-    setRequests((prev) => prev.filter((r) => get(r, "id", "Id") !== id));
-  } catch (err) {
-    console.error("Error deleting request:", err);
-    alert("Failed to delete the request. Please try again.");
-  }
-};
+      setRequests((prev) => prev.filter((r) => get(r, "id", "Id") !== id));
+    } catch (err) {
+      console.error("Error deleting request:", err);
+      alert("Failed to delete the request. Please try again.");
+    }
+  };
 
 
   return (
@@ -114,15 +114,14 @@ function ReturnAssets() {
                     <div className="d-flex justify-content-between">
                       <h5 className="card-title">Request #{i + 1}</h5>
                       <span
-                        className={`badge ${
-                          status === "Returned"
+                        className={`badge ${status === "Returned"
                             ? "bg-success"
                             : status === "Pending"
-                            ? "bg-warning text-dark"
-                            : status === "Approved"
-                            ? "bg-primary"
-                            : "bg-secondary"
-                        }`}
+                              ? "bg-warning text-dark"
+                              : status === "Approved"
+                                ? "bg-primary"
+                                : "bg-secondary"
+                          }`}
                       >
                         {status}
                       </span>
@@ -190,6 +189,15 @@ function ReturnAssets() {
                               <div>• Paper Size: {item.paperSize}</div>
                             )}
                             {item.dpi && <div>• DPI: {item.dpi}</div>}
+                            {/* Scanner1 fields */}
+                            {item.scanner1Type && (
+                              <div>• Scanner1 Type: {item.scanner1Type}</div>
+                            )}
+
+                            {item.scanner1Resolution && (
+                              <div>• Scanner1 Resolution: {item.scanner1Resolution}</div>
+                            )}
+
                           </div>
                         </div>
                       ))}
@@ -203,7 +211,7 @@ function ReturnAssets() {
                         View Assigned Items
                       </button>
 
-                       {/* <button
+                      {/* <button
                         className="btn btn-sm btn-outline-success"
                       >
                         Recieved

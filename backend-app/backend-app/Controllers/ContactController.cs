@@ -16,9 +16,7 @@ namespace backend_app.Controllers
             _context = context;
         }
 
-        // ============================================================
         // CATEGORY DETECTOR
-        // ============================================================
         private string GetCategoryFromAssetName(string assetName)
         {
             assetName = assetName.ToLower();
@@ -28,13 +26,12 @@ namespace backend_app.Controllers
             if (assetName.Contains("tablet")) return "Tablet";
             if (assetName.Contains("desktop")) return "Desktop";
             if (assetName.Contains("printer")) return "Printer";
+            if (assetName.Contains("scanner1")) return "Scanner1";
 
             return "Unknown";
         }
 
-        // ============================================================
         // CLEAN SPECS BASED ON CATEGORY
-        // ============================================================
         private void CleanSpecsByCategory(string category, AssetRequestItemDto item)
         {
             if (category == "Laptop")
@@ -42,8 +39,8 @@ namespace backend_app.Controllers
                 item.NetworkType = null;
                 item.SimType = null;
                 item.SimSupport = null;
-                item.ScannerType = null;
-                item.ScanSpeed = null;
+                item.Scanner1Type = null;
+                item.Scanner1Resolution = null;
                 item.PrinterType = null;
                 item.PaperSize = null;
                 item.Dpi = null;
@@ -52,8 +49,8 @@ namespace backend_app.Controllers
             {
                 item.OperatingSystem = null;
                 item.SimSupport = null;
-                item.ScannerType = null;
-                item.ScanSpeed = null;
+                item.Scanner1Type = null;
+                item.Scanner1Resolution = null;
                 item.PrinterType = null;
                 item.PaperSize = null;
                 item.Dpi = null;
@@ -61,22 +58,8 @@ namespace backend_app.Controllers
             else if (category == "Tablet")
             {
                 item.SimType = null;
-                item.ScannerType = null;
-                item.ScanSpeed = null;
-                item.PrinterType = null;
-                item.PaperSize = null;
-                item.Dpi = null;
-            }
-            else if (category == "Scanner")
-            {
-                item.Brand = null;
-                item.Processor = null;
-                item.Storage = null;
-                item.Ram = null;
-                item.OperatingSystem = null;
-                item.NetworkType = null;
-                item.SimType = null;
-                item.SimSupport = null;
+                item.Scanner1Type = null;
+                item.Scanner1Resolution = null;
                 item.PrinterType = null;
                 item.PaperSize = null;
                 item.Dpi = null;
@@ -91,27 +74,35 @@ namespace backend_app.Controllers
                 item.NetworkType = null;
                 item.SimType = null;
                 item.SimSupport = null;
-                item.ScannerType = null;
-                item.ScanSpeed = null;
+                item.Scanner1Type = null;
+                item.Scanner1Resolution = null;
             }
             else if (category == "Desktop")
             {
                 item.NetworkType = null;
                 item.SimType = null;
                 item.SimSupport = null;
-                item.ScannerType = null;
-                item.ScanSpeed = null;
+                item.Scanner1Type = null;
+                item.Scanner1Resolution = null;
                 item.PrinterType = null;
                 item.PaperSize = null;
                 item.Dpi = null;
             }
-
+            else if (category == "Scanner1")
+            {
+                item.Brand = null;
+                item.Processor = null;
+                item.Storage = null;
+                item.Ram = null;
+                item.OperatingSystem = null;
+                item.NetworkType = null;
+                item.SimType = null;
+                item.SimSupport = null;
+                item.PrinterType = null;
+            }
         }
 
-
-        // ============================================================
         // POST: CREATE NEW REQUEST
-        // ============================================================
         [HttpPost]
         public async Task<IActionResult> CreateContact([FromBody] AssetRequestDto request)
         {
@@ -132,7 +123,6 @@ namespace backend_app.Controllers
             if (location == null)
                 return NotFound("Location not found.");
 
-            // Create asset request
             var assetRequest = new AssetRequest
             {
                 UserId = user.Id,
@@ -145,7 +135,6 @@ namespace backend_app.Controllers
             _context.AssetRequests.Add(assetRequest);
             await _context.SaveChangesAsync();
 
-            // Save items
             foreach (var item in request.AssetRequests)
             {
                 var asset = await _context.Assets
@@ -154,7 +143,7 @@ namespace backend_app.Controllers
                 if (asset != null)
                 {
                     string category = GetCategoryFromAssetName(asset.Name);
-                    CleanSpecsByCategory(category, item); // ⭐ Clean fields
+                    CleanSpecsByCategory(category, item);
 
                     _context.AssetRequestItems.Add(new AssetRequestItem
                     {
@@ -170,11 +159,11 @@ namespace backend_app.Controllers
                         NetworkType = item.NetworkType,
                         SimType = item.SimType,
                         SimSupport = item.SimSupport,
-                        ScannerType = item.ScannerType,
-                        ScanSpeed = item.ScanSpeed,
                         PrinterType = item.PrinterType,
                         PaperSize = item.PaperSize,
-                        Dpi = item.Dpi
+                        Dpi = item.Dpi,
+                        Scanner1Type = item.Scanner1Type,
+                        Scanner1Resolution=item.Scanner1Resolution,
                     });
                 }
             }
@@ -183,10 +172,7 @@ namespace backend_app.Controllers
             return Ok(new { message = "Request submitted successfully." });
         }
 
-
-        // ============================================================
         // PUT: UPDATE REQUEST
-        // ============================================================
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateRequest(int id, [FromBody] AssetRequestDto request)
         {
@@ -203,7 +189,6 @@ namespace backend_app.Controllers
             if (existing.Status != "Pending")
                 return BadRequest("Only pending requests can be edited.");
 
-            // Update location
             var location = await _context.Locations
                 .FirstOrDefaultAsync(l => l.Name.ToLower() == request.Location.ToLower());
 
@@ -211,21 +196,16 @@ namespace backend_app.Controllers
                 return BadRequest("Location not found.");
 
             existing.LocationId = location.Id;
-
-            // Update message
             existing.Message = request.Message;
 
-            // Update phone
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
             if (user != null)
             {
                 user.PhoneNumber = request.PhoneNumber;
             }
 
-            // Remove existing items
             _context.AssetRequestItems.RemoveRange(existing.AssetRequestItems);
 
-            // Add new cleaned items
             foreach (var item in request.AssetRequests)
             {
                 var asset = await _context.Assets
@@ -234,7 +214,7 @@ namespace backend_app.Controllers
                 if (asset != null)
                 {
                     string category = GetCategoryFromAssetName(asset.Name);
-                    CleanSpecsByCategory(category, item); // ⭐ Clean fields
+                    CleanSpecsByCategory(category, item);
 
                     _context.AssetRequestItems.Add(new AssetRequestItem
                     {
@@ -250,11 +230,11 @@ namespace backend_app.Controllers
                         NetworkType = item.NetworkType,
                         SimType = item.SimType,
                         SimSupport = item.SimSupport,
-                        ScannerType = item.ScannerType,
-                        ScanSpeed = item.ScanSpeed,
                         PrinterType = item.PrinterType,
                         PaperSize = item.PaperSize,
-                        Dpi = item.Dpi
+                        Dpi = item.Dpi,
+                        Scanner1Type = item.Scanner1Type,
+                        Scanner1Resolution = item.Scanner1Resolution,
                     });
                 }
             }
@@ -263,11 +243,7 @@ namespace backend_app.Controllers
             return Ok(new { message = "Request updated successfully." });
         }
 
-
-
-        // ============================================================
         // DTOs
-        // ============================================================
         public class AssetRequestDto
         {
             public string Username { get; set; }
@@ -292,8 +268,8 @@ namespace backend_app.Controllers
             public string? NetworkType { get; set; }
             public string? SimType { get; set; }
             public string? SimSupport { get; set; }
-            public string? ScannerType { get; set; }
-            public string? ScanSpeed { get; set; }
+            public string? Scanner1Type { get; set; }
+            public string? Scanner1Resolution { get; set; }
             public string? PrinterType { get; set; }
             public string? PaperSize { get; set; }
             public string? Dpi { get; set; }
