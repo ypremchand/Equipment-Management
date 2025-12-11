@@ -50,7 +50,7 @@ function AssignedItems() {
     loadData();
   }, [loadData]);
 
-  // Open Modal
+  // Open Return Modal
   const openReturnModal = (assignedId) => {
     setSelectedAssignedId(assignedId);
     setReturnRemark("No");
@@ -94,16 +94,17 @@ function AssignedItems() {
   const printers = groupBy("printer");
   const scanner1 = groupBy("scanner1");
 
+  // DO NOT FILTER TABS — SHOW ALL ALWAYS
   const tabs = [
     { key: "laptop", label: "Laptops", data: laptops },
     { key: "mobile", label: "Mobiles", data: mobiles },
     { key: "tablet", label: "Tablets", data: tablets },
     { key: "desktop", label: "Desktops", data: desktops },
     { key: "printer", label: "Printers", data: printers },
-    { key: "scanner1", label: "Scanner1s", data: scanner1},
-  ].filter((t) => t.data.length > 0);
+    { key: "scanner1", label: "Scanner1", data: scanner1 }
+  ];
 
-  const firstTab = tabs.length > 0 ? tabs[0].key : null;
+  const firstTab = tabs[0].key;
 
   return (
     <div className="assigned-items-page container mt-4">
@@ -125,6 +126,29 @@ function AssignedItems() {
           <p>
             <strong>Message:</strong> {requestData.message || "—"}
           </p>
+    <p>
+  <strong>Approved Quantity:</strong>
+</p>
+
+<ul>
+  {requestData.assetRequestItems?.map((item) => {
+    const count = item.assignedAssets?.length || 0;
+    const name = item.asset?.name || "Asset";
+
+    // Convert name like "Laptops" or "Mobiles" → single name
+    const singular = name.endsWith("s")
+      ? name.slice(0, -1)
+      : name;
+
+    return (
+      <li key={item.id}>
+        {count} {singular}
+      </li>
+    );
+  })}
+</ul>
+
+
         </div>
       </div>
 
@@ -133,9 +157,7 @@ function AssignedItems() {
         {tabs.map((t) => (
           <li className="nav-item" key={t.key}>
             <a
-              className={`nav-link ${
-                firstTab === t.key ? "active" : ""
-              }`}
+              className={`nav-link ${firstTab === t.key ? "active" : ""}`}
               data-bs-toggle="tab"
               href={`#tab-${t.key}`}
             >
@@ -145,6 +167,7 @@ function AssignedItems() {
         ))}
       </ul>
 
+      {/* TAB CONTENT */}
       <div className="tab-content border p-3 border-top-0">
         {tabs.map((t) => (
           <div
@@ -154,79 +177,88 @@ function AssignedItems() {
               firstTab === t.key ? "active" : ""
             }`}
           >
-            <table className="table table-bordered mt-3">
-              <thead className="table-dark">
-                <tr>
-                  <th>Brand</th>
-                  <th>Model</th>
-                  <th>Asset Tag</th>
-                  <th>Status</th>
-                  <th>Assigned Date</th>
-                  <th>Returned Date</th>
-                  <th>Return</th>
-                </tr>
-              </thead>
+            {/* CASE — NO ITEMS FOR THIS TAB */}
+            {t.data.length === 0 ? (
+              <div className="text-center text-danger fw-bold mt-3">
+                No available items.
+              </div>
+            ) : (
+              /* CASE — ITEMS AVAILABLE → SHOW TABLE */
+              <table className="table table-bordered mt-3">
+                <thead className="table-dark">
+                  <tr>
+                    <th>Brand</th>
+                    <th>Model</th>
+                    <th>Asset Tag</th>
+                    <th>Status</th>
+                    <th>Assigned Date</th>
+                    <th>Returned Date</th>
+                    <th>Return</th>
+                  </tr>
+                </thead>
 
-              <tbody>
-                {t.data.map((a) => (
-                  <tr key={a.id}>
-  <td>
-    {a.assetType === "scanner1"
-      ? a.detail?.scanner1Brand
-      : a.detail?.brand}
-  </td>
+                <tbody>
+                  {t.data.map((a) => (
+                    <tr key={a.id}>
+                      <td>
+                        {a.assetType === "scanner1"
+                          ? a.detail?.scanner1Brand
+                          : a.detail?.brand}
+                      </td>
 
-  <td>
-    {a.assetType === "scanner1"
-      ? (
-          <>
-            {a.detail?.scanner1Model}
-            <div style={{ fontSize: "12px", color: "#666" }}>
-              <strong>Type:</strong> {a.detail?.scanner1Type} <br />
-              <strong>Resolution:</strong> {a.detail?.scanner1Resolution}
-            </div>
-          </>
-        )
-      : (a.detail?.model || a.detail?.modelNumber)}
-  </td>
+                      <td>
+                        {a.assetType === "scanner1" ? (
+                          <>
+                            {a.detail?.scanner1Model}
+                            <div style={{ fontSize: "12px", color: "#666" }}>
+                              <strong>Type:</strong> {a.detail?.scanner1Type}{" "}
+                              <br />
+                              <strong>Resolution:</strong>{" "}
+                              {a.detail?.scanner1Resolution}
+                            </div>
+                          </>
+                        ) : (
+                          a.detail?.model || a.detail?.modelNumber
+                        )}
+                      </td>
 
-  <td>
-    {a.assetType === "scanner1"
-      ? a.detail?.scanner1AssetTag
-      : a.detail?.assetTag}
-  </td>
+                      <td>
+                        {a.assetType === "scanner1"
+                          ? a.detail?.scanner1AssetTag
+                          : a.detail?.assetTag}
+                      </td>
 
-  <td>{a.status}</td>
+                      <td>{a.status}</td>
 
-  <td>
-    {a.assignedDate
-      ? new Date(a.assignedDate).toLocaleString()
-      : "—"}
-  </td>
+                      <td>
+                        {a.assignedDate
+                          ? new Date(a.assignedDate).toLocaleString()
+                          : "—"}
+                      </td>
 
-  <td>
-    {a.returnedDate
-      ? new Date(a.returnedDate).toLocaleString()
-      : "—"}
-  </td>
+                      <td>
+                        {a.returnedDate
+                          ? new Date(a.returnedDate).toLocaleString()
+                          : "—"}
+                      </td>
 
-  <td>
-    {a.status === "Returned" ? (
-      <span className="badge bg-success">Returned</span>
-    ) : (
-      <button
-        className="btn btn-sm btn-danger"
-        onClick={() => openReturnModal(a.id)}
-      >
-        Return
-      </button>
-    )}
-  </td>
-</tr>
-
-                ))}
-              </tbody>
-            </table>
+                      <td>
+                        {a.status === "Returned" ? (
+                          <span className="badge bg-success">Returned</span>
+                        ) : (
+                          <button
+                            className="btn btn-sm btn-danger"
+                            onClick={() => openReturnModal(a.id)}
+                          >
+                            Return
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         ))}
       </div>
@@ -246,7 +278,9 @@ function AssignedItems() {
               </div>
 
               <div className="modal-body">
-                <label className="form-label fw-bold">Is the item damaged?</label>
+                <label className="form-label fw-bold">
+                  Is the item damaged?
+                </label>
                 <select
                   className="form-select"
                   value={returnRemark}

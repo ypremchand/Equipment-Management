@@ -1,3 +1,12 @@
+/********************************************************************************************
+ * FULL UPDATED Requests.js
+ * WITH:
+ *  - Dynamic filtering inside AssignApproveModal
+ *  - Ignore empty fields
+ *  - Universal filter engine
+ *  - Checkbox item selection
+ ********************************************************************************************/
+
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Table, Button, Spinner, Modal } from "react-bootstrap";
@@ -35,8 +44,9 @@ function Requests() {
 
   const admin = JSON.parse(localStorage.getItem("user") || "{}");
 
-
-  // Load all requests
+  /*************************************
+   * Load all requests
+   *************************************/
   const fetchRequests = async () => {
     try {
       setLoading(true);
@@ -54,7 +64,9 @@ function Requests() {
     fetchRequests();
   }, []);
 
-  // Populate dropdowns from loaded data
+  /*************************************
+   * Load options for dropdown filters
+   *************************************/
   useEffect(() => {
     if (requests.length > 0) {
       const users = new Set();
@@ -75,7 +87,9 @@ function Requests() {
     }
   }, [requests]);
 
-  // FILTERING + SEARCH
+  /*************************************
+   * FILTERING + SEARCH
+   *************************************/
   const filteredRequests = requests.filter((req) => {
     const name = req.user?.name?.toLowerCase() || "";
     const email = req.user?.email?.toLowerCase() || "";
@@ -100,7 +114,9 @@ function Requests() {
     return matchesSearch && matchesUser && matchesEmail && matchesLocation;
   });
 
-  // PAGINATION
+  /*************************************
+   * PAGINATION
+   *************************************/
   const totalPages = Math.ceil(filteredRequests.length / pageSize);
   const startIndex = (page - 1) * pageSize;
   const paginatedRequests = filteredRequests.slice(
@@ -111,7 +127,9 @@ function Requests() {
   const nextPage = () => page < totalPages && setPage((p) => p + 1);
   const prevPage = () => page > 1 && setPage((p) => p - 1);
 
-  // ACTIONS
+  /*************************************
+   * ACTIONS
+   *************************************/
   const handleApprove = (req) => {
     setSelectedRequest(req);
     setShowApproveModal(true);
@@ -129,7 +147,7 @@ function Requests() {
   };
 
   const handleDelete = async (id) => {
-    const reason = prompt("Please enter the reason for deleting this tablet:");
+    const reason = prompt("Please enter the reason for deleting this request:");
 
     if (!reason || reason.trim() === "") {
       alert("Deletion cancelled — reason is required.");
@@ -150,11 +168,13 @@ function Requests() {
     }
   };
 
-  // VIEW BUTTON LOGIC
   const canView = (req) =>
     (req.status || "").toString().toLowerCase() === "approved" ||
     req.assetRequestItems?.some((i) => (i.assignedAssets?.length || 0) > 0);
 
+  /*************************************
+   * RENDER
+   *************************************/
   return (
     <div className="requests-page container mt-4">
       <h2 className="text-center mb-4">📦 Asset Requests</h2>
@@ -366,24 +386,30 @@ function Requests() {
 
 export default Requests;
 
-/* -------------------------------------------------------------------
-        ASSIGN & APPROVE MODAL
-------------------------------------------------------------------- */
+/* ============================================================================================
+    ASSIGN & APPROVE MODAL (UPDATED WITH FULL FILTERING SYSTEM)
+============================================================================================ */
+/* ============================================================================================
+    ASSIGN & APPROVE MODAL — FINAL VERSION (WITH "NO ITEMS" CASE + PARTIAL < REQUEST RULE)
+============================================================================================ */
 
 function AssignApproveModal({ show, onHide, request, fetchRequests }) {
   const [localRequest, setLocalRequest] = useState(null);
   const [availableItems, setAvailableItems] = useState({});
   const [loadingItems, setLoadingItems] = useState({});
   const [selectedIdsForItem, setSelectedIdsForItem] = useState({});
+  const [isPartialMode, setIsPartialMode] = useState({});
+  const [partialReasons, setPartialReasons] = useState({});
   const [finalizing, setFinalizing] = useState(false);
 
   const API_URL = "http://localhost:5083/api/AssetRequests";
   const ITEM_API = "http://localhost:5083/api/asset-items/available";
 
-
+  /* ------------------------------------------------------------
+     NORMALIZE TYPE
+  ------------------------------------------------------------- */
   function normalizeType(name) {
     if (!name) return "";
-
     const n = name.trim().toLowerCase();
 
     if (n.includes("laptop")) return "laptop";
@@ -392,132 +418,217 @@ function AssignApproveModal({ show, onHide, request, fetchRequests }) {
     if (n.includes("desktop")) return "desktop";
     if (n.includes("printer")) return "printer";
     if (n.includes("scanner1")) return "scanner1";
-
     return n;
   }
 
-
+  /* ------------------------------------------------------------
+     FILTER FIELDS MAP
+  ------------------------------------------------------------- */
   const categoryFields = {
     laptop: ["brand", "processor", "storage", "ram", "operatingSystem"],
-    desktop: ["brand", "processor", "storage", "ram", "operatingSystem"], // ⭐ add this
+    desktop: ["brand", "processor", "storage", "ram", "operatingSystem"],
     mobile: ["brand", "processor", "storage", "ram", "networkType", "simType"],
     tablet: ["brand", "processor", "storage", "ram", "networkType", "simSupport"],
     printer: ["printerType", "paperSize", "dpi"],
     scanner1: ["scanner1Type", "scanner1Resolution"],
-    default: []
   };
 
+  /* ------------------------------------------------------------
+     EXTRACT FILTERS FOR REQUESTED ITEM
+  ------------------------------------------------------------- */
+  function extractFilters(item, type) {
+    const filterObj = {};
+    const allowed = categoryFields[type] || [];
 
+    allowed.forEach((field) => {
+      const val = item[field];
+      if (val !== "" && val !== null && val !== undefined) {
+        filterObj[field] = val;
+      }
+    });
 
-  const shouldShowFilter = (assetName, field) =>
-    categoryFields[normalizeType(assetName)]?.includes(field);
+    return filterObj;
+  }
 
+  /* ------------------------------------------------------------
+     APPLY FILTERS TO AVAILABLE ITEMS
+  ------------------------------------------------------------- */
+  function applyFiltersToAvailable(available, filters) {
+    if (!filters || Object.keys(filters).length === 0) return available;
 
+    return available.filter((item) => {
+      return Object.keys(filters).every((fKey) => {
+        const itemVal =
+          item[fKey] ||
+          item?.detail?.[fKey] ||
+          item[`scanner1${fKey.charAt(0).toUpperCase() + fKey.slice(1)}`];
 
-  // When modal opens or request changes — clone request and load available items per requested row
+        return (
+          itemVal?.toString().toLowerCase() ===
+          filters[fKey].toString().toLowerCase()
+        );
+      });
+    });
+  }
+
+  /* ------------------------------------------------------------
+     LOAD REQUEST DETAILS
+  ------------------------------------------------------------- */
   useEffect(() => {
-    if (!request) {
-      setLocalRequest(null);
-      return;
-    }
+    if (!request) return;
 
     const clone = JSON.parse(JSON.stringify(request));
     setLocalRequest(clone);
 
-    // reset selections and available lists
-    const initSelected = {};
-    const initLoading = {};
-    const initAvailable = {};
-    clone.assetRequestItems?.forEach((item) => {
-      initSelected[item.id] = [];
-      initLoading[item.id] = false;
-      initAvailable[item.id] = [];
+    const initSel = {};
+    const initAvail = {};
+    const initLoad = {};
+    const initPartial = {};
+    const initReasons = {};
+
+    clone.assetRequestItems.forEach((item) => {
+      initSel[item.id] = [];
+      initAvail[item.id] = [];
+      initLoad[item.id] = false;
+      initPartial[item.id] = false;
+      initReasons[item.id] = "";
     });
 
-    setSelectedIdsForItem(initSelected);
-    setAvailableItems(initAvailable);
-    setLoadingItems(initLoading);
+    setSelectedIdsForItem(initSel);
+    setAvailableItems(initAvail);
+    setLoadingItems(initLoad);
+    setIsPartialMode(initPartial);
+    setPartialReasons(initReasons);
 
-    // fetch available items for each row
-    clone.assetRequestItems?.forEach((item) => {
-      const type = normalizeType(item.asset?.name);
-      loadAvailable(item.id, type);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    clone.assetRequestItems.forEach((item) =>
+      loadAvailable(item.id, normalizeType(item.asset?.name), item)
+    );
   }, [request]);
 
-  const loadAvailable = async (itemId, type) => {
+  /* ------------------------------------------------------------
+     LOAD AVAILABLE ITEMS BASED ON TYPE + FILTERS
+  ------------------------------------------------------------- */
+  const loadAvailable = async (itemId, type, requestItem) => {
     setLoadingItems((p) => ({ ...p, [itemId]: true }));
+
     try {
       const res = await axios.get(`${ITEM_API}?type=${type}`);
-      setAvailableItems((prev) => ({ ...prev, [itemId]: res.data || [] }));
-    } catch (err) {
-      console.error("Load available items error:", err);
-      setAvailableItems((prev) => ({ ...prev, [itemId]: [] }));
+      let list = res.data || [];
+
+      const filters = extractFilters(requestItem, type);
+      list = applyFiltersToAvailable(list, filters);
+
+      setAvailableItems((prev) => ({ ...prev, [itemId]: list }));
     } finally {
       setLoadingItems((p) => ({ ...p, [itemId]: false }));
     }
   };
 
-  const toggleSelect = (itemId, itemUniqueId, requestedQty) => {
+  /* ------------------------------------------------------------
+     TOGGLE ITEM SELECTION
+     (Partial mode must be < requested qty)
+  ------------------------------------------------------------- */
+  const toggleSelect = (itemId, itemUniqueId, requestedQty, isPartial) => {
     setSelectedIdsForItem((prev) => {
       const arr = prev[itemId] || [];
-      // deselect
+
       if (arr.includes(itemUniqueId)) {
         return { ...prev, [itemId]: arr.filter((x) => x !== itemUniqueId) };
       }
-      // select - ensure not exceeding requestedQty
-      if (arr.length >= requestedQty) {
+
+      // NEW RULE: partial must be strictly less than requested qty
+      if (isPartial && arr.length + 1 >= requestedQty) {
+        alert(
+          "Partial approval cannot be equal to or greater than the requested quantity."
+        );
+        return prev;
+      }
+
+      // Full approval cannot exceed required qty
+      if (!isPartial && arr.length >= requestedQty) {
         alert("You can only select the requested quantity.");
         return prev;
       }
+
       return { ...prev, [itemId]: [...arr, itemUniqueId] };
     });
   };
 
-  const allAssigned = () => {
+  /* ------------------------------------------------------------
+     VALIDATION FOR APPROVAL BUTTON
+  ------------------------------------------------------------- */
+  const canApprove = () => {
     if (!localRequest) return false;
+
     for (const item of localRequest.assetRequestItems) {
       const selected = selectedIdsForItem[item.id]?.length || 0;
-      if (selected !== item.requestedQuantity) return false;
+      const partial = isPartialMode[item.id];
+      const available = availableItems[item.id]?.length || 0;
+
+      if (!partial) {
+        if (available < item.requestedQuantity) return false;
+        if (selected !== item.requestedQuantity) return false;
+      } else {
+        if (!partialReasons[item.id]?.trim()) return false;
+
+        // NEW RULE: partial must be strictly LESS than requested qty
+        if (selected >= item.requestedQuantity) return false;
+
+        if (available > 0 && selected === 0) return false;
+      }
     }
+
     return true;
   };
 
+  /* ------------------------------------------------------------
+     SUBMIT APPROVAL
+  ------------------------------------------------------------- */
   const handleConfirmApproval = async () => {
     if (!localRequest) return;
+    if (!canApprove()) {
+      alert("Approval conditions not satisfied.");
+      return;
+    }
+
     if (!window.confirm("Approve and assign selected assets?")) return;
+
     setFinalizing(true);
 
     try {
-      const assignments = Object.keys(selectedIdsForItem).map((itemIdStr) => {
-        const itemId = Number(itemIdStr);
-        const itemObj = localRequest.assetRequestItems.find((i) => i.id === itemId);
-        const assetType = normalizeType(itemObj?.asset?.name);
+      const assignments = Object.keys(selectedIdsForItem).map((key) => {
+        const itemId = Number(key);
+        const itemObj = localRequest.assetRequestItems.find(
+          (i) => i.id === itemId
+        );
+
         return {
           itemId,
-          assetType,
+          assetType: normalizeType(itemObj.asset?.name),
           assetTypeItemIds: selectedIdsForItem[itemId],
+          partialReason: isPartialMode[itemId]
+            ? partialReasons[itemId]
+            : null,
         };
       });
 
-
-      const payload = { assignments };
-
-      await axios.post(`${API_URL}/confirm-approve/${localRequest.id}`, payload);
+      await axios.post(`${API_URL}/confirm-approve/${localRequest.id}`, {
+        assignments,
+      });
 
       fetchRequests();
       onHide();
-      alert("Approved & assigned successfully.");
-    } catch (err) {
-      console.error("Approval error:", err);
-      alert("Approval failed: " + (err?.response?.data || err.message));
+      alert("Approved successfully.");
     } finally {
       setFinalizing(false);
     }
   };
 
   if (!request) return null;
+
+  /* ------------------------------------------------------------
+     RENDER UI
+  ------------------------------------------------------------- */
 
   return (
     <Modal show={show} onHide={onHide} size="xl">
@@ -527,10 +638,10 @@ function AssignApproveModal({ show, onHide, request, fetchRequests }) {
 
       <Modal.Body>
         {!localRequest ? (
-          <p>Loading...</p>
+          "Loading..."
         ) : (
           <Table bordered hover>
-            <thead className="table-secondary">
+            <thead>
               <tr>
                 <th>Asset</th>
                 <th>Requested</th>
@@ -542,147 +653,228 @@ function AssignApproveModal({ show, onHide, request, fetchRequests }) {
             <tbody>
               {localRequest.assetRequestItems.map((item) => {
                 const list = availableItems[item.id] || [];
-                const loading = loadingItems[item.id];
+                const partial = isPartialMode[item.id];
+
+                const requestQty = item.requestedQuantity;
+                const availableQty = list.length;
+
+                const allowFull = availableQty >= requestQty;
 
                 return (
                   <tr key={item.id}>
                     <td>{item.asset?.name}</td>
-                    <td>{item.requestedQuantity}</td>
+                    <td>{requestQty}</td>
+
+                    {/* FILTER LIST */}
                     <td>
                       <ul className="list-unstyled mb-0">
-                        {[
-                          ["brand", item.brand],
-                          ["processor", item.processor],
-                          ["storage", item.storage],
-                          ["ram", item.ram],
-                          ["operatingSystem", item.operatingSystem],
-                          ["networkType", item.networkType],
-                          ["simType", item.simType],
-                          ["simSupport", item.simSupport],
-                          ["printerType", item.printerType],
-                          ["paperSize", item.paperSize],
-                          ["dpi", item.dpi],
-                          ["scanner1Type", item.scanner1Type],
-                          ["scanner1Resolution", item.scanner1Resolution],
-                        ]
-                          .filter(([field, value]) => shouldShowFilter(item.asset?.name, field) && value)
-                          .map(([field, value]) => (
-                            <li key={field}>
-                              <strong>{field}:</strong> {value}
-                            </li>
-                          ))}
+                        {Object.entries(
+                          extractFilters(item, normalizeType(item.asset?.name))
+                        ).map(([k, v]) => (
+                          <li key={k}>
+                            <strong>{k}:</strong> {v}
+                          </li>
+                        ))}
                       </ul>
                     </td>
 
-
+                    {/* SELECT ITEMS */}
                     <td>
-  {loading ? (
-    "Loading..."
-  ) : list.length === 0 ? (
-    <em>No available items</em>
-  ) : (
-    <div
-      style={{
-        maxHeight: 180,
-        overflowY: "auto",
-        border: "1px solid #ddd",
-        padding: 8,
-      }}
-    >
+                      {/* CASE 1 — NO ITEMS AVAILABLE */}
+                      {list.length === 0 ? (
+                        <div>
+                          <div className="form-check">
+                            <input
+                              type="checkbox"
+                              className="form-check-input"
+                              id={`noitems-${item.id}`}
+                              checked={partial}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
 
-      {/* ✅ Titles placed INSIDE the scroll box */}
-      <div className="mb-2">
-  <div className="form-check">
-    <input
-      type="checkbox"
-      className="form-check-input"
-      id={`selectAll-${item.id}`}
-      onChange={(e) => {
-        if (e.target.checked) {
-          // Select ALL items up to requested quantity
-          const firstN = list.slice(0, item.requestedQuantity).map(x => x.id);
-          setSelectedIdsForItem(prev => ({ ...prev, [item.id]: firstN }));
-        } else {
-          // Remove all
-          setSelectedIdsForItem(prev => ({ ...prev, [item.id]: [] }));
-        }
-      }}
-    />
-    <label className="form-check-label" htmlFor={`selectAll-${item.id}`}>
-      Select all requested quantity
-    </label>
-  </div>
+                                setIsPartialMode((p) => ({
+                                  ...p,
+                                  [item.id]: checked,
+                                }));
 
-  <div className="form-check">
-    <input
-      type="checkbox"
-      className="form-check-input"
-      id={`partial-${item.id}`}
-    />
-    <label className="form-check-label" htmlFor={`partial-${item.id}`}>
-      Select partial requested quantity
-    </label>
-  </div>
-</div>
+                                setSelectedIdsForItem((p) => ({
+                                  ...p,
+                                  [item.id]: [],
+                                }));
 
+                                if (!checked) {
+                                  setPartialReasons((p) => ({
+                                    ...p,
+                                    [item.id]: "",
+                                  }));
+                                }
+                              }}
+                            />
+                            <label htmlFor={`noitems-${item.id}`}>
+                              No available items found (partial approval only)
+                            </label>
+                          </div>
 
-      {list.map((a) => (
-        <div key={a.id} className="form-check mb-1">
-          <input
-            type="checkbox"
-            className="form-check-input"
-            checked={selectedIdsForItem[item.id]?.includes(a.id)}
-            onChange={() =>
-              toggleSelect(item.id, a.id, item.requestedQuantity)
-            }
-          />
+                          {partial && (
+                            <>
+                              <div className="text-warning fw-bold mt-2">
+                                Partial approval → reason required
+                              </div>
+                              <textarea
+                                className="form-control mt-2"
+                                placeholder="Enter reason"
+                                value={partialReasons[item.id] || ""}
+                                onChange={(e) =>
+                                  setPartialReasons((p) => ({
+                                    ...p,
+                                    [item.id]: e.target.value,
+                                  }))
+                                }
+                              />
+                            </>
+                          )}
+                        </div>
+                      ) : (
+                        <>
+                          {/* CASE 2 — ITEMS AVAILABLE */}
 
-          <label className="form-check-label ms-2">
-            {a.scanner1AssetTag || a.assetTag || a.imeiNumber || a.serialNumber}
+                          {/* FULL APPROVE */}
+                          <div className="form-check">
+                            <input
+                              type="checkbox"
+                              className="form-check-input"
+                              id={`all-${item.id}`}
+                              disabled={!allowFull || partial}
+                              checked={
+                                allowFull &&
+                                !partial &&
+                                selectedIdsForItem[item.id]?.length ===
+                                  requestQty
+                              }
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  const ids = list
+                                    .slice(0, requestQty)
+                                    .map((a) => a.id);
 
-            {" "}
+                                  setSelectedIdsForItem((p) => ({
+                                    ...p,
+                                    [item.id]: ids,
+                                  }));
 
-            {a.assetType === "scanner1" ? (
-              <>({a.scanner1Brand} - {a.scanner1Model})</>
-            ) : (
-              <>({a.brand} - {a.modelNumber || a.model || a.processor})</>
-            )}
+                                  setIsPartialMode((p) => ({
+                                    ...p,
+                                    [item.id]: false,
+                                  }));
+                                } else {
+                                  setSelectedIdsForItem((p) => ({
+                                    ...p,
+                                    [item.id]: [],
+                                  }));
+                                }
+                              }}
+                            />
+                            <label htmlFor={`all-${item.id}`}>
+                              Select all requested quantity
+                            </label>
+                          </div>
 
-            {/* Extra details */}
-            <div style={{ fontSize: "0.75rem", color: "#444" }}>
-              {a.processor && <span className="me-2"><strong>Processor:</strong> {a.processor}</span>}
-              {a.ram && <span className="me-2"><strong>RAM:</strong> {a.ram}</span>}
-              {a.storage && <span className="me-2"><strong>Storage:</strong> {a.storage}</span>}
+                          {/* PARTIAL APPROVE */}
+                          <div className="form-check mt-1">
+                            <input
+                              type="checkbox"
+                              className="form-check-input"
+                              id={`partial-${item.id}`}
+                              checked={partial}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
 
-              {a.printerType && <span className="me-2"><strong>Printer:</strong> {a.printerType}</span>}
-              {a.paperSize && <span className="me-2"><strong>Paper:</strong> {a.paperSize}</span>}
-              {a.dpi && <span className="me-2"><strong>DPI:</strong> {a.dpi}</span>}
+                                setIsPartialMode((p) => ({
+                                  ...p,
+                                  [item.id]: checked,
+                                }));
 
-              {a.scanner1Type && <span className="me-2"><strong>Type:</strong> {a.scanner1Type}</span>}
-              {a.scanner1Resolution && (
-                <span className="me-2"><strong>Resolution:</strong> {a.scanner1Resolution}</span>
-              )}
-              {a.scanner1Location && (
-                <span><strong>Location:</strong> {a.scanner1Location}</span>
-              )}
-            </div>
-          </label>
-        </div>
-      ))}
-    </div>
-  )}
+                                if (checked) {
+                                  setSelectedIdsForItem((p) => ({
+                                    ...p,
+                                    [item.id]: [],
+                                  }));
+                                } else {
+                                  setPartialReasons((p) => ({
+                                    ...p,
+                                    [item.id]: "",
+                                  }));
+                                }
+                              }}
+                            />
+                            <label htmlFor={`partial-${item.id}`}>
+                              Select partial requested quantity
+                            </label>
+                          </div>
 
-  <div className="mt-2">
-    {selectedIdsForItem[item.id]?.length === item.requestedQuantity ? (
-      <span className="text-success fw-bold">✔ Exact quantity selected</span>
-    ) : (
-      <span className="text-danger fw-bold">
-        {(selectedIdsForItem[item.id]?.length || 0)} / {item.requestedQuantity} selected
-      </span>
-    )}
-  </div>
-</td>
+                          {/* AVAILABLE ITEMS LIST */}
+                          <div
+                            style={{
+                              maxHeight: 200,
+                              overflowY: "auto",
+                              border: "1px solid #ccc",
+                              padding: 8,
+                            }}
+                          >
+                            {list.map((a) => (
+                              <div key={a.id} className="form-check mb-1">
+                                <input
+                                  type="checkbox"
+                                  className="form-check-input"
+                                  checked={selectedIdsForItem[item.id]?.includes(
+                                    a.id
+                                  )}
+                                  onChange={() =>
+                                    toggleSelect(
+                                      item.id,
+                                      a.id,
+                                      requestQty,
+                                      partial
+                                    )
+                                  }
+                                />
+                                <label className="ms-2">
+                                  {a.assetTag ||
+                                    a.imeiNumber ||
+                                    a.serialNumber}{" "}
+                                  ({a.brand} - {a.model || a.modelNumber})
+                                </label>
+                              </div>
+                            ))}
+                          </div>
 
+                          {/* COUNTER OR PARTIAL REASON */}
+                          {partial ? (
+                            <>
+                              <div className="text-warning mt-2 fw-bold">
+                                Partial approval → reason required
+                              </div>
+                              <textarea
+                                className="form-control mt-2"
+                                placeholder="Enter reason"
+                                value={partialReasons[item.id]}
+                                onChange={(e) =>
+                                  setPartialReasons((p) => ({
+                                    ...p,
+                                    [item.id]: e.target.value,
+                                  }))
+                                }
+                              />
+                            </>
+                          ) : allowFull ? (
+                            <div className="mt-2 text-danger fw-bold">
+                              {selectedIdsForItem[item.id]?.length || 0}/
+                              {requestQty} selected
+                            </div>
+                          ) : null}
+                        </>
+                      )}
+                    </td>
                   </tr>
                 );
               })}
@@ -692,11 +884,15 @@ function AssignApproveModal({ show, onHide, request, fetchRequests }) {
       </Modal.Body>
 
       <Modal.Footer>
-        <Button variant="secondary" onClick={onHide} disabled={finalizing}>
+        <Button variant="secondary" disabled={finalizing} onClick={onHide}>
           Close
         </Button>
 
-        <Button variant="success" disabled={!allAssigned() || finalizing} onClick={handleConfirmApproval}>
+        <Button
+          variant="success"
+          disabled={finalizing || !canApprove()}
+          onClick={handleConfirmApproval}
+        >
           {finalizing ? "Finalizing..." : "Confirm Approval"}
         </Button>
       </Modal.Footer>
@@ -704,9 +900,14 @@ function AssignApproveModal({ show, onHide, request, fetchRequests }) {
   );
 }
 
-/* -------------------------------------------------------------------
-        VIEW ASSIGNED ASSETS MODAL
-------------------------------------------------------------------- */
+
+
+
+
+/* ============================================================================================
+    VIEW ASSIGNED ASSETS MODAL
+============================================================================================ */
+
 function ViewAssignedModal({ show, onHide, request }) {
   if (!request) return null;
 
