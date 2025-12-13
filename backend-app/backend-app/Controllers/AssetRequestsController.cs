@@ -130,6 +130,7 @@ namespace backend_app.Controllers
                     Asset = new { i.Asset.Id, i.Asset.Name },
                     i.RequestedQuantity,
                     i.ApprovedQuantity,
+                    PartialReason = i.PartialReason,
 
                     // ✅ All filter fields included
                     Brand = i.Brand,
@@ -342,6 +343,7 @@ namespace backend_app.Controllers
                     Asset = new { i.Asset.Id, i.Asset.Name },
                     i.RequestedQuantity,
                     i.ApprovedQuantity,
+                    PartialReason = i.PartialReason,
 
                     // 🔥 All filters included
                     Brand = i.Brand,
@@ -469,6 +471,29 @@ namespace backend_app.Controllers
                     if (item == null)
                         return BadRequest($"Item with id {assign.ItemId} not found in request.");
 
+                    // ⭐⭐⭐ SAVE PARTIAL REASON (NEW CODE)
+                    int approvedCount = assign.AssetTypeItemIds?.Count ?? 0;
+
+                    if (approvedCount < item.RequestedQuantity)
+                    {
+                        // Partial approval must have a reason
+                        if (!string.IsNullOrWhiteSpace(assign.PartialReason))
+                        {
+                            item.PartialReason = assign.PartialReason;
+                        }
+                        else
+                        {
+                            item.PartialReason = "Partially approved — less items available";
+                        }
+                    }
+                    else
+                    {
+                        // Full approval → clear reason
+                        item.PartialReason = null;
+                    }
+                    // ⭐⭐⭐ END REASON SECTION
+
+
                     // -----------------------------------------
                     // 1) RESTORE STOCK FOR OLD ASSIGNMENTS
                     // -----------------------------------------
@@ -491,7 +516,6 @@ namespace backend_app.Controllers
                                 lap.AssignedDate = null;
                             }
                         }
-
                         else if (type == "mobile")
                         {
                             var mob = await _context.Mobiles.FindAsync(old.AssetTypeItemId);
@@ -501,7 +525,6 @@ namespace backend_app.Controllers
                                 mob.AssignedDate = null;
                             }
                         }
-
                         else if (type == "tablet")
                         {
                             var tab = await _context.Tablets.FindAsync(old.AssetTypeItemId);
@@ -511,7 +534,6 @@ namespace backend_app.Controllers
                                 tab.AssignedDate = null;
                             }
                         }
-
                         else if (type == "desktop")
                         {
                             var desk = await _context.Desktops.FindAsync(old.AssetTypeItemId);
@@ -521,7 +543,6 @@ namespace backend_app.Controllers
                                 desk.AssignedDate = null;
                             }
                         }
-
                         else if (type == "printer")
                         {
                             var prin = await _context.Printers.FindAsync(old.AssetTypeItemId);
@@ -531,7 +552,6 @@ namespace backend_app.Controllers
                                 prin.AssignedDate = null;
                             }
                         }
-
                         else if (type == "scanner1")
                         {
                             var scan1 = await _context.Scanner1.FindAsync(old.AssetTypeItemId);
@@ -546,6 +566,7 @@ namespace backend_app.Controllers
                     // Remove old assignments
                     _context.AssignedAssets.RemoveRange(oldAssigned);
                     await _context.SaveChangesAsync();
+
 
                     // -----------------------------------------
                     // 2) CREATE NEW ASSIGNMENTS
@@ -592,7 +613,6 @@ namespace backend_app.Controllers
                                 tab.AssignedDate = DateTime.Now;
                             }
                         }
-
                         else if (type == "desktop")
                         {
                             var desk = await _context.Desktops.FindAsync(assetTypeItemId);
@@ -602,7 +622,6 @@ namespace backend_app.Controllers
                                 desk.AssignedDate = DateTime.Now;
                             }
                         }
-
                         else if (type == "printer")
                         {
                             var prin = await _context.Printers.FindAsync(assetTypeItemId);
@@ -612,7 +631,6 @@ namespace backend_app.Controllers
                                 prin.AssignedDate = DateTime.Now;
                             }
                         }
-
                         else if (type == "scanner1")
                         {
                             var scan1 = await _context.Scanner1.FindAsync(assetTypeItemId);
@@ -630,7 +648,7 @@ namespace backend_app.Controllers
                     }
 
                     // Update approved count
-                    item.ApprovedQuantity = assign.AssetTypeItemIds?.Count ?? 0;
+                    item.ApprovedQuantity = approvedCount;
                 }
 
                 // Final update
@@ -647,6 +665,7 @@ namespace backend_app.Controllers
             }
         }
 
+
         // DTOs used by ConfirmApprove
         public class ApproveRequestDto
         {
@@ -662,6 +681,9 @@ namespace backend_app.Controllers
 
             // list of ids from corresponding table (Laptop.Id or Mobile.Id etc)
             public List<int> AssetTypeItemIds { get; set; } = new();
+
+            // ⭐ NEW: Partial approval reason
+            public string? PartialReason { get; set; }
         }
 
         // --------------------------

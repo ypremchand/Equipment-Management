@@ -1,0 +1,8 @@
+.user-report-page{
+    padding-top: 50px;
+}
+.asset-scroll-box {
+  max-height: 180px;     /* adjust height as needed */
+  overflow-y: auto;
+  padding-right: 5px;
+}

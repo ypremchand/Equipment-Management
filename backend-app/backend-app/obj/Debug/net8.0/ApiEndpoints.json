@@ -56,6 +56,32 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "backend_app.Controllers.AdminReportController",
+    "Method": "GetAllReports",
+    "RelativePath": "api/AdminReport",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_app.Controllers.AdminReportController",
+    "Method": "GetAssetsByType",
+    "RelativePath": "api/AdminReport/by-type/{assetName}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "assetName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "backend_app.Controllers.AssetItemsController",
     "Method": "GetAvailable",
     "RelativePath": "api/asset-items/available",
@@ -1626,6 +1652,22 @@
         "Name": "to",
         "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
         "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_app.Controllers.UserReportController",
+    "Method": "GetUserReport",
+    "RelativePath": "api/UserReport/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
       }
     ],
     "ReturnTypes": []

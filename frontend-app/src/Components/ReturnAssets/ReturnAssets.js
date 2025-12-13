@@ -115,12 +115,12 @@ function ReturnAssets() {
                       <h5 className="card-title">Request #{i + 1}</h5>
                       <span
                         className={`badge ${status === "Returned"
-                            ? "bg-success"
-                            : status === "Pending"
-                              ? "bg-warning text-dark"
-                              : status === "Approved"
-                                ? "bg-primary"
-                                : "bg-secondary"
+                          ? "bg-success"
+                          : status === "Pending"
+                            ? "bg-warning text-dark"
+                            : status === "Approved"
+                              ? "bg-primary"
+                              : "bg-secondary"
                           }`}
                       >
                         {status}

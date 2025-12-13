@@ -22,6 +22,9 @@ import DamagedAssets from "./Components/DamagedAssets/DamagedAssets";
 import ContactedUs from "./Components/ContactedUs/ContactedUs";
 import AdminDeleteHistory from "./Components/AdminDeleteHistory/AdminDeleteHistory";
 import UserDeleteHistory from "./Components/UserDeleteHistory/UserDeleteHistory";
+import AdminReport from "./Components/AdminReport/AdminReport";
+import IndividualDetails from "./Components/IndividualDetails/IndividualDetails";
+import UserReport from "./Components/UserReport/UserReport";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
@@ -58,6 +61,7 @@ function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/contact/:id" element={<Contact />} />
             <Route path="/requested-assets" element={<ReturnAssets />} />
+            <Route path="/user-report" element={<UserReport />} />
             <Route>
               <Route path="/assigned-items/:requestId" element={<AssignedItems />} />
             </Route>
@@ -107,12 +111,12 @@ function App() {
             <Route
               path="/scanner3"
               element={user?.email?.includes("@admin") ? <Scanner3 /> : <Navigate to="/" />}
-            />  
+            />
             <Route
               path="/requests"
               element={user?.email?.includes("@admin") ? <Requests /> : <Navigate to="/" />}
             />
-              <Route
+            <Route
               path="/damaged-assets"
               element={user?.email?.includes("@admin") ? <DamagedAssets /> : <Navigate to="/" />}
             />
@@ -125,6 +129,20 @@ function App() {
               path="/user-delete-history"
               element={user?.email?.includes("@admin") ? <UserDeleteHistory /> : <Navigate to="/" />}
             />
+            <Route
+              path="/admin-report"
+              element={user?.email?.includes("@admin") ? <AdminReport /> : <Navigate to="/" />}
+            />
+            <Route
+              path="/individual-details/asset/:assetType"
+              element={<IndividualDetails />}
+            />
+
+            <Route
+              path="/individual-details/location/:locationName"
+              element={<IndividualDetails />}
+            />
+
 
 
             <Route path="*" element={<Navigate to="/" />} />

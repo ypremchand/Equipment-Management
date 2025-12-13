@@ -117,7 +117,7 @@ namespace backend_app.Controllers
                 {
                     message = "Admin login successful",
                     role = "Admin",
-                    user = new { admin.Id, admin.Name, admin.Email }
+                    user = new { admin.Id, admin.Name, admin.Email,admin.PhoneNumber }
                 });
             }
 

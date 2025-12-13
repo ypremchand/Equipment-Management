@@ -90,6 +90,15 @@ function Navbar({ user, onLogout }) {
                     </button>
                   </div>
                 </li>
+                <li className="nav-item">
+                  <Link
+                    className="nav-link"
+                    to="/admin-report"
+                    onClick={() => setIsOpen(false)}
+                  >
+                   AdminReport
+                  </Link>
+                </li>
               </>
             ) : (
               <>
@@ -120,6 +129,15 @@ function Navbar({ user, onLogout }) {
                     onClick={() => setIsOpen(false)}
                   > 
                     RequestedAssets
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link
+                    className="nav-link"
+                    to="/user-report"
+                    onClick={() => setIsOpen(false)}
+                  > 
+                    UserReport
                   </Link>
                 </li>
               </>

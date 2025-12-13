@@ -89,6 +89,40 @@
         }
       }
     },
+    "/api/AdminReport": {
+      "get": {
+        "tags": [
+          "AdminReport"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/AdminReport/by-type/{assetName}": {
+      "get": {
+        "tags": [
+          "AdminReport"
+        ],
+        "parameters": [
+          {
+            "name": "assetName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/asset-items/available": {
       "get": {
         "tags": [
@@ -2667,6 +2701,29 @@
         }
       }
     },
+    "/api/UserReport/{id}": {
+      "get": {
+        "tags": [
+          "UserReport"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/WeatherForecast": {
       "get": {
         "tags": [
@@ -2925,6 +2982,10 @@
               "$ref": "#/components/schemas/AssignedAsset"
             },
             "nullable": true
+          },
+          "partialReason": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -3016,6 +3077,10 @@
               "type": "integer",
               "format": "int32"
             },
+            "nullable": true
+          },
+          "partialReason": {
+            "type": "string",
             "nullable": true
           }
         },

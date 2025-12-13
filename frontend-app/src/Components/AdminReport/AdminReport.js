@@ -1,34 +1,25 @@
 import React, { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Modal, Button, Table } from "react-bootstrap";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import "./style.css";
 
 function AdminReport() {
   const [reports, setReports] = useState([]);
+  const [adminData, setAdminData] = useState(null);
   const [inventory, setInventory] = useState(null);
   const [locationSummary, setLocationSummary] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [showPreview, setShowPreview] = useState(false);
-
   const [search, setSearch] = useState("");
 
-  // MODAL STATES
-  const [selectedAssetType, setSelectedAssetType] = useState(null);
-  const [assetItems, setAssetItems] = useState([]);
-
-  const [selectedLocation, setSelectedLocation] = useState(null);
-  const [locationRequests, setLocationRequests] = useState([]);
-
-  const [showAssetModal, setShowAssetModal] = useState(false);
-  const [showLocationModal, setShowLocationModal] = useState(false);
-
-  // PDF refs
   const inventoryRef = useRef(null);
   const locationRef = useRef(null);
   const requestsRef = useRef(null);
+
+  const navigate = useNavigate();
 
   const API = "http://localhost:5083/api/AdminReport";
 
@@ -45,32 +36,30 @@ function AdminReport() {
         setLoading(false);
       }
     };
-    loadData();
-  }, []);
 
-  // LOAD ASSET ITEMS
-  const loadAssetItems = async (assetType) => {
-    try {
-      const res = await axios.get(
-        `http://localhost:5083/api/Assets/by-type/${assetType}`
-      );
-      setAssetItems(res.data);
-      setSelectedAssetType(assetType);
-      setShowAssetModal(true);
-    } catch (err) {
-      console.error("Error loading asset items:", err);
+    // 🔐 LOAD ADMIN FROM LOCAL STORAGE
+    const storedAdmin = localStorage.getItem("user"); // or "admin"
+    if (storedAdmin) {
+      setAdminData(JSON.parse(storedAdmin));
+    } else {
+      navigate("/admin-login");
     }
+
+    loadData();
+  }, [navigate]);
+
+
+
+  // 👉 Navigate to Individual Asset Details Page
+  const goToAssetDetails = (assetType) => {
+    navigate(`/individual-details/asset/${assetType}`);
   };
 
-  // LOAD LOCATION REQUESTS
-  const loadLocationRequests = (loc) => {
-    const filtered = reports.filter((r) => r.location === loc);
-    setLocationRequests(filtered);
-    setSelectedLocation(loc);
-    setShowLocationModal(true);
+  // 👉 Navigate to Individual Location Requests Page
+  const goToLocationDetails = (location) => {
+    navigate(`/individual-details/location/${location}`);
   };
 
-  // SEARCH FILTER
   const filteredReports = reports.filter((req) => {
     const txt = search.toLowerCase();
     return (
@@ -83,26 +72,33 @@ function AdminReport() {
     );
   });
 
-  // PDF GENERATION
   const downloadPDF = async (ref, filename) => {
     const elem = ref.current;
     const canvas = await html2canvas(elem, { scale: 2 });
     const img = canvas.toDataURL("image/png");
+
     const pdf = new jsPDF("p", "mm", "a4");
     const width = pdf.internal.pageSize.getWidth();
     const height = (canvas.height * width) / canvas.width;
+
     pdf.addImage(img, "PNG", 0, 0, width, height);
     pdf.save(filename);
   };
 
   if (loading) return <div>Loading...</div>;
-  if (!reports.length) return <div>No data found</div>;
 
   return (
     <div className="admin-report-page container mt-4">
-
       <h2>📊 Admin Report</h2>
 
+
+      {/* ADMIN INFO */}
+      <div className="card p-3 mb-4">
+        <p><strong>Name:</strong> {adminData?.name || "—"}</p>
+        <p><strong>Email:</strong> {adminData?.email || "—"}</p>
+        <p><strong>Phone:</strong> {adminData?.phoneNumber || "—"}</p>
+
+      </div>
       {!showPreview && (
         <div className="text-end mb-3">
           <button className="btn btn-primary" onClick={() => setShowPreview(true)}>
@@ -114,11 +110,13 @@ function AdminReport() {
       {showPreview && (
         <div className="card p-4 shadow mb-4">
 
-          {/* INVENTORY SUMMARY */}
+          {/* =============================
+              INVENTORY SUMMARY
+          ============================= */}
           <div ref={inventoryRef} className="bg-white p-3 mb-3">
             <h3 className="text-center mb-3">📦 Inventory Summary</h3>
 
-            <Table bordered>
+            <table className="table table-bordered">
               <thead className="table-secondary">
                 <tr>
                   <th>Asset Type</th>
@@ -127,46 +125,60 @@ function AdminReport() {
                   <th>Available</th>
                 </tr>
               </thead>
+
               <tbody>
                 {inventory &&
-                  Object.entries(inventory).map(([asset, v]) => (
-                    <tr key={asset}>
+                  <>
+                    {Object.entries(inventory).map(([type, v]) => (
+                      <tr key={type}>
+                        <td
+                          className="text-primary fw-bold"
+                          style={{ cursor: "pointer" }}
+                          onClick={() => goToAssetDetails(type.toLowerCase())}
+                        >
+                          {type.toLowerCase()}
+                        </td>
+                        <td>{v.total}</td>
+                        <td>{v.assigned}</td>
+                        <td>{v.available}</td>
+                      </tr>
+                    ))}
+
+                    {/* ⭐ EXTRA ROW FOR ALL ASSETS */}
+                    <tr>
                       <td
-                        className="text-primary"
+                        className="text-danger fw-bold"
                         style={{ cursor: "pointer" }}
-                        onClick={() => loadAssetItems(asset)}
+                        onClick={() => goToAssetDetails("all")}
                       >
-                        {asset}
+                        all
                       </td>
-                      <td>{v.total}</td>
-                      <td>{v.assigned}</td>
-                      <td>{v.available}</td>
+                      <td colSpan="3">View all assets combined</td>
                     </tr>
-                  ))}
+                  </>
+                }
               </tbody>
-            </Table>
+
+            </table>
           </div>
 
           <div className="text-center mb-5">
-            <button
-              className="btn btn-success"
-              onClick={() =>
-                downloadPDF(inventoryRef, "InventorySummary.pdf")
-              }
-            >
-              ⬇ Download Inventory Summary PDF
+            <button className="btn btn-success" onClick={() => downloadPDF(inventoryRef, "InventorySummary.pdf")}>
+              ⬇ Download Inventory PDF
             </button>
           </div>
 
-          {/* LOCATION SUMMARY */}
+          {/* =============================
+              LOCATION SUMMARY
+          ============================= */}
           <div ref={locationRef} className="bg-white p-3 mb-3">
             <h3 className="text-center mb-3">📍 Location Summary</h3>
 
-            <Table bordered>
+            <table className="table table-bordered">
               <thead className="table-info">
                 <tr>
                   <th>Location</th>
-                  <th>Total Requests</th>
+                  <th>Total</th>
                   <th>Approved</th>
                   <th>Pending</th>
                 </tr>
@@ -177,9 +189,9 @@ function AdminReport() {
                   Object.entries(locationSummary).map(([loc, s]) => (
                     <tr key={loc}>
                       <td
-                        className="text-primary"
+                        className="text-primary fw-bold"
                         style={{ cursor: "pointer" }}
-                        onClick={() => loadLocationRequests(loc)}
+                        onClick={() => goToLocationDetails(loc)}
                       >
                         {loc}
                       </td>
@@ -189,24 +201,22 @@ function AdminReport() {
                     </tr>
                   ))}
               </tbody>
-            </Table>
+            </table>
           </div>
 
           <div className="text-center mb-5">
-            <button
-              className="btn btn-success"
-              onClick={() => downloadPDF(locationRef, "LocationSummary.pdf")}
-            >
-              ⬇ Download Location Summary PDF
+            <button className="btn btn-success" onClick={() => downloadPDF(locationRef, "LocationSummary.pdf")}>
+              ⬇ Download Location PDF
             </button>
           </div>
 
-          {/* REQUEST SUMMARY */}
+          {/* =============================
+              REQUEST SUMMARY
+          ============================= */}
           <label className="fw-bold">🔍 Search Requests:</label>
           <input
-            type="text"
             className="form-control mb-3"
-            placeholder="Search by Request ID, User, Status, Location..."
+            placeholder="Search by ID, Status, User, Location..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -214,7 +224,7 @@ function AdminReport() {
           <div ref={requestsRef} className="bg-white p-3">
             <h3 className="text-center mb-3">📋 All Requests Summary</h3>
 
-            <Table bordered>
+            <table className="table table-bordered">
               <thead className="table-dark">
                 <tr>
                   <th>ID</th>
@@ -236,114 +246,43 @@ function AdminReport() {
                     <td>{req.user}</td>
                     <td>{req.location}</td>
                     <td>{req.message}</td>
+
+                    {/* ❤️ Restored Assets Column With Partial Reason */}
                     <td>
                       {req.assetItems.map((item) => (
                         <div key={item.name}>
-                          <strong>{item.name}</strong> — {item.requestedQuantity} req /{" "}
-                          {item.approvedQuantity ?? 0} approved
+                          <strong>{item.name}</strong> —
+                          {item.requestedQuantity} req / {item.approvedQuantity ?? 0} approved
+                          {item.partialReason && (
+                            <div className="text-danger small">
+                              Reason: {item.partialReason}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </td>
+
                   </tr>
                 ))}
+
+                {filteredReports.length === 0 && (
+                  <tr>
+                    <td colSpan="7" className="text-center text-danger">
+                      No results found.
+                    </td>
+                  </tr>
+                )}
               </tbody>
-            </Table>
+            </table>
           </div>
 
           <div className="text-center mt-4">
-            <button
-              className="btn btn-success"
-              onClick={() =>
-                downloadPDF(requestsRef, "RequestsSummary.pdf")
-              }
-            >
-              ⬇ Download Requests Summary PDF
+            <button className="btn btn-success" onClick={() => downloadPDF(requestsRef, "RequestsSummary.pdf")}>
+              ⬇ Download Requests PDF
             </button>
           </div>
         </div>
       )}
-
-      {/* =========================
-          ASSET DETAILS MODAL
-      ========================= */}
-      <Modal show={showAssetModal} onHide={() => setShowAssetModal(false)} size="xl">
-        <Modal.Header closeButton>
-          <Modal.Title>🖥️ {selectedAssetType} Details</Modal.Title>
-        </Modal.Header>
-
-        <Modal.Body>
-          <Table bordered>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Brand</th>
-                <th>Processor</th>
-                <th>RAM</th>
-                <th>Storage</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {assetItems.length === 0 && (
-                <tr><td colSpan="6" className="text-center">No assets found.</td></tr>
-              )}
-
-              {assetItems.map((i) => (
-                <tr key={i.id}>
-                  <td>{i.id}</td>
-                  <td>{i.brand}</td>
-                  <td>{i.processor}</td>
-                  <td>{i.ram}</td>
-                  <td>{i.storage}</td>
-                  <td>{i.isAssigned ? "Assigned" : "Available"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        </Modal.Body>
-      </Modal>
-
-      {/* =========================
-          LOCATION DETAILS MODAL
-      ========================= */}
-      <Modal show={showLocationModal} onHide={() => setShowLocationModal(false)} size="xl">
-        <Modal.Header closeButton>
-          <Modal.Title>📍 {selectedLocation} — Requests</Modal.Title>
-        </Modal.Header>
-
-        <Modal.Body>
-          <Table bordered>
-            <thead className="table-primary">
-              <tr>
-                <th>ID</th>
-                <th>User</th>
-                <th>Status</th>
-                <th>Date</th>
-                <th>Message</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {locationRequests.length === 0 && (
-                <tr>
-                  <td colSpan="5" className="text-center">No requests found</td>
-                </tr>
-              )}
-
-              {locationRequests.map((req) => (
-                <tr key={req.id}>
-                  <td>{req.id}</td>
-                  <td>{req.user}</td>
-                  <td>{req.status}</td>
-                  <td>{new Date(req.requestDate).toLocaleString()}</td>
-                  <td>{req.message}</td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        </Modal.Body>
-      </Modal>
     </div>
   );
 }

@@ -112,45 +112,93 @@ function AssignedItems() {
 
       {/* Request Summary */}
       <div className="card mb-4">
-        <div className="card-body">
-          <p>
-            <strong>Status:</strong> {requestData.status}
-          </p>
-          <p>
-            <strong>Date:</strong>{" "}
-            {new Date(requestData.requestDate).toLocaleString()}
-          </p>
-          <p>
-            <strong>Location:</strong> {requestData.location?.name}
-          </p>
-          <p>
-            <strong>Message:</strong> {requestData.message || "—"}
-          </p>
+  <div className="card-body">
     <p>
-  <strong>Approved Quantity:</strong>
+      <strong>Status:</strong> {requestData.status}
+    </p>
+    <p>
+      <strong>Date:</strong>{" "}
+      {new Date(requestData.requestDate).toLocaleString()}
+    </p>
+    <p>
+      <strong>Location:</strong> {requestData.location?.name}
+    </p>
+   <p>
+  <strong>Requested:</strong>
+  <br />
+
+  {requestData.assetRequestItems?.map((item) => {
+    const title = requestData.message || "";
+
+    const filters = {
+      Brand: item.brand,
+      Processor: item.processor,
+      Storage: item.storage,
+      Ram: item.ram,
+      OperatingSystem: item.operatingSystem,
+      NetworkType: item.networkType,
+      SimType: item.simType,
+      SimSupport: item.simSupport,
+      PrinterType: item.printerType,
+      PaperSize: item.paperSize,
+      Dpi: item.dpi,
+      ScannerType: item.scanner1Type,
+      ScannerResolution: item.scanner1Resolution,
+    };
+
+    const filterText = Object.entries(filters)
+      .filter(([k, v]) => v && v !== "")
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(", ");
+
+    return (
+      <div key={item.id} style={{ marginLeft: "50px", marginBottom: "6px" }}>
+        • Requesting {item.requestedQuantity} of {item.asset?.name}
+        {filterText ? ` (${filterText})` : ""}
+      </div>
+    );
+  })}
 </p>
 
-<ul>
-  {requestData.assetRequestItems?.map((item) => {
+
+    {/* APPROVED QUANTITY OUTPUT */}
+   <p>
+  <strong>Approved Quantity:</strong>{" "}
+  {requestData.assetRequestItems?.map((item, index) => {
     const count = item.assignedAssets?.length || 0;
     const name = item.asset?.name || "Asset";
 
-    // Convert name like "Laptops" or "Mobiles" → single name
-    const singular = name.endsWith("s")
-      ? name.slice(0, -1)
-      : name;
+    // Convert plural → singular
+    const singular = name.endsWith("s") ? name.slice(0, -1) : name;
 
     return (
-      <li key={item.id}>
+      <span key={item.id}>
         {count} {singular}
-      </li>
+        {index < requestData.assetRequestItems.length - 1 ? ", " : ""}
+      </span>
     );
   })}
-</ul>
+</p>
 
+{/* REASON DISPLAY FIX */}
+<p>
+  <strong>Reason:</strong>{" "}
+  {requestData.assetRequestItems?.some((x) => x.partialReason) ? (
+    requestData.assetRequestItems
+      .filter((item) => item.partialReason)
+      .map((item) => {
+        const name = item.asset?.name || "Asset";
+        return `${name} – ${item.partialReason}`;
+      })
+      .join(", ")
+  ) : (
+    "—"
+  )}
+</p>
 
-        </div>
-      </div>
+  </div>
+</div>
+
 
       {/* Tabs */}
       <ul className="nav nav-tabs">
@@ -173,14 +221,13 @@ function AssignedItems() {
           <div
             key={t.key}
             id={`tab-${t.key}`}
-            className={`tab-pane fade show ${
-              firstTab === t.key ? "active" : ""
-            }`}
+            className={`tab-pane fade show ${firstTab === t.key ? "active" : ""
+              }`}
           >
             {/* CASE — NO ITEMS FOR THIS TAB */}
             {t.data.length === 0 ? (
               <div className="text-center text-danger fw-bold mt-3">
-                No available items.
+                No available items for this Request.
               </div>
             ) : (
               /* CASE — ITEMS AVAILABLE → SHOW TABLE */

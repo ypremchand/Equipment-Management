@@ -40,4 +40,5 @@ public class AssetRequestItem
     public string? Scanner1Resolution { get; set; }
 
     public ICollection<AssignedAsset> AssignedAssets { get; set; } = new List<AssignedAsset>();
+    public string? PartialReason { get; set; }
 }
