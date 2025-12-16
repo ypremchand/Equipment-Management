@@ -49,7 +49,11 @@ namespace backend_app.Controllers
                     i.Ram,
                     i.OperatingSystem,
                     i.Scanner1Type,
-                    i.Scanner1Resolution
+                    i.Scanner1Resolution,
+                    i.Scanner2Type,
+                    i.Scanner2Resolution,
+                    i.Scanner3Type,
+                    i.Scanner3Resolution
                 })
             }).ToList();
 
@@ -101,6 +105,18 @@ namespace backend_app.Controllers
                     Total = _context.Scanner1.Count(),
                     Assigned = _context.Scanner1.Count(x => x.IsAssigned),
                     Available = _context.Scanner1.Count(x => !x.IsAssigned)
+                },
+                Scanner2 = new
+                {
+                    Total = _context.Scanner2.Count(),
+                    Assigned = _context.Scanner2.Count(x => x.IsAssigned),
+                    Available = _context.Scanner2.Count(x => !x.IsAssigned)
+                },
+                Scanner3 = new
+                {
+                    Total = _context.Scanner3.Count(),
+                    Assigned = _context.Scanner3.Count(x => x.IsAssigned),
+                    Available = _context.Scanner3.Count(x => !x.IsAssigned)
                 }
             };
 
@@ -135,6 +151,12 @@ namespace backend_app.Controllers
             if (assetName == "scanner1")
                 return Ok(await _context.Scanner1.ToListAsync());
 
+            if (assetName == "scanner2")
+                return Ok(await _context.Scanner2.ToListAsync());
+
+            if (assetName == "scanner3")
+                return Ok(await _context.Scanner3.ToListAsync());
+
             // ⭐ NEW: ALL ASSETS IN ONE RESPONSE
             if (assetName == "all")
             {
@@ -144,7 +166,9 @@ namespace backend_app.Controllers
                     Mobiles = await _context.Mobiles.ToListAsync(),
                     Tablets = await _context.Tablets.ToListAsync(),
                     Printers = await _context.Printers.ToListAsync(),
-                    Scanner1 = await _context.Scanner1.ToListAsync()
+                    Scanner1 = await _context.Scanner1.ToListAsync(),
+                    Scanner2 = await _context.Scanner2.ToListAsync(),
+                    Scanner3 = await _context.Scanner3.ToListAsync()
                 };
                 return Ok(allAssets);
             }

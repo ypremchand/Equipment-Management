@@ -200,6 +200,54 @@ namespace backend_app.Controllers
 
                 return Ok(data);
             }
+            if (type == "scanner2")
+            {
+                var data = await _context.Scanner2
+                    .Where(x => !x.IsAssigned && !damagedIds.Contains(x.Id))
+                    .Select(x => new
+                    {
+                        id = x.Id,
+                        scanner2Brand = x.Scanner2Brand,
+                        scanner2Model = x.Scanner2Model,
+                        scanner2Type = x.Scanner2Type,
+                        scanner2Resolution = x.Scanner2Resolution,
+                        scanner2AssetTag = x.Scanner2AssetTag,
+
+                        purchaseDate = x.PurchaseDate,
+                        scanner2Location = x.Scanner2Location,
+                        remarks = x.Remarks,
+                        isAssigned = x.IsAssigned,
+                        assignedDate = x.AssignedDate,
+                        assetId = x.AssetId
+                    })
+                    .ToListAsync();
+
+                return Ok(data);
+            }
+            if (type == "scanner3")
+            {
+                var data = await _context.Scanner3
+                    .Where(x => !x.IsAssigned && !damagedIds.Contains(x.Id))
+                    .Select(x => new
+                    {
+                        id = x.Id,
+                        scanner3Brand = x.Scanner3Brand,
+                        scanner3Model = x.Scanner3Model,
+                        scanner3Type = x.Scanner3Type,
+                        scanner3Resolution = x.Scanner3Resolution,
+                        scanner3AssetTag = x.Scanner3AssetTag,
+
+                        purchaseDate = x.PurchaseDate,
+                        scanner3Location = x.Scanner3Location,
+                        remarks = x.Remarks,
+                        isAssigned = x.IsAssigned,
+                        assignedDate = x.AssignedDate,
+                        assetId = x.AssetId
+                    })
+                    .ToListAsync();
+
+                return Ok(data);
+            }
 
             return BadRequest("Unknown asset type.");
         }

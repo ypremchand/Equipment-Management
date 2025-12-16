@@ -2,7 +2,7 @@
     padding-top: 50px;
 }
 .asset-scroll-box {
-  max-height: 180px;     /* adjust height as needed */
+  max-height: 200px;
   overflow-y: auto;
-  padding-right: 5px;
+  padding-right: 6px;
 }

@@ -527,7 +527,7 @@ export default function Scanner1() {
                     <div className="spinner-border"></div>
                 </div>
             ) : items.length === 0 ? (
-                <div className="alert alert-info text-center">No scanner records found</div>
+                <div className="alert alert-info text-center">No scanner1(docs scanners) records found</div>
             ) : (
                 <>
                     <div className="table-responsive">

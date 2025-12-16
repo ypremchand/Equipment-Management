@@ -176,12 +176,6 @@ function ReturnAssets() {
                             {item.simSupport && (
                               <div>• SIM Support: {item.simSupport}</div>
                             )}
-                            {item.scannerType && (
-                              <div>• Scanner Type: {item.scannerType}</div>
-                            )}
-                            {item.scanSpeed && (
-                              <div>• Scan Speed: {item.scanSpeed}</div>
-                            )}
                             {item.printerType && (
                               <div>• Printer Type: {item.printerType}</div>
                             )}
@@ -196,6 +190,22 @@ function ReturnAssets() {
 
                             {item.scanner1Resolution && (
                               <div>• Scanner1 Resolution: {item.scanner1Resolution}</div>
+                            )}
+                            {/* Scanner2 fields */}
+                            {item.scanner2Type && (
+                              <div>• Scanner2 Type: {item.scanner2Type}</div>
+                            )}
+
+                            {item.scanner2Resolution && (
+                              <div>• Scanner2 Resolution: {item.scanner2Resolution}</div>
+                            )}
+                             {/* Scanner3 fields */}
+                            {item.scanner3Type && (
+                              <div>• Scanner3 Type: {item.scanner3Type}</div>
+                            )}
+
+                            {item.scanner3Resolution && (
+                              <div>• Scanner3 Resolution: {item.scanner3Resolution}</div>
                             )}
 
                           </div>

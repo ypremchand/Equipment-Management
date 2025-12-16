@@ -31,6 +31,8 @@ namespace backend_app.Controllers
             if (n.Contains("desktop")) return "desktop";
             if (n.Contains("printer")) return "printer";
             if (n.Contains("scanner1")) return "scanner1";
+            if (n.Contains("scanner2")) return "scanner2";
+            if (n.Contains("scanner3")) return "scanner3";
 
             return n;
         }
@@ -50,6 +52,8 @@ namespace backend_app.Controllers
             var desktops = await _context.Desktops.ToListAsync();
             var printers = await _context.Printers.ToListAsync();
             var scanner1 = await _context.Scanner1.ToListAsync();
+            var scanner2 = await _context.Scanner2.ToListAsync();
+            var scanner3 = await _context.Scanner3.ToListAsync();
 
             // Load damaged laptop IDs once
             var damagedLaptops = await _context.DamagedAssets
@@ -65,6 +69,7 @@ namespace backend_app.Controllers
                 int assigned = 0;
 
                 if (type == "laptop")
+
                 {
                     total = laptops.Count(x =>
                         (x.AssetId == a.Id || x.AssetId == null) &&
@@ -171,6 +176,45 @@ namespace backend_app.Controllers
                     );
                 }
 
+
+                else if (type == "scanner2")
+                {
+                    var damaged = _context.DamagedAssets
+                        .Where(s2 => s2.AssetType.ToLower() == "scanner2")
+                        .Select(s2 => s2.AssetTypeItemId)
+                        .ToList();
+
+                    total = scanner2.Count(x =>
+                        (x.AssetId == a.Id || x.AssetId == null) &&
+                        !damaged.Contains(x.Id)
+                    );
+
+                    assigned = scanner2.Count(x =>
+                        (x.AssetId == a.Id || x.AssetId == null) &&
+                        x.IsAssigned &&
+                        !damaged.Contains(x.Id)
+                    );
+                }
+
+
+                else if (type == "scanner3")
+                {
+                    var damaged = _context.DamagedAssets
+                        .Where(s3 => s3.AssetType.ToLower() == "scanner3")
+                        .Select(s3 => s3.AssetTypeItemId)
+                        .ToList();
+
+                    total = scanner3.Count(x =>
+                        (x.AssetId == a.Id || x.AssetId == null) &&
+                        !damaged.Contains(x.Id)
+                    );
+
+                    assigned = scanner3.Count(x =>
+                        (x.AssetId == a.Id || x.AssetId == null) &&
+                        x.IsAssigned &&
+                        !damaged.Contains(x.Id)
+                    );
+                }
 
                 else
                 {

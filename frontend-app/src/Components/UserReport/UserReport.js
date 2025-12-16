@@ -51,19 +51,39 @@ function UserReport() {
   // ===========================
   // 📌 DOWNLOAD PDF
   // ===========================
-  const downloadPDF = async () => {
-    const element = reportRef.current;
+ const downloadPDF = async () => {
+  const element = reportRef.current;
 
-    const canvas = await html2canvas(element, { scale: 2 });
-    const imgData = canvas.toDataURL("image/png");
+  // ✅ REMOVE SCROLL LIMITS TEMPORARILY
+  const scrollBoxes = element.querySelectorAll(".asset-scroll-box");
+  scrollBoxes.forEach(box => {
+    box.style.maxHeight = "none";
+    box.style.overflow = "visible";
+  });
 
-    const pdf = new jsPDF("p", "mm", "a4");
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+  const canvas = await html2canvas(element, {
+    scale: 2,
+    useCORS: true,
+    windowWidth: element.scrollWidth,
+    windowHeight: element.scrollHeight
+  });
 
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-    pdf.save(`UserReport_${userData.name}.pdf`);
-  };
+  const imgData = canvas.toDataURL("image/png");
+
+  const pdf = new jsPDF("p", "mm", "a4");
+  const pdfWidth = pdf.internal.pageSize.getWidth();
+  const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+  pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+  pdf.save(`UserReport_${userData.name}.pdf`);
+
+  // ✅ RESTORE SCROLL AFTER PDF
+  scrollBoxes.forEach(box => {
+    box.style.maxHeight = "200px";
+    box.style.overflowY = "auto";
+  });
+};
+
 
   if (loading) return <div>Loading...</div>;
   if (!userData) return <div>No report found</div>;
@@ -153,8 +173,12 @@ function UserReport() {
                               {item.storage && <li>Storage: {item.storage}</li>}
                               {item.ram && <li>RAM: {item.ram}</li>}
                               {item.operatingSystem && <li>OS: {item.operatingSystem}</li>}
-                              {item.scanner1Type && <li>Scanner Type: {item.scanner1Type}</li>}
-                              {item.scanner1Resolution && <li>Scanner Res: {item.scanner1Resolution}</li>}
+                              {item.scanner1Type && <li>Scanner1 Type: {item.scanner1Type}</li>}
+                              {item.scanner1Resolution && <li>Scanner1 Res: {item.scanner1Resolution}</li>}
+                              {item.scanner2Type && <li>Scanner2 Type: {item.scanner2Type}</li>}
+                              {item.scanner2Resolution && <li>Scanner2 Res: {item.scanner2Resolution}</li>}
+                              {item.scanner3Type && <li>Scanner3 Type: {item.scanner3Type}</li>}
+                              {item.scanner3Resolution && <li>Scanner3 Res: {item.scanner3Resolution}</li>}
                             </ul>
                           </div>
                         ))}

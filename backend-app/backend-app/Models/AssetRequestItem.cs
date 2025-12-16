@@ -39,6 +39,14 @@ public class AssetRequestItem
     public string? Scanner1Type { get; set; }
     public string? Scanner1Resolution { get; set; }
 
+    // ⭐ Scanner2 fields (Required)
+    public string? Scanner2Type { get; set; }
+    public string? Scanner2Resolution { get; set; }
+
+    // ⭐ Scanner3 fields (Required)
+    public string? Scanner3Type { get; set; }
+    public string? Scanner3Resolution { get; set; }
+
     public ICollection<AssignedAsset> AssignedAssets { get; set; } = new List<AssignedAsset>();
     public string? PartialReason { get; set; }
 }

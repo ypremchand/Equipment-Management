@@ -38,6 +38,14 @@ function Contact() {
       //Scanner1
       scanner1Type: "",
       scanner1Resolution: "",
+
+      //Scanner2
+      scanner2Type: "",
+      scanner2Resolution: "",
+
+      //Scanner3
+      scanner3Type: "",
+      scanner3Resolution: "",
     }
   ]);
 
@@ -77,6 +85,10 @@ function Contact() {
     Printers: ["printerType", "paperSize", "dpi"],
     Scanner1: ["scanner1Type", "scanner1Resolution"],
     "Scanner1(DOCS Scanner)": ["scanner1Type", "scanner1Resolution"],  // ⭐ Needed because asset name has brackets
+    Scanner2: ["scanner2Type", "scanner2Resolution"],
+    "Scanner2(ICR Scanner)": ["scanner2Type", "scanner2Resolution"],
+    Scanner3: ["scanner3Type", "scanner3Resolution"],
+    "Scanner3(OMR Scanner)": ["scanner3Type", "scanner3Resolution"],
     default: []
   };
 
@@ -88,80 +100,135 @@ function Contact() {
   // API ENDPOINT MAPPER
   // ============================================================
 
- const categoryEndpoint = (assetName) => {
-  if (!assetName) return null;
 
-  const lower = assetName.toLowerCase();
+  const categoryEndpoint = (assetName) => {
+    if (!assetName) return null;
 
-  // ⭐ Correct Scanner1 endpoint
-  if (lower.includes("scanner1"))
-    return "http://localhost:5083/api/asset-items/available?type=scanner1";
+    const lower = assetName.toLowerCase();
 
-  // Default endpoints
-  return `http://localhost:5083/api/${lower}`;
-};
+    if (lower.includes("scanner1"))
+      return "http://localhost:5083/api/asset-items/available?type=scanner1";
 
+    if (lower.includes("scanner2"))
+      return "http://localhost:5083/api/asset-items/available?type=scanner2";
+
+    if (lower.includes("scanner3"))
+      return "http://localhost:5083/api/asset-items/available?type=scanner3";
+
+    // default (laptop, mobile, tablet, printer, desktop)
+    return `http://localhost:5083/api/${lower}`;
+  };
 
   // Load category items for dropdowns
   const loadCategoryItems = useCallback(async (assetName) => {
-  if (!assetName) return [];
+    if (!assetName) return [];
 
-  const key = assetName.toLowerCase().includes("scanner1")
-    ? "scanner1"
-    : assetName.toLowerCase();
+    let key = assetName.toLowerCase();
 
-  if (categoryItemsCache.current[key]) 
-    return categoryItemsCache.current[key];
+    if (key.includes("scanner1")) key = "scanner1";
+    if (key.includes("scanner2")) key = "scanner2";
+    if (key.includes("scanner3")) key = "scanner3";
 
-  const url = categoryEndpoint(assetName);
-  if (!url) return [];
+    if (categoryItemsCache.current[key])
+      return categoryItemsCache.current[key];
 
-  try {
-    const res = await axios.get(url);
-    const items = res.data?.data ?? res.data ?? [];
-    categoryItemsCache.current[key] = items;
-    return items;
-  } catch (err) {
-    console.error("Error loading category items:", err);
-    return [];
-  }
-}, []);
+    const url = categoryEndpoint(assetName);
+    if (!url) return [];
+
+    try {
+      const res = await axios.get(url);
+      const items = res.data?.data ?? res.data ?? [];
+      categoryItemsCache.current[key] = items;
+      return items;
+    } catch (err) {
+      console.error("Error loading category items:", err);
+      return [];
+    }
+  }, []);
 
 
   // Extract dropdown values for a field
   const getOptionsFor = (assetName, field) => {
     if (!assetName) return [];
 
-    // Normalize: "Scanner1(DOCS Scanner)" → "scanner1"
-    const key = assetName.toLowerCase().includes("scanner1")
-      ? "scanner1"
-      : assetName.toLowerCase();
+    let key = assetName.toLowerCase();
+    if (key.includes("scanner1")) key = "scanner1";
+    if (key.includes("scanner2")) key = "scanner2";
+    if (key.includes("scanner3")) key = "scanner3";
 
     const items = categoryItemsCache.current[key] ?? [];
 
-    // ⭐ Scanner1 TYPE dropdown (from DB: Scanner1Type)
+    // ============================
+    // Scanner1 dropdowns
+    // ============================
     if (field === "scanner1Type") {
       return [
         ...new Set(
           items
-            .map((i) => i.type || i.scanner1Type) // backend returns "Type"
+            .map((i) => i.scanner1Type || i.type)
             .filter(Boolean)
         ),
       ];
     }
 
-    // ⭐ Scanner1 RESOLUTION dropdown (from DB: Scanner1Resolution)
     if (field === "scanner1Resolution") {
       return [
         ...new Set(
           items
-            .map((i) => i.resolution || i.scanner1Resolution) // backend returns "Resolution"
+            .map((i) => i.scanner1Resolution || i.resolution)
             .filter(Boolean)
         ),
       ];
     }
 
-    // ⭐ Default behavior for all other fields
+    // ============================
+    // Scanner2 dropdowns ✅ NEW
+    // ============================
+    if (field === "scanner2Type") {
+      return [
+        ...new Set(
+          items
+            .map((i) => i.scanner2Type || i.type)
+            .filter(Boolean)
+        ),
+      ];
+    }
+
+    if (field === "scanner2Resolution") {
+      return [
+        ...new Set(
+          items
+            .map((i) => i.scanner2Resolution || i.resolution)
+            .filter(Boolean)
+        ),
+      ];
+    }
+
+    // ============================
+    // Scanner3 dropdowns ✅ NEW
+    // ============================
+    if (field === "scanner3Type") {
+      return [
+        ...new Set(
+          items
+            .map((i) => i.scanner3Type || i.type)
+            .filter(Boolean)
+        ),
+      ];
+    }
+
+    if (field === "scanner3Resolution") {
+      return [
+        ...new Set(
+          items
+            .map((i) => i.scanner3Resolution || i.resolution)
+            .filter(Boolean)
+        ),
+      ];
+    }
+    // ============================
+    // Default behavior
+    // ============================
     return [...new Set(items.map((i) => i[field]).filter(Boolean))];
   };
 
@@ -199,6 +266,10 @@ function Contact() {
           dpi: "",
           scanner1Type: "",
           Scanner1Resolution: "",
+          scanner2Type: "",
+          Scanner2Resolution: "",
+          scanner3Type: "",
+          Scanner3Resolution: "",
         }
       ]);
 
@@ -308,6 +379,8 @@ function Contact() {
           dpi: item.dpi ?? "",
           scanner1Type: item.scanner1Type ?? "",
           scanner1Resolution: item.scanner1Resolution ?? "",
+          scanner2Type: item.scanner2Type ?? "",
+          scanner2Resolution: item.scanner2Resolution ?? "",
         };
       });
 
@@ -350,6 +423,10 @@ function Contact() {
         dpi: "",
         scanner1Type: "",
         scanner1Resolution: "",
+        scanner2Type: "",
+        scanner2Resolution: "",
+        scanner3Type: "",
+        scanner3Resolution: "",
       };
       return updated;
     });
@@ -411,6 +488,10 @@ function Contact() {
         dpi: "",
         scanner1Type: "",
         scanner1Resolution: "",
+        scanner2Type: "",
+        scanner2Resolution: "",
+        scanner3Type: "",
+        scanner3Resolution: "",
       }
     ]);
   };
@@ -449,6 +530,10 @@ function Contact() {
         dpi: r.dpi,
         scanner1Type: r.scanner1Type,
         scanner1Resolution: r.scanner1Resolution,
+        scanner2Type: r.scanner2Type,
+        scanner2Resolution: r.scanner2Resolution,
+        scanner3Type: r.scanner3Type,
+        scanner3Resolution: r.scanner3Resolution,
         requestedQuantity: Number(r.requestedQuantity || 0),
         availableQuantity: Number(r.quantity || 0)
       })),
@@ -764,59 +849,61 @@ function Contact() {
                         </div>
                       )}
 
-                      
-{/* Printer Fields */}
 
-{/* Printer Type Dropdown */}
-{shouldShowField(req.assetName, "printerType") && (
-  <div className="col-6">
-    <label className="form-label small">Printer Type</label>
-    <select
-      className="form-select"
-      value={req.printerType}
-      onChange={(e) => handleSpecChange(index, "printerType", e.target.value)}
-    >
-      <option value="">Any</option>
-      {getOptionsFor(req.assetName, "printerType").map((opt, i) => (
-        <option key={i} value={opt}>{opt}</option>
-      ))}
-    </select>
-  </div>
-)}
+                      {/* Printer Fields */}
 
-{/* Paper Size Dropdown */}
-{shouldShowField(req.assetName, "paperSize") && (
-  <div className="col-6">
-    <label className="form-label small">Paper Size</label>
-    <select
-      className="form-select"
-      value={req.paperSize}
-      onChange={(e) => handleSpecChange(index, "paperSize", e.target.value)}
-    >
-      <option value="">Any</option>
-      {getOptionsFor(req.assetName, "paperSize").map((opt, i) => (
-        <option key={i} value={opt}>{opt}</option>
-      ))}
-    </select>
-  </div>
-)}
+                      {/* Printer Type Dropdown */}
+                      {shouldShowField(req.assetName, "printerType") && (
+                        <div className="col-6">
+                          <label className="form-label small">Printer Type</label>
+                          <select
+                            className="form-select"
+                            value={req.printerType}
+                            onChange={(e) => handleSpecChange(index, "printerType", e.target.value)}
+                          >
+                            <option value="">Any</option>
+                            {getOptionsFor(req.assetName, "printerType").map((opt, i) => (
+                              <option key={i} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
 
-{/* DPI Dropdown */}
-{shouldShowField(req.assetName, "dpi") && (
-  <div className="col-6">
-    <label className="form-label small">DPI</label>
-    <select
-      className="form-select"
-      value={req.dpi}
-      onChange={(e) => handleSpecChange(index, "dpi", e.target.value)}
-    >
-      <option value="">Any</option>
-      {getOptionsFor(req.assetName, "dpi").map((opt, i) => (
-        <option key={i} value={opt}>{opt}</option>
-      ))}
-    </select>
-  </div>
-)}
+                      {/* Paper Size Dropdown */}
+                      {shouldShowField(req.assetName, "paperSize") && (
+                        <div className="col-6">
+                          <label className="form-label small">Paper Size</label>
+                          <select
+                            className="form-select"
+                            value={req.paperSize}
+                            onChange={(e) => handleSpecChange(index, "paperSize", e.target.value)}
+                          >
+                            <option value="">Any</option>
+                            {getOptionsFor(req.assetName, "paperSize").map((opt, i) => (
+                              <option key={i} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* DPI Dropdown */}
+                      {shouldShowField(req.assetName, "dpi") && (
+                        <div className="col-6">
+                          <label className="form-label small">DPI</label>
+                          <select
+                            className="form-select"
+                            value={req.dpi}
+                            onChange={(e) => handleSpecChange(index, "dpi", e.target.value)}
+                          >
+                            <option value="">Any</option>
+                            {getOptionsFor(req.assetName, "dpi").map((opt, i) => (
+                              <option key={i} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Scanner1 */}
 
                       {/* Scanner1 TYPE (Dropdown) */}
                       {shouldShowField(normalizeAssetName(req.assetName), "scanner1Type") && (
@@ -854,6 +941,83 @@ function Contact() {
                         </div>
                       )}
 
+
+                      {/* Scanner2 */}
+
+                      {/* Scanner2 TYPE (Dropdown) */}
+                      {shouldShowField(normalizeAssetName(req.assetName), "scanner2Type") && (
+                        <div className="col-6">
+                          <label className="form-label small">Scanner2 Type</label>
+                          <select
+                            className="form-select"
+                            value={req.scanner2Type}
+                            onChange={(e) => handleSpecChange(index, "scanner2Type", e.target.value)}
+                          >
+                            <option value="">Any</option>
+                            {getOptionsFor(req.assetName, "scanner2Type").map((opt, i) => (
+                              <option key={i} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Scanner2 RESOLUTION (Dropdown) */}
+                      {shouldShowField(normalizeAssetName(req.assetName), "scanner2Resolution") && (
+                        <div className="col-6">
+                          <label className="form-label small">Scanner2 Resolution</label>
+                          <select
+                            className="form-select"
+                            value={req.scanner2Resolution}
+                            onChange={(e) =>
+                              handleSpecChange(index, "scanner2Resolution", e.target.value)
+                            }
+                          >
+                            <option value="">Any</option>
+                            {getOptionsFor(req.assetName, "scanner2Resolution").map((opt, i) => (
+                              <option key={i} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+
+                      {/* Scanner3 */}
+
+                      {/* Scanner3 TYPE (Dropdown) */}
+                      {shouldShowField(normalizeAssetName(req.assetName), "scanner3Type") && (
+                        <div className="col-6">
+                          <label className="form-label small">Scanner3 Type</label>
+                          <select
+                            className="form-select"
+                            value={req.scanner3Type}
+                            onChange={(e) => handleSpecChange(index, "scanner3Type", e.target.value)}
+                          >
+                            <option value="">Any</option>
+                            {getOptionsFor(req.assetName, "scanner3Type").map((opt, i) => (
+                              <option key={i} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Scanner3 RESOLUTION (Dropdown) */}
+                      {shouldShowField(normalizeAssetName(req.assetName), "scanner3Resolution") && (
+                        <div className="col-6">
+                          <label className="form-label small">Scanner3 Resolution</label>
+                          <select
+                            className="form-select"
+                            value={req.scanner3Resolution}
+                            onChange={(e) =>
+                              handleSpecChange(index, "scanner3Resolution", e.target.value)
+                            }
+                          >
+                            <option value="">Any</option>
+                            {getOptionsFor(req.assetName, "scanner3Resolution").map((opt, i) => (
+                              <option key={i} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                     </div>
                   </div>
 

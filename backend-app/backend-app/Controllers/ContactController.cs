@@ -27,6 +27,8 @@ namespace backend_app.Controllers
             if (assetName.Contains("desktop")) return "Desktop";
             if (assetName.Contains("printer")) return "Printer";
             if (assetName.Contains("scanner1")) return "Scanner1";
+            if (assetName.Contains("scanner2")) return "Scanner2";
+            if (assetName.Contains("scanner3")) return "Scanner3";
 
             return "Unknown";
         }
@@ -89,6 +91,31 @@ namespace backend_app.Controllers
                 item.Dpi = null;
             }
             else if (category == "Scanner1")
+            {
+                item.Brand = null;
+                item.Processor = null;
+                item.Storage = null;
+                item.Ram = null;
+                item.OperatingSystem = null;
+                item.NetworkType = null;
+                item.SimType = null;
+                item.SimSupport = null;
+                item.PrinterType = null;
+            }
+
+            else if (category == "Scanner2")
+            {
+                item.Brand = null;
+                item.Processor = null;
+                item.Storage = null;
+                item.Ram = null;
+                item.OperatingSystem = null;
+                item.NetworkType = null;
+                item.SimType = null;
+                item.SimSupport = null;
+                item.PrinterType = null;
+            }
+            else if (category == "Scanner3")
             {
                 item.Brand = null;
                 item.Processor = null;
@@ -164,6 +191,10 @@ namespace backend_app.Controllers
                         Dpi = item.Dpi,
                         Scanner1Type = item.Scanner1Type,
                         Scanner1Resolution=item.Scanner1Resolution,
+                        Scanner2Type = item.Scanner2Type,
+                        Scanner2Resolution = item.Scanner2Resolution,
+                        Scanner3Type = item.Scanner3Type,
+                        Scanner3Resolution = item.Scanner3Resolution,
                     });
                 }
             }
@@ -235,6 +266,10 @@ namespace backend_app.Controllers
                         Dpi = item.Dpi,
                         Scanner1Type = item.Scanner1Type,
                         Scanner1Resolution = item.Scanner1Resolution,
+                        Scanner2Type = item.Scanner2Type,
+                        Scanner2Resolution = item.Scanner2Resolution,
+                        Scanner3Type = item.Scanner3Type,
+                        Scanner3Resolution = item.Scanner3Resolution,
                     });
                 }
             }
@@ -270,6 +305,10 @@ namespace backend_app.Controllers
             public string? SimSupport { get; set; }
             public string? Scanner1Type { get; set; }
             public string? Scanner1Resolution { get; set; }
+            public string? Scanner2Type { get; set; }
+            public string? Scanner2Resolution { get; set; }
+            public string? Scanner3Type { get; set; }
+            public string? Scanner3Resolution { get; set; }
             public string? PrinterType { get; set; }
             public string? PaperSize { get; set; }
             public string? Dpi { get; set; }

@@ -93,6 +93,8 @@ function AssignedItems() {
   const desktops = groupBy("desktop");
   const printers = groupBy("printer");
   const scanner1 = groupBy("scanner1");
+   const scanner2 = groupBy("scanner2");
+   const scanner3 = groupBy("scanner3");
 
   // DO NOT FILTER TABS — SHOW ALL ALWAYS
   const tabs = [
@@ -101,7 +103,9 @@ function AssignedItems() {
     { key: "tablet", label: "Tablets", data: tablets },
     { key: "desktop", label: "Desktops", data: desktops },
     { key: "printer", label: "Printers", data: printers },
-    { key: "scanner1", label: "Scanner1", data: scanner1 }
+    { key: "scanner1", label: "Scanner1", data: scanner1 },
+    { key: "scanner2", label: "Scanner2", data: scanner2 },
+     { key: "scanner3", label: "Scanner3", data: scanner3 }
   ];
 
   const firstTab = tabs[0].key;
@@ -142,8 +146,12 @@ function AssignedItems() {
       PrinterType: item.printerType,
       PaperSize: item.paperSize,
       Dpi: item.dpi,
-      ScannerType: item.scanner1Type,
-      ScannerResolution: item.scanner1Resolution,
+      Scanner1Type: item.scanner1Type,
+      Scanner1Resolution: item.scanner1Resolution,
+       Scanner2Type: item.scanner2Type,
+      Scanner2Resolution: item.scanner2Resolution,
+       Scanner3Type: item.scanner3Type,
+      Scanner3Resolution: item.scanner3Resolution,
     };
 
     const filterText = Object.entries(filters)
@@ -247,31 +255,56 @@ function AssignedItems() {
                 <tbody>
                   {t.data.map((a) => (
                     <tr key={a.id}>
+                      {/* BRAND */}
                       <td>
                         {a.assetType === "scanner1"
                           ? a.detail?.scanner1Brand
+                          : a.assetType === "scanner2"
+                          ? a.detail?.scanner2Brand
+                          : a.assetType === "scanner3"
+                          ? a.detail?.scanner3Brand
                           : a.detail?.brand}
                       </td>
 
+                      {/* MODEL + DETAILS */}
                       <td>
                         {a.assetType === "scanner1" ? (
                           <>
                             {a.detail?.scanner1Model}
-                            <div style={{ fontSize: "12px", color: "#666" }}>
-                              <strong>Type:</strong> {a.detail?.scanner1Type}{" "}
-                              <br />
-                              <strong>Resolution:</strong>{" "}
-                              {a.detail?.scanner1Resolution}
-                            </div>
+                            {/* <div className="text-muted small">
+                              Type: {a.detail?.scanner1Type}<br />
+                              Resolution: {a.detail?.scanner1Resolution}
+                            </div> */}
+                          </>
+                        ) : a.assetType === "scanner2" ? (
+                          <>
+                            {a.detail?.scanner2Model}
+                            {/* <div className="text-muted small">
+                              Type: {a.detail?.scanner2Type}<br />
+                              Resolution: {a.detail?.scanner2Resolution}
+                            </div> */}
+                          </>
+                        ) : a.assetType === "scanner3" ? (
+                          <>
+                            {a.detail?.scanner3Model}
+                            {/* <div className="text-muted small">
+                              Type: {a.detail?.scanner3Type}<br />
+                              Resolution: {a.detail?.scanner3Resolution}
+                            </div> */}
                           </>
                         ) : (
                           a.detail?.model || a.detail?.modelNumber
                         )}
                       </td>
 
+                      {/* ASSET TAG */}
                       <td>
                         {a.assetType === "scanner1"
                           ? a.detail?.scanner1AssetTag
+                          : a.assetType === "scanner2"
+                          ? a.detail?.scanner2AssetTag
+                          : a.assetType === "scanner3"
+                          ? a.detail?.scanner3AssetTag
                           : a.detail?.assetTag}
                       </td>
 

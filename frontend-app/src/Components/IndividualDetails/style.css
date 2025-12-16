@@ -4,11 +4,6 @@
 .asset-scroll-box {
   max-height: 400px;     /* adjust if needed */
   overflow-y: auto;
-  overflow-x: auto;
   border: 1px solid #ccc;
   padding: 5px;
-}
-
-.asset-scroll-box table {
-  min-width: 1200px; /* ensures table scrolls horizontally */
 }

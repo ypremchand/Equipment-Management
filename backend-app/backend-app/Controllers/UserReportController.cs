@@ -60,7 +60,12 @@ namespace backend_app.Controllers
                                 i.PaperSize,
                                 i.Dpi,
                                 i.Scanner1Type,
-                                i.Scanner1Resolution
+                                i.Scanner1Resolution,
+                                i.Scanner2Type,
+                                i.Scanner2Resolution,
+                                i.Scanner3Type,
+                                i.Scanner3Resolution
+
                             })
                         })
                         .OrderByDescending(r => r.Id)

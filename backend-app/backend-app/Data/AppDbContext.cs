@@ -18,6 +18,9 @@ namespace backend_app.Data
         public DbSet<Desktop> Desktops { get; set; }
         public DbSet<Printer> Printers { get; set; }
         public DbSet<Scanner1> Scanner1 { get; set; }
+        public DbSet<Scanner2> Scanner2 { get; set; }
+        public DbSet<Scanner3> Scanner3 { get; set; }
+
 
         public DbSet<DamagedAsset> DamagedAssets { get; set; }
         public DbSet<RepairHistory> RepairHistories { get; set; }
@@ -29,6 +32,8 @@ namespace backend_app.Data
 
         public DbSet<AdminDeleteHistory> AdminDeleteHistories { get; set; }
         public DbSet<UserDeleteHistory> UserDeleteHistories { get; set; }
+        public DbSet<AssetHistory> AssetHistories { get; set; }
+
 
     }
 }
