@@ -9,6 +9,7 @@ import ReturnAssets from "./Components/ReturnAssets/ReturnAssets";
 import AssignedItems from "./Components/AssignedItems/AssignedItems";
 import Requests from "./Components/Requests/Requests";
 import AdminPanel from "./Components/AdminPanel/AdminPanel";
+import PurchaseOrder from "./Components/PurchaseOrder/PurchaseOrder";
 import Inventory from "./Components/Inventory/Inventory";
 import Laptops from "./Components/Laptops/Laptops";
 import Mobiles from "./Components/Mobiles/Mobiles";
@@ -18,6 +19,7 @@ import Printers from "./Components/Printers/Printers";
 import Scanner1 from "./Components/Scanner1/Scanner1";
 import Scanner2 from "./Components/Scanner2/Scanner2";
 import Scanner3 from "./Components/Scanner3/Scanner3";
+import Barcode from "./Components/BarCode/Barcode";
 import DamagedAssets from "./Components/DamagedAssets/DamagedAssets";
 import ContactedUs from "./Components/ContactedUs/ContactedUs";
 import AdminDeleteHistory from "./Components/AdminDeleteHistory/AdminDeleteHistory";
@@ -73,6 +75,10 @@ function App() {
               element={user?.email?.includes("@admin") ? <AdminPanel /> : <Navigate to="/" />}
             />
             <Route
+              path="/purchase-order"
+              element={user?.email?.includes("@admin") ? <PurchaseOrder /> : <Navigate to="/" />}
+            />
+            <Route
               path="/inventory"
               element={user?.email?.includes("@admin") ? <Inventory /> : <Navigate to="/" />}
             />
@@ -111,6 +117,10 @@ function App() {
             <Route
               path="/scanner3"
               element={user?.email?.includes("@admin") ? <Scanner3 /> : <Navigate to="/" />}
+            />
+             <Route
+              path="/barcodes"
+              element={user?.email?.includes("@admin") ? <Barcode /> : <Navigate to="/" />}
             />
             <Route
               path="/requests"

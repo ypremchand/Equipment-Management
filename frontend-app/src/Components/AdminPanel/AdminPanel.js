@@ -8,20 +8,21 @@ function AdminPanel() {
   const [asset, setAsset] = useState("");
   // const [assetQuantity, setAssetQuantity] = useState(""); // still exists, used internally
   const [assets, setAssets] = useState([]);
+  const [assetPreCode, setAssetPreCode] = useState("");
   const [loadingAssets, setLoadingAssets] = useState(true);
   const [editingAssetId, setEditingAssetId] = useState(null);
-
   const [location, setLocation] = useState("");
   const [locations, setLocations] = useState([]);
   const [loadingLocations, setLoadingLocations] = useState(true);
   const [editingLocationId, setEditingLocationId] = useState(null);
+  const [preCodeError, setPreCodeError] = useState("");
+  const [isPreCodeManual, setIsPreCodeManual] = useState(false);
 
   const ASSETS_API = "http://localhost:5083/api/assets";
   const LOCATIONS_API = "http://localhost:5083/api/locations";
 
-
   // GET LOGGED-IN ADMIN
-const admin = JSON.parse(localStorage.getItem("user") || "{}");
+  const admin = JSON.parse(localStorage.getItem("user") || "{}");
 
   const fetchAssets = async () => {
     setLoadingAssets(true);
@@ -53,81 +54,117 @@ const admin = JSON.parse(localStorage.getItem("user") || "{}");
   }, []);
 
 
+  const getAssetRoute = (name) => {
+    if (!name) return "/";
 
-  const assetRouteMap = {
-    laptops: "/laptops",
-    mobiles: "/mobiles",
-    tablets: "/tablets",
-    desktops: "/desktops",
-    printers: "/printers",
-    "scanner1(docs scanner)": "/scanner1",
-    "scanner2(icr scanner)": "/scanner2",
-    "scanner3(omr scanner)": "/scanner3",
+    const slug = name.toLowerCase();
+
+    if (slug.includes("laptop")) return "/laptops";
+    if (slug.includes("mobile")) return "/mobiles";
+    if (slug.includes("tablet")) return "/tablets";
+    if (slug.includes("desktop")) return "/desktops";
+    if (slug.includes("printer")) return "/printers";
+    if (slug.includes("scanner1")) return "/scanner1";
+    if (slug.includes("scanner2")) return "/scanner2";
+    if (slug.includes("scanner3")) return "/scanner3";
+    if (slug.includes("barcode")) return "/barcodes";
+    return "/";
   };
-
 
   const handleAssetSubmit = async (e) => {
     e.preventDefault();
-    if (!asset.trim()) return alert("Please enter an asset name");
 
+    if (!asset.trim()) {
+      setPreCodeError("Asset name is required.");
+      return;
+    }
     try {
       if (editingAssetId) {
         await axios.put(`${ASSETS_API}/${editingAssetId}`, {
           id: editingAssetId,
           name: asset,
+          preCode: assetPreCode,
         });
-        alert("Asset updated successfully!");
+        alert("✅ Asset updated successfully!");
       } else {
-        // ✅ Prevent duplicate assets (case-insensitive)
-        const exists = assets.some(a => a.name.toLowerCase() === asset.toLowerCase());
-        if (exists) {
-          alert("Asset already exists!");
-          return;
-        }
-
-        await axios.post(ASSETS_API, { name: asset });
-        alert("Asset added successfully!");
-
-        // ✅ Notify Navbar to refresh Inventory
+        await axios.post(ASSETS_API, {
+          name: asset,
+          preCode: assetPreCode,
+        });
+        alert("✅ Asset added successfully!");
         window.dispatchEvent(new Event("inventoryUpdated"));
-
-
       }
+
+      // reset
       setAsset("");
+      setAssetPreCode("");
+      setPreCodeError("");
       setEditingAssetId(null);
+      setIsPreCodeManual(false);
       fetchAssets();
+
     } catch (error) {
-      console.error("Error saving asset:", error);
+      if (error.response?.status === 409) {
+        // 🔥 SHOW BELOW INPUT (NOT ALERT)
+        setPreCodeError(error.response.data.message);
+      } else {
+        alert("Failed to save asset.");
+        console.error(error);
+      }
     }
   };
 
-const handleDeleteAsset = async (id) => {
-  const reason = prompt("Please enter the reason for deleting this asset:");
+  const generatePreCode = (name) => {
+    if (!name) return "";
 
-  if (!reason || reason.trim() === "") {
-    alert("Deletion cancelled. Reason is required.");
-    return;
-  }
+    const words = name
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
 
-  if (!window.confirm("Are you sure you want to delete this asset?")) return;
+    // 1 Word
+    if (words.length === 1) {
+      return words[0].substring(0, 3).toUpperCase();
+    }
+    // 2 Words
+    if (words.length === 2) {
+      return (
+        words[0].substring(0, 2) +
+        words[1].substring(0, 1)
+      ).toUpperCase();
+    }
 
-  try {
-    await axios.delete(`${ASSETS_API}/${id}`, {
-  data: { 
-    reason,
-    adminName: admin?.name || "Unknown Admin"
-  }
-});
+    // 3 or more words
+    return words
+      .slice(0, 3)
+      .map(w => w[0])
+      .join("")
+      .toUpperCase();
+  };
 
 
-    fetchAssets();
-  } catch (err) {
-    console.error(err);
-    alert("Failed to delete asset");
-  }
-};
+  const handleDeleteAsset = async (id) => {
+    const reason = prompt("Please enter the reason for deleting this asset:");
 
+    if (!reason || reason.trim() === "") {
+      alert("Deletion cancelled. Reason is required.");
+      return;
+    }
+    if (!window.confirm("Are you sure you want to delete this asset?")) return;
+    try {
+      await axios.delete(`${ASSETS_API}/${id}`, {
+        data: {
+          reason,
+          adminName: admin?.name || "Unknown Admin"
+        }
+      });
 
+      fetchAssets();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete asset");
+    }
+  };
 
   const handleLocationSubmit = async (e) => {
     e.preventDefault();
@@ -139,10 +176,10 @@ const handleDeleteAsset = async (id) => {
           id: editingLocationId,
           name: location,
         });
-        alert("Location updated successfully!");
+        alert("✅ Location updated successfully!");
       } else {
         await axios.post(LOCATIONS_API, { name: location });
-        alert("Location added successfully!");
+        alert("✅ Location added successfully!");
       }
       setLocation("");
       setEditingLocationId(null);
@@ -152,33 +189,29 @@ const handleDeleteAsset = async (id) => {
     }
   };
 
-const handleDeleteLocation = async (id) => {
-  const reason = prompt("Please enter the reason for deleting this location:");
+  const handleDeleteLocation = async (id) => {
+    const reason = prompt("Please enter the reason for deleting this location:");
 
-  if (!reason || reason.trim() === "") {
-    alert("Deletion cancelled. Reason is required.");
-    return;
-  }
+    if (!reason || reason.trim() === "") {
+      alert("Deletion cancelled. Reason is required.");
+      return;
+    }
 
-  if (!window.confirm("Are you sure you want to delete this location?")) return;
+    if (!window.confirm("Are you sure you want to delete this location?")) return;
 
-  try {
-   await axios.delete(`${LOCATIONS_API}/${id}`, {
-  data: { 
-    reason,
-    adminName: admin?.name || "Unknown Admin"
-  }
-});
-
-
-    fetchLocations();
-  } catch (err) {
-    console.error(err);
-    alert("Failed to delete location");
-  }
-};
-
-
+    try {
+      await axios.delete(`${LOCATIONS_API}/${id}`, {
+        data: {
+          reason,
+          adminName: admin?.name || "Unknown Admin"
+        }
+      });
+      fetchLocations();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete location");
+    }
+  };
   return (
     <div className="admin-page container mt-4">
       <h3 className="text-center mb-4">Admin Panel</h3>
@@ -196,12 +229,38 @@ const handleDeleteLocation = async (id) => {
                 <input
                   type="text"
                   className="form-control"
-                  id="asset"
                   placeholder="Enter asset name..."
                   value={asset}
-                  onChange={(e) => setAsset(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setAsset(value);
+                    if (!isPreCodeManual) {
+                      setAssetPreCode(generatePreCode(value));
+                    }
+                    setPreCodeError("");
+                  }}
                 />
               </div>
+
+              <div className="mb-3">
+                <label className="form-label">Asset PreCode</label>
+                <input
+                  type="text"
+                  className={`form-control ${preCodeError ? "is-invalid" : ""}`}
+                  placeholder="Auto-generated PreCode"
+                  value={assetPreCode}
+                  onChange={(e) => {
+                    setAssetPreCode(e.target.value.toUpperCase());
+                    setIsPreCodeManual(true);
+                    setPreCodeError("");
+                  }}
+                />
+              </div>
+              {preCodeError && (
+                <div className="text-danger mt-1 fw-semibold">
+                  {preCodeError}
+                </div>
+              )}
 
               <button type="submit" className="btn btn-primary me-2">
                 {editingAssetId ? "Update" : "Add Asset"}
@@ -212,7 +271,10 @@ const handleDeleteLocation = async (id) => {
                   className="btn btn-secondary"
                   onClick={() => {
                     setAsset("");
+                    setAssetPreCode("");
+                    setPreCodeError("");
                     setEditingAssetId(null);
+                    setIsPreCodeManual(false);
                   }}
                 >
                   Cancel
@@ -241,31 +303,27 @@ const handleDeleteLocation = async (id) => {
                   <tr key={item.id}>
                     <td>{i + 1}</td>
                     <td>
-                      <Link
-                        to={assetRouteMap[item.name.toLowerCase()] || "/"}
-                        className="text-decoration-none"
-                      >
+                      <Link to={getAssetRoute(item.name)}>
                         {item.name}
                       </Link>
                     </td>
-
-
-
                     <td>{item.quantity}</td>
                     <td>
                       <button
                         className="btn btn-warning btn-sm me-2"
                         onClick={() => {
                           setAsset(item.name);
+                          setAssetPreCode(item.preCode || generatePreCode(item.name));
+                          setIsPreCodeManual(true);
+                          setPreCodeError("");
                           setEditingAssetId(item.id);
-                        }}
-                      >
+                        }}>
                         Edit
                       </button>
+
                       <button
                         className="btn btn-danger btn-sm"
-                        onClick={() => handleDeleteAsset(item.id)}
-                      >
+                        onClick={() => handleDeleteAsset(item.id)}>
                         Delete
                       </button>
                     </td>

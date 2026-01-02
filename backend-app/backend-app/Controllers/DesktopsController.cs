@@ -347,6 +347,47 @@ namespace backend_app.Controllers
             return NoContent();
         }
 
+        // ============================================================
+        // GET NEXT AVAILABLE DESKTOP ASSET TAG (from Purchase Orders)
+        // ============================================================
+        [HttpGet("next-asset-tag")]
+        public async Task<IActionResult> GetNextAvailableAssetTag()
+        {
+            // 1️⃣ Get Desktop asset
+            var desktopAsset = await _context.Assets
+                .FirstOrDefaultAsync(a => a.Name.ToLower() == "desktops");
+
+            if (desktopAsset == null)
+                return NotFound(new { message = "Desktop asset not found" });
+
+            // 2️⃣ All Desktop purchase tags ONLY
+            var purchasedDesktopTags = await _context.PurchaseOrderItems
+                .Where(p =>
+                    p.AssetId == desktopAsset.Id &&
+                    p.AssetTag != null
+                )
+                .Select(p => p.AssetTag)
+                .ToListAsync();
+
+            if (!purchasedDesktopTags.Any())
+                return NotFound(new { message = "No desktop purchase tags found" });
+
+            // 3️⃣ Tags already used by desktops
+            var usedTags = await _context.Desktops
+                .Select(l => l.AssetTag)
+                .Where(t => t != null)
+                .ToListAsync();
+
+            // 4️⃣ First unused DES tag
+            var nextTag = purchasedDesktopTags
+                .FirstOrDefault(tag => !usedTags.Contains(tag));
+
+            if (nextTag == null)
+                return NotFound(new { message = "No available desktop asset tags" });
+
+            return Ok(new { assetTag = nextTag });
+        }
+
         // =======================
         // CHECK DUPLICATE 
         // =======================

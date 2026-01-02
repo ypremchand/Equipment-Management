@@ -77,7 +77,7 @@ export default function Mobiles() {
 
     if (!form.brand.trim()) {
       newErrors.brand = "Brand is required";
-    }else if(form.brand.trim().length<2){
+    } else if (form.brand.trim().length < 2) {
       newErrors.brand = "Brand must be at least 2 characters";
     }
     if (!form.model.trim()) newErrors.model = "Model is required";
@@ -162,21 +162,6 @@ export default function Mobiles() {
     const { name, value } = e.target;
     setForm((p) => ({ ...p, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
-
-    if (name === "assetTag") {
-      if (!value.trim()) return setAssetError("");
-
-      try {
-        const res = await axios.get(`${API_URL}/check-duplicate`, {
-          params: { assetTag: value },
-        });
-        setAssetError(
-          res.data.exists ? "Asset number already exists" : ""
-        );
-      } catch (err) {
-        console.error("Asset check error", err);
-      }
-    }
   };
 
   const handleSubmit = async (e) => {
@@ -189,17 +174,27 @@ export default function Mobiles() {
     try {
       if (editingId) {
         await axios.put(`${API_URL}/${editingId}`, form);
-        alert("Mobile updated successfully");
+        alert("✅ Mobile updated successfully");
       } else {
         await axios.post(API_URL, form);
-        alert("Mobile added successfully");
+        alert("✅ Mobile added successfully");
       }
-
       resetForm();
       fetchMobiles(page);
     } catch (err) {
       console.error("Save error", err);
       alert(err.response?.data?.message || "Failed to save");
+    }
+  };
+  const fetchNextAssetTag = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/next-asset-tag`);
+      setForm((p) => ({
+        ...p,
+        assetTag: res.data.assetTag || ""
+      }));
+    } catch (err) {
+      alert("No available asset tags. Please create a purchase order.");
     }
   };
 
@@ -423,7 +418,11 @@ export default function Mobiles() {
         <div className="text-center mb-3">
           <button
             className="btn btn-success"
-            onClick={() => setShowForm(true)}
+            onClick={() => {
+              setShowForm(true);
+              fetchNextAssetTag();
+            }}
+
           >
             ➕ Add New Mobile
           </button>
@@ -462,11 +461,14 @@ export default function Mobiles() {
                   type={type}
                   name={name}
                   value={form[name]}
-                  onChange={handleChange}
-                  className={`form-control ${
-                    errors[name] ? "is-invalid" : ""
-                  } ${name === "assetTag" && assetError ? "is-invalid" : ""}`}
+                  onChange={name === "assetTag" ? undefined : handleChange}
+                  readOnly={name === "assetTag"}
+                  className={`form-control ${errors[name] ? "is-invalid" : ""
+                    } ${name === "assetTag" ? "bg-light" : ""}`}
+
                 />
+
+
 
                 {/* Field Errors */}
                 {errors[name] && (
@@ -476,10 +478,10 @@ export default function Mobiles() {
                 )}
 
                 {/* Asset Tag Duplicate Error */}
-                {name === "assetTag" && assetError && (
-                  <div className="invalid-feedback d-block">
-                    {assetError}
-                  </div>
+                {name === "assetTag" && (
+                  <small className="text-muted">
+                    Auto-generated from Purchase Orders
+                  </small>
                 )}
               </div>
             ))}
@@ -504,9 +506,8 @@ export default function Mobiles() {
                     damageReason: "",
                   }));
                 }}
-                className={`form-select ${
-                  errors.remarks ? "is-invalid" : ""
-                }`}
+                className={`form-select ${errors.remarks ? "is-invalid" : ""
+                  }`}
               >
                 <option value="">Select</option>
                 <option value="No">No</option>
@@ -530,9 +531,8 @@ export default function Mobiles() {
                   name="damageReason"
                   value={form.damageReason}
                   onChange={handleChange}
-                  className={`form-control ${
-                    errors.damageReason ? "is-invalid" : ""
-                  }`}
+                  className={`form-control ${errors.damageReason ? "is-invalid" : ""
+                    }`}
                 />
                 {errors.damageReason && (
                   <div className="invalid-feedback d-block">

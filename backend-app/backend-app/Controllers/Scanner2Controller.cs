@@ -340,6 +340,47 @@ namespace backend_app.Controllers
         }
 
         // ============================================================
+        // GET NEXT AVAILABLE SCANNER2 ASSET TAG (from Purchase Orders)
+        // ============================================================
+        [HttpGet("next-asset-tag")]
+        public async Task<IActionResult> GetNextAvailableScanner2AssetTag()
+        {
+            var scannerAsset = await _context.Assets
+                .FirstOrDefaultAsync(a => a.Name.ToLower().Contains("scanner2"));
+
+            if (scannerAsset == null)
+                return NotFound(new { message = "Scanner2 asset not found" });
+
+            // All Scanner1 purchase tags
+            var purchasedTags = await _context.PurchaseOrderItems
+                .Where(p =>
+                    p.AssetId == scannerAsset.Id &&
+                    p.AssetTag != null
+                )
+                .OrderBy(p => p.Id)
+                .Select(p => p.AssetTag)
+                .ToListAsync();
+
+            if (!purchasedTags.Any())
+                return NotFound(new { message = "No scanner2 purchase tags found" });
+
+            // Used tags
+            var usedTags = await _context.Scanner2
+                .Select(s => s.Scanner2AssetTag)
+                .Where(t => t != null)
+                .ToListAsync();
+
+            // First unused tag
+            var nextTag = purchasedTags.FirstOrDefault(t => !usedTags.Contains(t));
+
+            if (nextTag == null)
+                return NotFound(new { message = "No available scanner2 asset tags" });
+
+            return Ok(new { assetTag = nextTag });
+        }
+
+
+        // ============================================================
         // DUPLICATE CHECK
         // ============================================================
         [HttpGet("check-duplicate")]

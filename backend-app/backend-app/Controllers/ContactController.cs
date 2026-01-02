@@ -29,9 +29,11 @@ namespace backend_app.Controllers
             if (assetName.Contains("scanner1")) return "Scanner1";
             if (assetName.Contains("scanner2")) return "Scanner2";
             if (assetName.Contains("scanner3")) return "Scanner3";
+            if (assetName.Contains("barcode")) return "Barcode";
 
             return "Unknown";
         }
+
 
         // CLEAN SPECS BASED ON CATEGORY
         private void CleanSpecsByCategory(string category, AssetRequestItemDto item)
@@ -41,8 +43,17 @@ namespace backend_app.Controllers
                 item.NetworkType = null;
                 item.SimType = null;
                 item.SimSupport = null;
+
+
+                // ❌ scanners not allowed
                 item.Scanner1Type = null;
                 item.Scanner1Resolution = null;
+                item.Scanner2Type = null;
+                item.Scanner2Resolution = null;
+                item.Scanner3Type = null;
+                item.Scanner3Resolution = null;
+
+                // ❌ Printors not allowed
                 item.PrinterType = null;
                 item.PaperSize = null;
                 item.Dpi = null;
@@ -51,8 +62,15 @@ namespace backend_app.Controllers
             {
                 item.OperatingSystem = null;
                 item.SimSupport = null;
+
+
+                // ❌ scanners not allowed
                 item.Scanner1Type = null;
                 item.Scanner1Resolution = null;
+                item.Scanner2Type = null;
+                item.Scanner2Resolution = null;
+                item.Scanner3Type = null;
+                item.Scanner3Resolution = null;
                 item.PrinterType = null;
                 item.PaperSize = null;
                 item.Dpi = null;
@@ -60,8 +78,14 @@ namespace backend_app.Controllers
             else if (category == "Tablet")
             {
                 item.SimType = null;
+
+                // ❌ scanners not allowed
                 item.Scanner1Type = null;
                 item.Scanner1Resolution = null;
+                item.Scanner2Type = null;
+                item.Scanner2Resolution = null;
+                item.Scanner3Type = null;
+                item.Scanner3Resolution = null;
                 item.PrinterType = null;
                 item.PaperSize = null;
                 item.Dpi = null;
@@ -76,16 +100,28 @@ namespace backend_app.Controllers
                 item.NetworkType = null;
                 item.SimType = null;
                 item.SimSupport = null;
+
+                // ❌ scanners not allowed
                 item.Scanner1Type = null;
                 item.Scanner1Resolution = null;
+                item.Scanner2Type = null;
+                item.Scanner2Resolution = null;
+                item.Scanner3Type = null;
+                item.Scanner3Resolution = null;
             }
             else if (category == "Desktop")
             {
                 item.NetworkType = null;
                 item.SimType = null;
                 item.SimSupport = null;
+
+                // ❌ scanners not allowed
                 item.Scanner1Type = null;
                 item.Scanner1Resolution = null;
+                item.Scanner2Type = null;
+                item.Scanner2Resolution = null;
+                item.Scanner3Type = null;
+                item.Scanner3Resolution = null;
                 item.PrinterType = null;
                 item.PaperSize = null;
                 item.Dpi = null;
@@ -127,6 +163,37 @@ namespace backend_app.Controllers
                 item.SimSupport = null;
                 item.PrinterType = null;
             }
+
+            else if (category == "Barcode")
+            {
+                item.Brand = null;
+                item.Processor = null;
+                item.Storage = null;
+                item.Ram = null;
+                item.OperatingSystem = null;
+                item.NetworkType = null;
+                item.SimType = null;
+                item.SimSupport = null;
+
+                // ❌ scanners not allowed
+                item.Scanner1Type = null;
+                item.Scanner1Resolution = null;
+                item.Scanner2Type = null;
+                item.Scanner2Resolution = null;
+                item.Scanner3Type = null;
+                item.Scanner3Resolution = null;
+
+                // ❌ printer-only
+                item.PrinterType = null;
+                item.PaperSize = null;
+                item.Dpi = null;
+
+                // ✅ ONLY THESE ALLOWED
+                // item.Type
+                // item.Technology
+            }
+
+
         }
 
         // POST: CREATE NEW REQUEST
@@ -195,6 +262,9 @@ namespace backend_app.Controllers
                         Scanner2Resolution = item.Scanner2Resolution,
                         Scanner3Type = item.Scanner3Type,
                         Scanner3Resolution = item.Scanner3Resolution,
+                      Type=item.Type,
+                      Technology=item.Technology,
+
                     });
                 }
             }
@@ -270,6 +340,8 @@ namespace backend_app.Controllers
                         Scanner2Resolution = item.Scanner2Resolution,
                         Scanner3Type = item.Scanner3Type,
                         Scanner3Resolution = item.Scanner3Resolution,
+                        Type=item.Type,
+                        Technology=item.Technology,
                     });
                 }
             }
@@ -309,6 +381,8 @@ namespace backend_app.Controllers
             public string? Scanner2Resolution { get; set; }
             public string? Scanner3Type { get; set; }
             public string? Scanner3Resolution { get; set; }
+            public string? Type { get; set; }
+            public string? Technology { get; set; }
             public string? PrinterType { get; set; }
             public string? PaperSize { get; set; }
             public string? Dpi { get; set; }

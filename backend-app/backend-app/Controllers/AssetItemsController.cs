@@ -248,6 +248,35 @@ namespace backend_app.Controllers
 
                 return Ok(data);
             }
+            // ===========================
+            //        BARCODE SCANNERS
+            // ===========================
+            if (type == "barcode")
+            {
+                var data = await _context.Barcodes
+                    .Where(x => !x.IsAssigned && !damagedIds.Contains(x.Id))
+                    .Select(x => new
+                    {
+                        x.Id,
+                        x.Brand,
+                        x.Model,
+                        x.Type,
+                        x.Technology,
+                        x.AssetTag,
+                        x.PurchaseDate,
+                        x.Location,
+                        x.Remarks,
+                        x.IsAssigned,
+                        x.AssignedDate,
+                        x.AssetId
+                    })
+                    .ToListAsync();
+
+                return Ok(data);
+            }
+
+
+
 
             return BadRequest("Unknown asset type.");
         }

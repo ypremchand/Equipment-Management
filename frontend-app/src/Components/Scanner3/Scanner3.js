@@ -138,21 +138,6 @@ export default function Scanner3() {
         setErrors((prev) => ({ ...prev, [name]: "" }));
     };
 
-    // Duplicate AssetTag check
-    const handleAssetTagChange = async (value) => {
-        setFormData((prev) => ({ ...prev, scanner3AssetTag: value }));
-        if (!value.trim()) return setAssetError("");
-
-        try {
-            const res = await axios.get(`${API_URL}/check-duplicate`, {
-                params: { assetTag: value },
-            });
-            setAssetError(res.data?.exists ? "Asset Tag already exists" : "");
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
     // Filter handler
     const handleFilterChange = (e) => {
         setFilters((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -186,13 +171,27 @@ export default function Scanner3() {
         }
     };
 
+
+    const fetchNextScannerAssetTag = async () => {
+        try {
+            const res = await axios.get(`${API_URL}/next-asset-tag`);
+            setFormData((p) => ({
+                ...p,
+                scanner3AssetTag: res.data.assetTag || "",
+            }));
+        } catch {
+            alert("No available scanner asset tags. Please create a purchase order.");
+        }
+    };
+
+
     // Edit
     const handleEdit = (p) => {
         setEditingId(p.id);
         setFormData({
             scanner3Brand: p.scanner3Brand,
             scanner3Model: p.scanner3Model,
-           scanner3Type: p.scanner3Type,
+            scanner3Type: p.scanner3Type,
             scanner3Resolution: p.scanner3Resolution,
             scanner3AssetTag: p.scanner3AssetTag,
             purchaseDate: p.purchaseDate?.split("T")[0] || "",
@@ -350,10 +349,10 @@ export default function Scanner3() {
                             Reset
                         </button>
 
-                            <button className="btn btn-outline-danger" onClick={exportToPDF}>
-                                Export PDF
-                            </button>
-                        </div>
+                        <button className="btn btn-outline-danger" onClick={exportToPDF}>
+                            Export PDF
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -362,7 +361,10 @@ export default function Scanner3() {
                 <div className="text-center mb-3">
                     <button
                         className="btn btn-success px-4 py-2"
-                        onClick={() => setShowForm(true)}
+                        onClick={() => {
+                            setShowForm(true);
+                            fetchNextScannerAssetTag();
+                        }}
                     >
                         ➕ Add Scanner3(OMR Scanner)
                     </button>
@@ -440,11 +442,13 @@ export default function Scanner3() {
                                 type="text"
                                 name="scanner3AssetTag"
                                 value={formData.scanner3AssetTag}
-                                onChange={(e) => handleAssetTagChange(e.target.value)}
-                                className={`form-control ${errors.scanner3AssetTag || assetError ? "is-invalid" : ""}`}
+                                readOnly
+                                className={`form-control ${errors.scanner3AssetTag ? "is-invalid" : ""
+                                    } bg-light`}
                             />
-                            {errors.scanner3AssetTag && <div className="text-danger small">{errors.scanner3AssetTag}</div>}
-                            {assetError && <div className="text-danger small">{assetError}</div>}
+                            <small className="text-muted">
+                                Auto-generated from Purchase Orders
+                            </small>
                         </div>
 
                         <div className="col-md-4">

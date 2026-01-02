@@ -24,6 +24,35 @@ namespace backend_app.Controllers
         {
             public string? DamageReason { get; set; }
         }
+
+        private async Task FixMissingAssetIds()
+        {
+            var asset = await _context.Assets
+                .FirstOrDefaultAsync(a => a.Name.ToLower() == "laptops");
+
+            if (asset == null)
+            {
+                asset = new Asset { Name = "Laptops", PreCode = "LAP" };
+                _context.Assets.Add(asset);
+                await _context.SaveChangesAsync();
+            }
+
+            var missing = await _context.Laptops
+                .Where(l => l.AssetId == null)
+                .ToListAsync();
+
+            if (missing.Count > 0)
+            {
+                foreach (var l in missing)
+                    l.AssetId = asset.Id;
+
+                await _context.SaveChangesAsync();
+
+                asset.Quantity = await _context.Laptops.CountAsync(l => l.AssetId == asset.Id);
+                await _context.SaveChangesAsync();
+            }
+        }
+
         // ============================================================
         // GET ALL LAPTOPS (Search + Filters + Sorting + Pagination)
         // ============================================================
@@ -41,6 +70,7 @@ namespace backend_app.Controllers
             [FromQuery] string? operatingSystem = null
         )
         {
+            await FixMissingAssetIds();
             if (page <= 0) page = 1;
             if (pageSize <= 0) pageSize = 10;
 
@@ -201,6 +231,7 @@ namespace backend_app.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Laptop>> GetLaptop(int id)
         {
+            await FixMissingAssetIds();
             var laptop = await _context.Laptops
                 .Include(l => l.Asset)
                 .FirstOrDefaultAsync(l => l.Id == id);
@@ -215,8 +246,22 @@ namespace backend_app.Controllers
         [HttpPost]
         public async Task<ActionResult<Laptop>> PostLaptop([FromBody] LaptopPayload payload)
         {
-            if (payload.AssetTag == null)
-                return BadRequest(new { message = "AssetTag is required" });
+            if (string.IsNullOrWhiteSpace(payload.AssetTag))
+            {
+                var usedTags = await _context.Laptops
+                    .Select(m => m.AssetTag)
+                    .Where(t => t != null)
+                    .ToListAsync();
+
+                payload.AssetTag = await _context.PurchaseOrderItems
+                    .Where(p => p.AssetTag != null && !usedTags.Contains(p.AssetTag))
+                    .OrderBy(p => p.Id)
+                    .Select(p => p.AssetTag)
+                    .FirstOrDefaultAsync();
+
+                if (payload.AssetTag == null)
+                    return BadRequest(new { message = "No available asset tags" });
+            }
 
             bool exists = await _context.Laptops
                 .AnyAsync(l => (l.AssetTag ?? "").ToLower() == payload.AssetTag.ToLower());
@@ -377,6 +422,47 @@ namespace backend_app.Controllers
             }
 
             return NoContent();
+        }
+
+        // ============================================================
+        // GET NEXT AVAILABLE LAPTOP ASSET TAG (from Purchase Orders)
+        // ============================================================
+        [HttpGet("next-asset-tag")]
+        public async Task<IActionResult> GetNextAvailableAssetTag()
+        {
+            // 1️⃣ Get Laptop asset
+            var laptopAsset = await _context.Assets
+                .FirstOrDefaultAsync(a => a.Name.ToLower() == "laptops");
+
+            if (laptopAsset == null)
+                return NotFound(new { message = "Laptop asset not found" });
+
+            // 2️⃣ All laptop purchase tags ONLY
+            var purchasedLaptopTags = await _context.PurchaseOrderItems
+                .Where(p =>
+                    p.AssetId == laptopAsset.Id &&
+                    p.AssetTag != null
+                )
+                .Select(p => p.AssetTag)
+                .ToListAsync();
+
+            if (!purchasedLaptopTags.Any())
+                return NotFound(new { message = "No laptop purchase tags found" });
+
+            // 3️⃣ Tags already used by laptops
+            var usedTags = await _context.Laptops
+                .Select(l => l.AssetTag)
+                .Where(t => t != null)
+                .ToListAsync();
+
+            // 4️⃣ First unused LAP tag
+            var nextTag = purchasedLaptopTags
+                .FirstOrDefault(tag => !usedTags.Contains(tag));
+
+            if (nextTag == null)
+                return NotFound(new { message = "No available laptop asset tags" });
+
+            return Ok(new { assetTag = nextTag });
         }
 
 

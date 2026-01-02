@@ -51,38 +51,38 @@ function UserReport() {
   // ===========================
   // 📌 DOWNLOAD PDF
   // ===========================
- const downloadPDF = async () => {
-  const element = reportRef.current;
+  const downloadPDF = async () => {
+    const element = reportRef.current;
 
-  // ✅ REMOVE SCROLL LIMITS TEMPORARILY
-  const scrollBoxes = element.querySelectorAll(".asset-scroll-box");
-  scrollBoxes.forEach(box => {
-    box.style.maxHeight = "none";
-    box.style.overflow = "visible";
-  });
+    // ✅ REMOVE SCROLL LIMITS TEMPORARILY
+    const scrollBoxes = element.querySelectorAll(".asset-scroll-box");
+    scrollBoxes.forEach(box => {
+      box.style.maxHeight = "none";
+      box.style.overflow = "visible";
+    });
 
-  const canvas = await html2canvas(element, {
-    scale: 2,
-    useCORS: true,
-    windowWidth: element.scrollWidth,
-    windowHeight: element.scrollHeight
-  });
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      windowWidth: element.scrollWidth,
+      windowHeight: element.scrollHeight
+    });
 
-  const imgData = canvas.toDataURL("image/png");
+    const imgData = canvas.toDataURL("image/png");
 
-  const pdf = new jsPDF("p", "mm", "a4");
-  const pdfWidth = pdf.internal.pageSize.getWidth();
-  const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-  pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-  pdf.save(`UserReport_${userData.name}.pdf`);
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`UserReport_${userData.name}.pdf`);
 
-  // ✅ RESTORE SCROLL AFTER PDF
-  scrollBoxes.forEach(box => {
-    box.style.maxHeight = "200px";
-    box.style.overflowY = "auto";
-  });
-};
+    // ✅ RESTORE SCROLL AFTER PDF
+    scrollBoxes.forEach(box => {
+      box.style.maxHeight = "200px";
+      box.style.overflowY = "auto";
+    });
+  };
 
 
   if (loading) return <div>Loading...</div>;

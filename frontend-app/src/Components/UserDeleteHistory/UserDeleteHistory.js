@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./style.css"
@@ -6,10 +7,10 @@ import "./style.css"
 function UserDeleteHistory() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
-   const [search, setSearch] = useState("");   // used
-    const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
-   const pageSize = 10;  // used
+  const [search, setSearch] = useState("");   // used
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const pageSize = 10;  // used
 
 
   useEffect(() => {
@@ -22,21 +23,22 @@ function UserDeleteHistory() {
         },
       })
       .then((res) => {
-        console.log("Delete history:",res.data);
+        console.log("Delete history:", res.data);
         setLogs(res.data.data || []);
-      setTotalPages(res.data.totalPages || 1);
-      }) 
+        setTotalPages(res.data.totalPages || 1);
+      })
 
-      .catch((err) => {console.error("Error fetching history:", err);
+      .catch((err) => {
+        console.error("Error fetching history:", err);
         setLogs([]);
       })
       .finally(() => setLoading(false));
-  }, [page,search]);
+  }, [page, search]);
 
   return (
     <div className="user-delete-history-page container mt-4">
       <h3 className="text-center mb-4">🧑‍💻 User Delete History</h3>
-      
+
       {/* 🔍 Search */}
       <div className="mb-3 d-flex justify-content-center">
         <input
@@ -99,6 +101,14 @@ function UserDeleteHistory() {
         >
           Next
         </button>
+      </div>
+      <div className="text-center my-4">
+        <Link
+          to="/adminpanel"
+          className="btn btn-outline-dark px-3 px-sm-4 py-2 w-sm-auto"
+        >
+          ⬅ Back to Admin Panel
+        </Link>
       </div>
     </div>
   );

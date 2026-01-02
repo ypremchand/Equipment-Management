@@ -1,24 +1,33 @@
-﻿using System;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace backend_app.Models
+public class AssetHistory
 {
-    public class AssetHistory
-    {
-        public int Id { get; set; }
+    public int Id { get; set; }
 
-        public string AssetTag { get; set; } = null!;
+    [Required]
+    [StringLength(50)]   // 🔥 THIS FIXES IT
+    public string AssetType { get; set; } = null!;
 
-        public string? Brand { get; set; }
-        public string? Location { get; set; }
+    [Required]
+    [StringLength(100)]
+    public string AssetTag { get; set; } = null!;
 
-        public DateTime? RequestedDate { get; set; }
-        public string? RequestedBy { get; set; }
+    public int AssetItemId { get; set; }
 
-        public DateTime? AssignedDate { get; set; }
-        public string? AssignedBy { get; set; }
+    [StringLength(100)]
+    public string? Brand { get; set; }
 
-        public DateTime? ReturnDate { get; set; }
+    [StringLength(100)]
+    public string? Location { get; set; }
 
-        public string? Remarks { get; set; }
-    }
+    public DateTime? RequestedDate { get; set; }
+    public string? RequestedBy { get; set; }
+
+    public DateTime? AssignedDate { get; set; }
+    public string? AssignedBy { get; set; }
+
+    public DateTime? ReturnDate { get; set; }
+
+    [StringLength(255)]
+    public string? Remarks { get; set; }
 }

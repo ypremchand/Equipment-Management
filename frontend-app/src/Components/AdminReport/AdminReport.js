@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { jsPDF } from "jspdf";
@@ -13,10 +14,13 @@ function AdminReport() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
+  // Pagination
+  const [page, setPage] = useState(1);
+  const pageSize = 5;
+
   const inventoryRef = useRef(null);
   const locationRef = useRef(null);
   const requestsRef = useRef(null);
-
   const navigate = useNavigate();
   const API = "http://localhost:5083/api/AdminReport";
 
@@ -57,6 +61,15 @@ function AdminReport() {
   const goToLocationDetails = (location) => {
     navigate(`/individual-details/location/${location}`);
   };
+  const totalInventory = Object.values(inventory).reduce(
+    (acc, item) => {
+      acc.total += item.total || 0;
+      acc.assigned += item.assigned || 0;
+      acc.available += item.available || 0;
+      return acc;
+    },
+    { total: 0, assigned: 0, available: 0 }
+  );
 
   /* ============================================================
      SEARCH FILTER
@@ -100,6 +113,14 @@ function AdminReport() {
     return <div className="text-center mt-4">Loading...</div>;
   }
 
+  /* ================= PAGINATION ================= */
+  /* ================= PAGINATION ================= */
+  const totalPages = Math.ceil(filteredReports.length / pageSize);
+  const paginatedReports = filteredReports.slice(
+    (page - 1) * pageSize,
+    page * pageSize
+  );
+
   return (
     <div className="admin-report-page container mt-4">
       <h2>📊 Admin Report</h2>
@@ -115,7 +136,17 @@ function AdminReport() {
 
         {/* ================= INVENTORY SUMMARY ================= */}
         <div ref={inventoryRef} className="bg-white p-3 mb-3">
-          <h3 className="text-center mb-3">📦 Inventory Summary</h3>
+          <div className="d-flex justify-content-between py-3">
+            <h3 className="text-center">📦 Inventory Summary</h3>
+            <div className="text-center">
+              <button
+                className="btn btn-success"
+                onClick={() => downloadPDF(inventoryRef, "InventorySummary.pdf")}
+              >
+                ⬇ Download Inventory PDF
+              </button>
+            </div>
+          </div>
 
           <table className="table table-bordered">
             <thead className="table-secondary">
@@ -148,26 +179,32 @@ function AdminReport() {
                   style={{ cursor: "pointer" }}
                   onClick={() => goToAssetDetails("all")}
                 >
-                  all
+                  All Assets
                 </td>
-                <td colSpan="3">View all assets combined</td>
+                <td>{totalInventory.total}</td>
+                <td>{totalInventory.assigned}</td>
+                <td>{totalInventory.available}</td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <div className="text-center mb-5">
-          <button
-            className="btn btn-success"
-            onClick={() => downloadPDF(inventoryRef, "InventorySummary.pdf")}
-          >
-            ⬇ Download Inventory PDF
-          </button>
-        </div>
+
 
         {/* ================= LOCATION SUMMARY ================= */}
         <div ref={locationRef} className="bg-white p-3 mb-3">
-          <h3 className="text-center mb-3">📍 Location Summary</h3>
+          <div className="d-flex justify-content-between py-3">
+            <h3 className="text-center">📍 Location Summary</h3>
+            <div className="text-center">
+              <button
+                className="btn btn-success"
+                onClick={() => downloadPDF(locationRef, "LocationSummary.pdf")}
+              >
+                ⬇ Download Location PDF
+              </button>
+            </div>
+          </div>
+
 
           <table className="table table-bordered">
             <thead className="table-info">
@@ -197,14 +234,7 @@ function AdminReport() {
           </table>
         </div>
 
-        <div className="text-center mb-5">
-          <button
-            className="btn btn-success"
-            onClick={() => downloadPDF(locationRef, "LocationSummary.pdf")}
-          >
-            ⬇ Download Location PDF
-          </button>
-        </div>
+
 
         {/* ================= REQUEST SUMMARY ================= */}
         <label className="fw-bold">🔍 Search Requests:</label>
@@ -216,7 +246,18 @@ function AdminReport() {
         />
 
         <div ref={requestsRef} className="bg-white p-3">
-          <h3 className="text-center mb-3">📋 All Requests Summary</h3>
+          <div className="d-flex justify-content-between py-3">
+            <h3 className="text-center">📋 All Requests Summary</h3>
+            <div className="text-center ">
+              <button
+                className="btn btn-success"
+                onClick={() => downloadPDF(requestsRef, "RequestsSummary.pdf")}
+              >
+                ⬇ Download Requests PDF
+              </button>
+            </div>
+          </div>
+
 
           <table className="table table-bordered">
             <thead className="table-dark">
@@ -226,12 +267,12 @@ function AdminReport() {
                 <th>Date</th>
                 <th>User</th>
                 <th>Location</th>
-                <th>Message</th>
+                <th className="w-25">Message</th>
                 <th>Assets</th>
               </tr>
             </thead>
             <tbody>
-              {filteredReports.map((req) => (
+              {paginatedReports.map((req) => (
                 <tr key={req.id}>
                   <td>{req.id}</td>
                   <td>{req.status}</td>
@@ -255,7 +296,7 @@ function AdminReport() {
                 </tr>
               ))}
 
-              {filteredReports.length === 0 && (
+              {paginatedReports.length === 0 && (
                 <tr>
                   <td colSpan="7" className="text-center text-danger">
                     No results found.
@@ -263,18 +304,42 @@ function AdminReport() {
                 </tr>
               )}
             </tbody>
+
           </table>
         </div>
 
-        <div className="text-center mt-4">
+
+        {/* PAGINATION */}
+        <div className="d-flex justify-content-center mt-3 gap-2">
           <button
-            className="btn btn-success"
-            onClick={() => downloadPDF(requestsRef, "RequestsSummary.pdf")}
+            className="btn btn-dark"
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
           >
-            ⬇ Download Requests PDF
+            Prev
+          </button>
+
+          <span className="align-self-center">
+            Page {page} of {totalPages}
+          </span>
+
+          <button
+            className="btn btn-dark"
+            disabled={page === totalPages}
+            onClick={() => setPage(page + 1)}
+          >
+            Next
           </button>
         </div>
 
+      </div>
+      <div className="text-center my-4">
+        <Link
+          to="/adminpanel"
+          className="btn btn-outline-dark px-3 px-sm-4 py-2 w-sm-auto"
+        >
+          ⬅ Back to Admin Panel
+        </Link>
       </div>
     </div>
   );

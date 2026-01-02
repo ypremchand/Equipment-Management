@@ -53,7 +53,9 @@ namespace backend_app.Controllers
                     i.Scanner2Type,
                     i.Scanner2Resolution,
                     i.Scanner3Type,
-                    i.Scanner3Resolution
+                    i.Scanner3Resolution,
+                    i.Type,
+                    i.Technology,
                 })
             }).ToList();
 
@@ -117,6 +119,12 @@ namespace backend_app.Controllers
                     Total = _context.Scanner3.Count(),
                     Assigned = _context.Scanner3.Count(x => x.IsAssigned),
                     Available = _context.Scanner3.Count(x => !x.IsAssigned)
+                },
+                Barcodes = new
+                {
+                    Total = _context.Barcodes.Count(),
+                    Assigned = _context.Barcodes.Count(x => x.IsAssigned),
+                    Available = _context.Barcodes.Count(x => !x.IsAssigned)
                 }
             };
 
@@ -157,6 +165,9 @@ namespace backend_app.Controllers
             if (assetName == "scanner3")
                 return Ok(await _context.Scanner3.ToListAsync());
 
+            if (assetName == "barcodes")
+                return Ok(await _context.Barcodes.ToListAsync());
+
             // ⭐ NEW: ALL ASSETS IN ONE RESPONSE
             if (assetName == "all")
             {
@@ -168,7 +179,8 @@ namespace backend_app.Controllers
                     Printers = await _context.Printers.ToListAsync(),
                     Scanner1 = await _context.Scanner1.ToListAsync(),
                     Scanner2 = await _context.Scanner2.ToListAsync(),
-                    Scanner3 = await _context.Scanner3.ToListAsync()
+                    Scanner3 = await _context.Scanner3.ToListAsync(),
+                    Barcodes = await _context.Barcodes.ToListAsync()
                 };
                 return Ok(allAssets);
             }

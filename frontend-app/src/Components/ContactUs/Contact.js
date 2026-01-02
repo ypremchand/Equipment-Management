@@ -1,6 +1,3 @@
-// --- FULL CONTACT.JS ---
-// (Dynamic fields for Laptops, Mobiles, Tablets, Scanners, Printers)
-
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
@@ -9,23 +6,21 @@ import "./style.css";
 
 function Contact() {
   const [user, setUser] = useState({ name: "", email: "", phone: "" });
-
   const [assets, setAssets] = useState([]);
   const [locations, setLocations] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState("");
-
   const [assetRequests, setAssetRequests] = useState([
     {
       assetName: "",
       quantity: 0,
       requestedQuantity: "",
 
-      // Laptops/Mobiles/Tablets
+      // Laptops/Mobiles/Tablets/Desktops
       brand: "",
       processor: "",
       storage: "",
       ram: "",
-      operatingSystem: "", // laptops only
+      operatingSystem: "", // laptops and desktops only
       networkType: "", // mobiles/tablets
       simType: "", // mobiles
       simSupport: "", // tablet
@@ -46,6 +41,11 @@ function Contact() {
       //Scanner3
       scanner3Type: "",
       scanner3Resolution: "",
+
+      //Barcode Scanners
+      type: "",
+      technology: "",
+
     }
   ]);
 
@@ -67,11 +67,14 @@ function Contact() {
 
   const normalizeAssetName = (name) => {
     if (!name) return "";
-    if (name.startsWith("Scanner1")) return "Scanner1";
+
+    const lower = name.toLowerCase();
+    if (lower.includes("scanner1")) return "Scanner1";
+    if (lower.includes("scanner2")) return "Scanner2";
+    if (lower.includes("scanner3")) return "Scanner3";
+    if (lower.includes("barcode")) return "Barcodes";
     return name;
   };
-
-
 
   // ============================================================
   // CATEGORY FIELD MAP (dropdown visibility)
@@ -89,6 +92,7 @@ function Contact() {
     "Scanner2(ICR Scanner)": ["scanner2Type", "scanner2Resolution"],
     Scanner3: ["scanner3Type", "scanner3Resolution"],
     "Scanner3(OMR Scanner)": ["scanner3Type", "scanner3Resolution"],
+    Barcodes: ["type", "technology"],
     default: []
   };
 
@@ -99,11 +103,8 @@ function Contact() {
   // ============================================================
   // API ENDPOINT MAPPER
   // ============================================================
-
-
   const categoryEndpoint = (assetName) => {
     if (!assetName) return null;
-
     const lower = assetName.toLowerCase();
 
     if (lower.includes("scanner1"))
@@ -114,6 +115,9 @@ function Contact() {
 
     if (lower.includes("scanner3"))
       return "http://localhost:5083/api/asset-items/available?type=scanner3";
+
+    if (lower.includes("barcode"))
+      return "http://localhost:5083/api/barcodes";
 
     // default (laptop, mobile, tablet, printer, desktop)
     return `http://localhost:5083/api/${lower}`;
@@ -226,6 +230,9 @@ function Contact() {
         ),
       ];
     }
+
+
+
     // ============================
     // Default behavior
     // ============================
@@ -270,6 +277,9 @@ function Contact() {
           Scanner2Resolution: "",
           scanner3Type: "",
           Scanner3Resolution: "",
+          type: "",
+          technology: "",
+
         }
       ]);
 
@@ -381,6 +391,10 @@ function Contact() {
           scanner1Resolution: item.scanner1Resolution ?? "",
           scanner2Type: item.scanner2Type ?? "",
           scanner2Resolution: item.scanner2Resolution ?? "",
+          type: item.type ?? "",
+          technology: item.technology ?? "",
+
+
         };
       });
 
@@ -427,6 +441,9 @@ function Contact() {
         scanner2Resolution: "",
         scanner3Type: "",
         scanner3Resolution: "",
+        type: "",
+        technology: "",
+
       };
       return updated;
     });
@@ -446,9 +463,6 @@ function Contact() {
       });
     }
   };
-
-
-
 
   const handleSpecChange = (index, field, value) => {
     setAssetRequests((prev) => {
@@ -492,9 +506,26 @@ function Contact() {
         scanner2Resolution: "",
         scanner3Type: "",
         scanner3Resolution: "",
+        type: "",
+        technology: "",
+
       }
     ]);
   };
+
+
+const canAddRow = () => {
+  const lastRow = assetRequests[assetRequests.length - 1];
+
+  if (!lastRow) return false;
+
+  return (
+    lastRow.assetName &&
+    Number(lastRow.requestedQuantity) > 0 &&
+    Number(lastRow.requestedQuantity) <= Number(lastRow.quantity)
+  );
+};
+
 
   const handleRemoveRow = (index) => {
     setAssetRequests((prev) => prev.filter((_, i) => i !== index));
@@ -534,6 +565,9 @@ function Contact() {
         scanner2Resolution: r.scanner2Resolution,
         scanner3Type: r.scanner3Type,
         scanner3Resolution: r.scanner3Resolution,
+        type: r.type,
+        technology: r.technology,
+
         requestedQuantity: Number(r.requestedQuantity || 0),
         availableQuantity: Number(r.quantity || 0)
       })),
@@ -546,10 +580,10 @@ function Contact() {
     try {
       if (id) {
         await axios.put(`${CONTACT_API}/${id}`, payload);
-        alert("Request updated successfully!");
+        alert("✅ Request updated successfully!");
       } else {
         await axios.post(CONTACT_API, payload);
-        alert("Request submitted successfully!");
+        alert("✅ Request submitted successfully!");
       }
       navigate("/returnassets");
     } catch (err) {
@@ -558,9 +592,6 @@ function Contact() {
     }
   };
 
-  // ============================================================
-  // UI
-  // ============================================================
 
   return (
     <div className="contact-page container mt-4">
@@ -1018,6 +1049,44 @@ function Contact() {
                           </select>
                         </div>
                       )}
+
+                      {/* Barcode Scanner */}
+
+                      {/* Barcode Scanner TYPE (Dropdown) */}
+                      {shouldShowField(normalizeAssetName(req.assetName), "type") && (
+                        <div className="col-6">
+                          <label className="form-label small">Barcode Type</label>
+                          <select
+                            className="form-select"
+                            value={req.type}
+                            onChange={(e) => handleSpecChange(index, "type", e.target.value)}
+                          >
+                            <option value="">Any</option>
+                            {getOptionsFor(req.assetName, "type").map((opt, i) => (
+                              <option key={i} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Barcode Technology(Dropdown) */}
+                      {shouldShowField(normalizeAssetName(req.assetName), "technology") && (
+                        <div className="col-6">
+                          <label className="form-label small">Barcode Technology</label>
+                          <select
+                            className="form-select"
+                            value={req.technology}
+                            onChange={(e) =>
+                              handleSpecChange(index, "technology", e.target.value)
+                            }
+                          >
+                            <option value="">Any</option>
+                            {getOptionsFor(req.assetName, "technology").map((opt, i) => (
+                              <option key={i} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1044,6 +1113,7 @@ function Contact() {
               type="button"
               className="btn btn-outline-success"
               onClick={handleAddRow}
+              disabled={!canAddRow()}
             >
               + Add Asset
             </button>

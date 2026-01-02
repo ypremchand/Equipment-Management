@@ -17,18 +17,26 @@ namespace backend_app.Controllers
         }
 
         // ============================================================
-        // GET: api/AssetHistory/{assetTag}
+        // GET: api/AssetHistory/{assetType}/{assetTag}
         // Used by React "View History" modal
         // ============================================================
-        [HttpGet("{assetTag}")]
-        public async Task<IActionResult> GetHistoryByAssetTag(string assetTag)
+        [HttpGet("{assetType}/{assetTag}")]
+        public async Task<IActionResult> GetHistory(string assetType, string assetTag)
         {
-            if (string.IsNullOrWhiteSpace(assetTag))
-                return BadRequest("AssetTag is required.");
+            if (string.IsNullOrWhiteSpace(assetType) || string.IsNullOrWhiteSpace(assetTag))
+                return BadRequest("AssetType and AssetTag are required.");
+
+            assetType = assetType
+                .ToLower()
+                .Trim()
+                .TrimEnd('s'); // 🔥 REMOVE PLURAL
 
             var history = await _context.AssetHistories
-                .Where(h => h.AssetTag == assetTag)
-                .OrderByDescending(h => h.RequestedDate)
+                .Where(h =>
+                    h.AssetType == assetType &&
+                    h.AssetTag == assetTag
+                )
+                .OrderByDescending(h => h.AssignedDate)
                 .Select(h => new
                 {
                     h.Id,
@@ -47,15 +55,19 @@ namespace backend_app.Controllers
             return Ok(history);
         }
 
+
         // ============================================================
         // POST: api/AssetHistory
-        // Call this when asset is Assigned / Returned
+        // Optional: manual history insert
         // ============================================================
         [HttpPost]
         public async Task<IActionResult> AddHistory([FromBody] AssetHistory model)
         {
             if (model == null)
                 return BadRequest("Invalid history data.");
+
+            if (string.IsNullOrWhiteSpace(model.AssetType))
+                return BadRequest("AssetType is required.");
 
             _context.AssetHistories.Add(model);
             await _context.SaveChangesAsync();

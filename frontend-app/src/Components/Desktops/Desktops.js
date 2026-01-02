@@ -154,22 +154,7 @@ export default function Desktops() {
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  // AssetTag duplicate
-  const handleAssetTagChange = async (value) => {
-    setFormData((prev) => ({ ...prev, assetTag: value }));
-    setErrors((prev) => ({ ...prev, assetTag: "" }));
-
-    if (!value.trim()) return setAssetError("");
-
-    try {
-      const res = await axios.get(`${API_URL}/check-duplicate`, {
-        params: { assetTag: value }
-      });
-      setAssetError(res.data?.exists ? "Asset number already exists" : "");
-    } catch (err) {
-      console.error("AssetTag check error", err);
-    }
-  };
+ 
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -202,6 +187,19 @@ export default function Desktops() {
       fetchDesktops(page);
     } catch (err) {
       alert(err.response?.data?.message || "Failed to save desktop");
+    }
+  };
+
+
+  const fetchNextDesktopAssetTag = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/next-asset-tag`);
+      setFormData((p) => ({
+        ...p,
+        assetTag: res.data.assetTag || ""
+      }));
+    } catch (err) {
+      alert("No available desktop asset tags. Please create a purchase order.");
     }
   };
 
@@ -385,7 +383,11 @@ export default function Desktops() {
 
       {!showForm && (
         <div className="text-center mb-3">
-          <button className="btn btn-success px-4 py-2" onClick={() => setShowForm(true)}>
+          <button className="btn btn-success px-4 py-2"
+            onClick={() => {
+              setShowForm(true);
+              fetchNextDesktopAssetTag();
+            }}>
             ➕ Add Desktop
           </button>
         </div>
@@ -427,17 +429,19 @@ export default function Desktops() {
             </div>
 
             {/* Asset Tag */}
-            <div className="col-md-4">
-              <label className="form-label">Asset Tag *</label>
+            <div className="col-12 col-sm-6 col-md-4 px-2">
+              <label className="form-label small fw-semibold">Asset Tag *</label>
               <input
                 type="text"
                 name="assetTag"
                 value={formData.assetTag}
-                onChange={(e) => handleAssetTagChange(e.target.value)}
-                className={`form-control ${errors.assetTag || assetError ? "is-invalid" : ""}`}
+                readOnly
+                className={`form-control ${errors.assetTag ? "is-invalid" : ""} bg-light`}
               />
-              {errors.assetTag && <div className="text-danger small">{errors.assetTag}</div>}
-              {assetError && <div className="text-danger small">{assetError}</div>}
+              <small className="text-muted">
+                Auto-generated from Purchase Orders
+              </small>
+
             </div>
 
             {/* Purchase Date */}

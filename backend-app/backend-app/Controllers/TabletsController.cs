@@ -217,8 +217,22 @@ namespace backend_app.Controllers
         [HttpPost]
         public async Task<ActionResult<Tablet>> PostTablet([FromBody] TabletPayload payload)
         {
-            if (payload.AssetTag == null)
-                return BadRequest(new { message = "AssetTag is required" });
+            if (string.IsNullOrWhiteSpace(payload.AssetTag))
+            {
+                var usedTags = await _context.Laptops
+                    .Select(m => m.AssetTag)
+                    .Where(t => t != null)
+                    .ToListAsync();
+
+                payload.AssetTag = await _context.PurchaseOrderItems
+                    .Where(p => p.AssetTag != null && !usedTags.Contains(p.AssetTag))
+                    .OrderBy(p => p.Id)
+                    .Select(p => p.AssetTag)
+                    .FirstOrDefaultAsync();
+
+                if (payload.AssetTag == null)
+                    return BadRequest(new { message = "No available asset tags" });
+            }
 
             // Check duplicate
             bool exists = await _context.Tablets
@@ -378,6 +392,51 @@ namespace backend_app.Controllers
             }
 
             return NoContent();
+        }
+
+
+
+        // ============================================================
+        // GET NEXT AVAILABLE TABLET ASSET TAG (from Purchase Orders)
+        // ============================================================
+
+        [HttpGet("next-asset-tag")]
+        public async Task<IActionResult> GetNextAvailableTabletAssetTag()
+        {
+            // 1️⃣ Get Tablet asset
+            var tabletAsset = await _context.Assets
+                .FirstOrDefaultAsync(a => a.Name.ToLower() == "tablets");
+
+            if (tabletAsset == null)
+                return NotFound(new { message = "Tablet asset not found" });
+
+            // 2️⃣ All Tablet purchase tags ONLY
+            var purchasedTabletTags = await _context.PurchaseOrderItems
+                .Where(p =>
+                    p.AssetId == tabletAsset.Id &&
+                    p.AssetTag != null
+                )
+                .OrderBy(p => p.Id)
+                .Select(p => p.AssetTag)
+                .ToListAsync();
+
+            if (!purchasedTabletTags.Any())
+                return NotFound(new { message = "No tablet purchase tags found" });
+
+            // 3️⃣ Used tablet tags
+            var usedTags = await _context.Tablets
+                .Select(t => t.AssetTag)
+                .Where(t => t != null)
+                .ToListAsync();
+
+            // 4️⃣ First unused TAB tag
+            var nextTag = purchasedTabletTags
+                .FirstOrDefault(tag => !usedTags.Contains(tag));
+
+            if (nextTag == null)
+                return NotFound(new { message = "No available tablet asset tags" });
+
+            return Ok(new { assetTag = nextTag });
         }
 
 

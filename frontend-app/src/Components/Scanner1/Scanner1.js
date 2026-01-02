@@ -138,20 +138,6 @@ export default function Scanner1() {
         setErrors((prev) => ({ ...prev, [name]: "" }));
     };
 
-    // Duplicate AssetTag check
-    const handleAssetTagChange = async (value) => {
-        setFormData((prev) => ({ ...prev, scanner1AssetTag: value }));
-        if (!value.trim()) return setAssetError("");
-
-        try {
-            const res = await axios.get(`${API_URL}/check-duplicate`, {
-                params: { assetTag: value },
-            });
-            setAssetError(res.data?.exists ? "Asset Tag already exists" : "");
-        } catch (err) {
-            console.error(err);
-        }
-    };
 
     // Filter handler
     const handleFilterChange = (e) => {
@@ -185,6 +171,19 @@ export default function Scanner1() {
             alert(err.response?.data?.message || "Failed to save scanner");
         }
     };
+
+    const fetchNextScannerAssetTag = async () => {
+        try {
+            const res = await axios.get(`${API_URL}/next-asset-tag`);
+            setFormData((p) => ({
+                ...p,
+                scanner1AssetTag: res.data.assetTag || "",
+            }));
+        } catch {
+            alert("No available scanner asset tags. Please create a purchase order.");
+        }
+    };
+
 
     // Edit
     const handleEdit = (p) => {
@@ -350,10 +349,10 @@ export default function Scanner1() {
                             Reset
                         </button>
 
-                            <button className="btn btn-outline-danger" onClick={exportToPDF}>
-                                Export PDF
-                            </button>
-                        </div>
+                        <button className="btn btn-outline-danger" onClick={exportToPDF}>
+                            Export PDF
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -362,7 +361,11 @@ export default function Scanner1() {
                 <div className="text-center mb-3">
                     <button
                         className="btn btn-success px-4 py-2"
-                        onClick={() => setShowForm(true)}
+                        onClick={() => {
+                            setShowForm(true);
+                            fetchNextScannerAssetTag();
+                        }}
+
                     >
                         ➕ Add Scanner1(DOCS Scanner)
                     </button>
@@ -440,12 +443,15 @@ export default function Scanner1() {
                                 type="text"
                                 name="scanner1AssetTag"
                                 value={formData.scanner1AssetTag}
-                                onChange={(e) => handleAssetTagChange(e.target.value)}
-                                className={`form-control ${errors.scanner1AssetTag || assetError ? "is-invalid" : ""}`}
+                                readOnly
+                                className={`form-control ${errors.scanner1AssetTag ? "is-invalid" : ""
+                                    } bg-light`}
                             />
-                            {errors.scanner1AssetTag && <div className="text-danger small">{errors.scanner1AssetTag}</div>}
-                            {assetError && <div className="text-danger small">{assetError}</div>}
+                            <small className="text-muted">
+                                Auto-generated from Purchase Orders
+                            </small>
                         </div>
+
 
                         <div className="col-md-4">
                             <label className="form-label">Purchase Date *</label>

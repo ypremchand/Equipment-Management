@@ -175,3 +175,4 @@ C:\Users\ADMIN\Desktop\EqipmentDispatch Management\backend-app\backend-app\bin\D
 C:\Users\ADMIN\Desktop\EqipmentDispatch Management\backend-app\backend-app\bin\Debug\net8.0\Microsoft.Bcl.Memory.dll
 C:\Users\ADMIN\Desktop\EqipmentDispatch Management\backend-app\backend-app\bin\Debug\net8.0\Newtonsoft.Json.dll
 C:\Users\ADMIN\Desktop\EqipmentDispatch Management\backend-app\backend-app\bin\Debug\net8.0\Twilio.dll
+C:\Users\ADMIN\Desktop\EqipmentDispatch Management\backend-app\backend-app\bin\Debug\net8.0\backend-app.staticwebassets.runtime.json

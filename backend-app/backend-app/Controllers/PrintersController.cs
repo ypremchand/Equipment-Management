@@ -338,6 +338,47 @@ namespace backend_app.Controllers
         }
 
         // ============================================================
+        // GET NEXT AVAILABLE PRINTER ASSET TAG (from Purchase Orders)
+        // ============================================================
+        [HttpGet("next-asset-tag")]
+        public async Task<IActionResult> GetNextAvailableAssetTag()
+        {
+            // 1️⃣ Get Printer asset
+            var printerAsset = await _context.Assets
+                .FirstOrDefaultAsync(a => a.Name.ToLower() == "printers");
+
+            if (printerAsset == null)
+                return NotFound(new { message = "Printer asset not found" });
+
+            // 2️⃣ All printer purchase tags ONLY
+            var purchasedPrinterTags = await _context.PurchaseOrderItems
+                .Where(p =>
+                    p.AssetId == printerAsset.Id &&
+                    p.AssetTag != null
+                )
+                .Select(p => p.AssetTag)
+                .ToListAsync();
+
+            if (!purchasedPrinterTags.Any())
+                return NotFound(new { message = "No printer purchase tags found" });
+
+            // 3️⃣ Tags already used by printers
+            var usedTags = await _context.Printers
+                .Select(l => l.AssetTag)
+                .Where(t => t != null)
+                .ToListAsync();
+
+            // 4️⃣ First unused PRI tag
+            var nextTag = purchasedPrinterTags
+                .FirstOrDefault(tag => !usedTags.Contains(tag));
+
+            if (nextTag == null)
+                return NotFound(new { message = "No available printer asset tags" });
+
+            return Ok(new { assetTag = nextTag });
+        }
+
+        // ============================================================
         // DUPLICATE CHECK
         // ============================================================
         [HttpGet("check-duplicate")]

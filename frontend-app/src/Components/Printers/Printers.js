@@ -140,21 +140,6 @@ export default function Printers() {
         setErrors((prev) => ({ ...prev, [name]: "" }));
     };
 
-    // Duplicate asset check
-    const handleAssetTagChange = async (value) => {
-        setFormData((prev) => ({ ...prev, assetTag: value }));
-        if (!value.trim()) return setAssetError("");
-
-        try {
-            const res = await axios.get(`${API_URL}/check-duplicate`, {
-                params: { assetTag: value },
-            });
-            setAssetError(res.data?.exists ? "Asset Tag already exists" : "");
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
     // Filter
     const handleFilterChange = (e) => {
         setFilters((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -185,6 +170,18 @@ export default function Printers() {
             fetchPrinters(page);
         } catch (err) {
             alert(err.response?.data?.message || "Failed to save printer");
+        }
+    };
+
+    const fetchNextPrinterAssetTag = async () => {
+        try {
+            const res = await axios.get(`${API_URL}/next-asset-tag`);
+            setFormData((p) => ({
+                ...p,
+                assetTag: res.data.assetTag || ""
+            }));
+        } catch (err) {
+            alert("No available printer asset tags. Please create a purchase order.");
         }
     };
 
@@ -376,8 +373,11 @@ export default function Printers() {
                 <div className="text-center mb-3">
                     <button
                         className="btn btn-success px-4 py-2"
-                        onClick={() => setShowForm(true)}
-                    >
+                        onClick={() => {
+                            setShowForm(true);
+                            fetchNextPrinterAssetTag();
+                        }}>
+
                         ➕ Add Printer
                     </button>
                 </div>
@@ -480,17 +480,19 @@ export default function Printers() {
                         </div>
 
                         {/* Asset Tag */}
-                        <div className="col-md-4">
-                            <label className="form-label">Asset Tag *</label>
+                        <div className="col-12 col-sm-6 col-md-4 px-2">
+                            <label className="form-label small fw-semibold">Asset Tag *</label>
                             <input
                                 type="text"
                                 name="assetTag"
                                 value={formData.assetTag}
-                                onChange={(e) => handleAssetTagChange(e.target.value)}
-                                className={`form-control ${errors.assetTag || assetError ? "is-invalid" : ""}`}
+                                readOnly
+                                className={`form-control ${errors.assetTag ? "is-invalid" : ""} bg-light`}
                             />
-                            {errors.assetTag && <div className="text-danger small">{errors.assetTag}</div>}
-                            {assetError && <div className="text-danger small">{assetError}</div>}
+                            <small className="text-muted">
+                                Auto-generated from Purchase Orders
+                            </small>
+
                         </div>
 
                         {/* Purchase Date */}

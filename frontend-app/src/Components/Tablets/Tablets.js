@@ -79,7 +79,7 @@ export default function Tablets() {
 
     if (!form.brand.trim()) {
       newErrors.brand = "Brand is required";
-    }else if(form.brand.trim().length<2){
+    } else if (form.brand.trim().length < 2) {
       newErrors.brand = "Brand must be at least 2 characters";
     }
     if (!form.model.trim()) newErrors.model = "Model is required";
@@ -204,10 +204,10 @@ export default function Tablets() {
 
       if (editingId) {
         await axios.put(`${API_URL}/${editingId}`, payload);
-        alert("Updated successfully");
+        alert("✅ Updated successfully");
       } else {
         await axios.post(API_URL, payload);
-        alert("Added successfully");
+        alert("✅ Added successfully");
       }
 
       resetForm();
@@ -243,6 +243,18 @@ export default function Tablets() {
     setShowForm(true);
   };
 
+
+  const fetchNextTabletAssetTag = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/next-asset-tag`);
+      setForm((p) => ({
+        ...p,
+        assetTag: res.data.assetTag || ""
+      }));
+    } catch {
+      alert("No available tablet asset tags. Please create a purchase order.");
+    }
+  };
   const handleDelete = async (id) => {
     const reason = prompt(
       "Please enter the reason for deleting this tablet:"
@@ -442,7 +454,10 @@ export default function Tablets() {
         <div className="text-center mb-3">
           <button
             className="btn btn-success"
-            onClick={() => setShowForm(true)}
+            onClick={() => {
+              setShowForm(true);
+              fetchNextTabletAssetTag();
+            }}
           >
             ➕ Add New Tablet
           </button>
@@ -473,32 +488,30 @@ export default function Tablets() {
               ["lastServicedDate", "Last Serviced Date", "date"],
             ].map(([name, label, type = "text"]) => (
               <div key={name} className="col-md-4">
-                <label className="form-label small fw-semibold">
-                  {label}
-                </label>
+                <label className="form-label small fw-semibold">{label}</label>
+
                 <input
                   type={type}
                   name={name}
                   value={form[name]}
                   onChange={handleChange}
-                  className={`form-control ${
-                    errors[name] ? "is-invalid" : ""
-                  } ${
-                    name === "assetTag" && assetError ? "is-invalid" : ""
-                  }`}
+                  readOnly={name === "assetTag"}   // ✅ ONLY assetTag locked
+                  className={`form-control ${errors[name] ? "is-invalid" : ""
+                    } ${name === "assetTag" ? "bg-light" : ""}`}
                 />
+
                 {errors[name] && (
-                  <div className="invalid-feedback d-block">
-                    {errors[name]}
-                  </div>
+                  <div className="invalid-feedback d-block">{errors[name]}</div>
                 )}
-                {name === "assetTag" && assetError && (
-                  <div className="invalid-feedback d-block">
-                    {assetError}
-                  </div>
+
+                {name === "assetTag" && (
+                  <small className="text-muted">
+                    Auto-generated from Purchase Orders
+                  </small>
                 )}
               </div>
             ))}
+
 
             {/* SIM Support */}
             <div className="col-md-4">
@@ -508,9 +521,8 @@ export default function Tablets() {
               <select
                 name="simSupport"
                 value={form.simSupport}
-                className={`form-select ${
-                  errors.simSupport ? "is-invalid" : ""
-                }`}
+                className={`form-select ${errors.simSupport ? "is-invalid" : ""
+                  }`}
                 onChange={(e) => {
                   const value = e.target.value;
                   setForm((prev) => ({
@@ -547,9 +559,8 @@ export default function Tablets() {
                   name="imeiNumber"
                   value={form.imeiNumber}
                   onChange={handleChange}
-                  className={`form-control ${
-                    errors.imeiNumber ? "is-invalid" : ""
-                  }`}
+                  className={`form-control ${errors.imeiNumber ? "is-invalid" : ""
+                    }`}
                 />
                 {errors.imeiNumber && (
                   <div className="invalid-feedback d-block">
@@ -566,9 +577,8 @@ export default function Tablets() {
               </label>
               <select
                 name="remarks"
-                className={`form-select ${
-                  errors.remarks ? "is-invalid" : ""
-                }`}
+                className={`form-select ${errors.remarks ? "is-invalid" : ""
+                  }`}
                 value={form.remarks}
                 onChange={(e) => {
                   const v = e.target.value;
@@ -607,9 +617,8 @@ export default function Tablets() {
                   name="damageReason"
                   value={form.damageReason}
                   onChange={handleChange}
-                  className={`form-control ${
-                    errors.damageReason ? "is-invalid" : ""
-                  }`}
+                  className={`form-control ${errors.damageReason ? "is-invalid" : ""
+                    }`}
                 />
                 {errors.damageReason && (
                   <div className="invalid-feedback d-block">
@@ -775,7 +784,7 @@ export default function Tablets() {
 
       <div className="text-center mt-4">
         <Link to="/adminpanel" className="btn btn-outline-dark">
-          ⬅ Back
+          ⬅ Back to Admin Panel
         </Link>
       </div>
     </div>

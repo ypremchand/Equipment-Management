@@ -47,6 +47,11 @@ public class AssetRequestItem
     public string? Scanner3Type { get; set; }
     public string? Scanner3Resolution { get; set; }
 
+
+    // * Barcode Scanner fields (Required)
+    public string? Type { get; set; }
+    public string? Technology { get; set; }
+
     public ICollection<AssignedAsset> AssignedAssets { get; set; } = new List<AssignedAsset>();
     public string? PartialReason { get; set; }
 }

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import { Table, Button, Spinner, Modal } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -355,6 +356,14 @@ function Requests() {
               Next ▶️
             </button>
           </div>
+          <div className="text-center my-4">
+        <Link
+          to="/adminpanel"
+          className="btn btn-outline-dark px-3 px-sm-4 py-2 w-sm-auto"
+        >
+          ⬅ Back to Admin Panel
+        </Link>
+      </div>
         </>
       )}
 
@@ -377,9 +386,6 @@ function Requests() {
 
 export default Requests;
 
-/* ============================================================================================
-    ASSIGN & APPROVE MODAL (UPDATED WITH FULL FILTERING SYSTEM)
-============================================================================================ */
 /* ============================================================================================
     ASSIGN & APPROVE MODAL — FINAL VERSION (WITH "NO ITEMS" CASE + PARTIAL < REQUEST RULE)
 ============================================================================================ */
@@ -411,6 +417,9 @@ function AssignApproveModal({ show, onHide, request, fetchRequests }) {
     if (n.includes("scanner1")) return "scanner1";
     if (n.includes("scanner2")) return "scanner2";
     if (n.includes("scanner3")) return "scanner3";
+    if (n.includes("barcode")) return "barcode";
+
+
     return n;
   }
 
@@ -424,8 +433,10 @@ function AssignApproveModal({ show, onHide, request, fetchRequests }) {
     tablet: ["brand", "processor", "storage", "ram", "networkType", "simSupport"],
     printer: ["printerType", "paperSize", "dpi"],
     scanner1: ["scanner1Type", "scanner1Resolution"],
-     scanner2: ["scanner2Type", "scanner2Resolution"],
-     scanner3: ["scanner3Type", "scanner3Resolution"],
+    scanner2: ["scanner2Type", "scanner2Resolution"],
+    scanner3: ["scanner3Type", "scanner3Resolution"],
+    barcode: ["type", "technology"],
+
   };
 
   /* ------------------------------------------------------------
@@ -454,11 +465,12 @@ function AssignApproveModal({ show, onHide, request, fetchRequests }) {
     return available.filter((item) => {
       return Object.keys(filters).every((fKey) => {
         const itemVal =
-  item[fKey] ||
-  item?.detail?.[fKey] ||
-  item[`scanner1${fKey.charAt(0).toUpperCase() + fKey.slice(1)}`] ||
-  item[`scanner2${fKey.charAt(0).toUpperCase() + fKey.slice(1)}`] ||
-   item[`scanner3${fKey.charAt(0).toUpperCase() + fKey.slice(1)}`];
+          item[fKey] ||
+          item?.detail?.[fKey] ||
+          item[`scanner1${fKey.charAt(0).toUpperCase() + fKey.slice(1)}`] ||
+          item[`scanner2${fKey.charAt(0).toUpperCase() + fKey.slice(1)}`] ||
+          item[`scanner3${fKey.charAt(0).toUpperCase() + fKey.slice(1)}`];
+
 
         return (
           itemVal?.toString().toLowerCase() ===
@@ -609,13 +621,25 @@ function AssignApproveModal({ show, onHide, request, fetchRequests }) {
         };
       });
 
-      await axios.post(`${API_URL}/confirm-approve/${localRequest.id}`, {
-        assignments,
-      });
+      const admin = JSON.parse(localStorage.getItem("user"));
+
+      await axios.post(
+        `http://localhost:5083/api/AssetRequests/confirm-approve/${localRequest.id}`,
+        {
+          adminName: admin.name,     // 🔥 MUST EXIST
+          assignments: assignments   // 🔥 MUST EXIST
+        },
+        {
+          headers: {
+            "Content-Type": "application/json"
+          }
+        }
+      );
+
 
       fetchRequests();
       onHide();
-      alert("Approved successfully.");
+      alert("✅ Approved successfully.");
     } finally {
       setFinalizing(false);
     }
@@ -746,7 +770,7 @@ function AssignApproveModal({ show, onHide, request, fetchRequests }) {
                                 allowFull &&
                                 !partial &&
                                 selectedIdsForItem[item.id]?.length ===
-                                  requestQty
+                                requestQty
                               }
                               onChange={(e) => {
                                 if (e.target.checked) {
@@ -836,23 +860,23 @@ function AssignApproveModal({ show, onHide, request, fetchRequests }) {
                                   }
                                 />
                                 <label className="ms-2">
-                            {a.scanner2AssetTag ||
-                              a.scanner1AssetTag ||
-                              a.scanner3AssetTag ||
-                              a.assetTag ||
-                              a.serialNumber} (
-                            {a.scanner2Brand ||
-                              a.scanner1Brand ||
-                              a.scanner3Brand ||
-                              a.brand}{" "}
-                            -{" "}
-                            {a.scanner2Model ||
-                              a.scanner1Model ||
-                              a.scanner3Model ||
-                              a.model ||
-                              a.modelNumber}
-                            )
-                          </label>
+                                  {a.scanner2AssetTag ||
+                                    a.scanner1AssetTag ||
+                                    a.scanner3AssetTag ||
+                                    a.assetTag ||
+                                    a.serialNumber} (
+                                  {a.scanner2Brand ||
+                                    a.scanner1Brand ||
+                                    a.scanner3Brand ||
+                                    a.brand}{" "}
+                                  -{" "}
+                                  {a.scanner2Model ||
+                                    a.scanner1Model ||
+                                    a.scanner3Model ||
+                                    a.model ||
+                                    a.modelNumber}
+                                  )
+                                </label>
                               </div>
                             ))}
                           </div>
@@ -932,7 +956,7 @@ function ViewAssignedModal({ show, onHide, request }) {
             <h5>{item.asset?.name}</h5>
 
             {item.assignedAssets?.length === 0 ? (
-              <p className="text-danger">No assets assigned</p>
+              <p className="text-danger">Approved by Admin, but User not yet recieve.</p>
             ) : (
               <Table bordered>
                 <thead>

@@ -24,9 +24,8 @@ function Navbar({ user, onLogout }) {
         </button>
 
         <div
-          className={`collapse navbar-collapse justify-content-between ${
-            isOpen ? "show" : ""
-          }`}
+          className={`collapse navbar-collapse justify-content-between ${isOpen ? "show" : ""
+            }`}
         >
           <ul className="navbar-nav ms-3">
             {isAdmin ? (
@@ -38,6 +37,15 @@ function Navbar({ user, onLogout }) {
                     onClick={() => setIsOpen(false)}
                   >
                     AdminPanel
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link
+                    className="nav-link"
+                    to="/purchase-order"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    PurchaseOrder
                   </Link>
                 </li>
 
@@ -54,7 +62,7 @@ function Navbar({ user, onLogout }) {
                   </Link>
                 </li>
 
-                  <li className="nav-item">
+                <li className="nav-item">
                   <Link
                     className="nav-link"
                     to="/damaged-assets"
@@ -96,7 +104,7 @@ function Navbar({ user, onLogout }) {
                     to="/admin-report"
                     onClick={() => setIsOpen(false)}
                   >
-                   AdminReport
+                    AdminReport
                   </Link>
                 </li>
               </>
@@ -112,14 +120,14 @@ function Navbar({ user, onLogout }) {
                     Home
                   </Link>
                 </li>
-                
+
                 <li className="nav-item">
                   <Link
                     className="nav-link"
                     to="/contact"
                     onClick={() => setIsOpen(false)}
                   >
-                    RequestUs  
+                    RequestUs
                   </Link>
                 </li>
                 <li className="nav-item">
@@ -127,7 +135,7 @@ function Navbar({ user, onLogout }) {
                     className="nav-link"
                     to="/requested-assets"
                     onClick={() => setIsOpen(false)}
-                  > 
+                  >
                     RequestedAssets
                   </Link>
                 </li>
@@ -136,7 +144,7 @@ function Navbar({ user, onLogout }) {
                     className="nav-link"
                     to="/user-report"
                     onClick={() => setIsOpen(false)}
-                  > 
+                  >
                     UserReport
                   </Link>
                 </li>
@@ -159,4 +167,3 @@ function Navbar({ user, onLogout }) {
 }
 
 export default Navbar;
- 

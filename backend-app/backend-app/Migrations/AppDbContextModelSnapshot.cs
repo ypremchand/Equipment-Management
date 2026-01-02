@@ -22,6 +22,84 @@ namespace backend_app.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Asset", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PreCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Assets");
+                });
+
+            modelBuilder.Entity("AssetHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AssetItemId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AssetTag")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("AssetType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("AssignedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("AssignedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Brand")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("RequestedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("RequestedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ReturnDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AssetHistories");
+                });
+
             modelBuilder.Entity("AssetRequestItem", b =>
                 {
                     b.Property<int>("Id")
@@ -94,6 +172,12 @@ namespace backend_app.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Storage")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Technology")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Type")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -203,72 +287,6 @@ namespace backend_app.Migrations
                     b.ToTable("AdminDeleteHistories");
                 });
 
-            modelBuilder.Entity("backend_app.Models.Asset", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
-                    b.Property<string>("TableName")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Assets");
-                });
-
-            modelBuilder.Entity("backend_app.Models.AssetHistory", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("AssetTag")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("AssignedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("AssignedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Brand")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Location")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Remarks")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("RequestedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("RequestedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("ReturnDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("AssetHistories");
-                });
-
             modelBuilder.Entity("backend_app.Models.AssetRequest", b =>
                 {
                     b.Property<int>("Id")
@@ -301,6 +319,60 @@ namespace backend_app.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("AssetRequests");
+                });
+
+            modelBuilder.Entity("backend_app.Models.Barcode", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AssetId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AssetTag")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("AssignedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Brand")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsAssigned")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("PurchaseDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Remarks")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Technology")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetId");
+
+                    b.ToTable("Barcodes");
                 });
 
             modelBuilder.Entity("backend_app.Models.DamagedAsset", b =>
@@ -638,6 +710,67 @@ namespace backend_app.Migrations
                     b.ToTable("Printers");
                 });
 
+            modelBuilder.Entity("backend_app.Models.PurchaseOrder", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AssetId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AssetName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DocumentFileName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DocumentPath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PreCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("PurchaseDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PurchaseOrders");
+                });
+
+            modelBuilder.Entity("backend_app.Models.PurchaseOrderItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AssetId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AssetTag")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PurchaseOrderId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PurchaseOrderId");
+
+                    b.ToTable("PurchaseOrderItems");
+                });
+
             modelBuilder.Entity("backend_app.Models.RepairHistory", b =>
                 {
                     b.Property<int>("Id")
@@ -969,7 +1102,7 @@ namespace backend_app.Migrations
 
             modelBuilder.Entity("AssetRequestItem", b =>
                 {
-                    b.HasOne("backend_app.Models.Asset", "Asset")
+                    b.HasOne("Asset", "Asset")
                         .WithMany()
                         .HasForeignKey("AssetId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1016,9 +1149,18 @@ namespace backend_app.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("backend_app.Models.Barcode", b =>
+                {
+                    b.HasOne("Asset", "Asset")
+                        .WithMany()
+                        .HasForeignKey("AssetId");
+
+                    b.Navigation("Asset");
+                });
+
             modelBuilder.Entity("backend_app.Models.Desktop", b =>
                 {
-                    b.HasOne("backend_app.Models.Asset", "Asset")
+                    b.HasOne("Asset", "Asset")
                         .WithMany()
                         .HasForeignKey("AssetId");
 
@@ -1027,7 +1169,7 @@ namespace backend_app.Migrations
 
             modelBuilder.Entity("backend_app.Models.Laptop", b =>
                 {
-                    b.HasOne("backend_app.Models.Asset", "Asset")
+                    b.HasOne("Asset", "Asset")
                         .WithMany()
                         .HasForeignKey("AssetId");
 
@@ -1036,7 +1178,7 @@ namespace backend_app.Migrations
 
             modelBuilder.Entity("backend_app.Models.Mobile", b =>
                 {
-                    b.HasOne("backend_app.Models.Asset", "Asset")
+                    b.HasOne("Asset", "Asset")
                         .WithMany()
                         .HasForeignKey("AssetId");
 
@@ -1045,16 +1187,27 @@ namespace backend_app.Migrations
 
             modelBuilder.Entity("backend_app.Models.Printer", b =>
                 {
-                    b.HasOne("backend_app.Models.Asset", "Asset")
+                    b.HasOne("Asset", "Asset")
                         .WithMany()
                         .HasForeignKey("AssetId");
 
                     b.Navigation("Asset");
                 });
 
+            modelBuilder.Entity("backend_app.Models.PurchaseOrderItem", b =>
+                {
+                    b.HasOne("backend_app.Models.PurchaseOrder", "PurchaseOrder")
+                        .WithMany("Items")
+                        .HasForeignKey("PurchaseOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PurchaseOrder");
+                });
+
             modelBuilder.Entity("backend_app.Models.Scanner1", b =>
                 {
-                    b.HasOne("backend_app.Models.Asset", "Asset")
+                    b.HasOne("Asset", "Asset")
                         .WithMany()
                         .HasForeignKey("AssetId");
 
@@ -1063,7 +1216,7 @@ namespace backend_app.Migrations
 
             modelBuilder.Entity("backend_app.Models.Scanner2", b =>
                 {
-                    b.HasOne("backend_app.Models.Asset", "Asset")
+                    b.HasOne("Asset", "Asset")
                         .WithMany()
                         .HasForeignKey("AssetId");
 
@@ -1072,7 +1225,7 @@ namespace backend_app.Migrations
 
             modelBuilder.Entity("backend_app.Models.Scanner3", b =>
                 {
-                    b.HasOne("backend_app.Models.Asset", "Asset")
+                    b.HasOne("Asset", "Asset")
                         .WithMany()
                         .HasForeignKey("AssetId");
 
@@ -1081,7 +1234,7 @@ namespace backend_app.Migrations
 
             modelBuilder.Entity("backend_app.Models.Tablet", b =>
                 {
-                    b.HasOne("backend_app.Models.Asset", "Asset")
+                    b.HasOne("Asset", "Asset")
                         .WithMany()
                         .HasForeignKey("AssetId");
 
@@ -1096,6 +1249,11 @@ namespace backend_app.Migrations
             modelBuilder.Entity("backend_app.Models.AssetRequest", b =>
                 {
                     b.Navigation("AssetRequestItems");
+                });
+
+            modelBuilder.Entity("backend_app.Models.PurchaseOrder", b =>
+                {
+                    b.Navigation("Items");
                 });
 #pragma warning restore 612, 618
         }

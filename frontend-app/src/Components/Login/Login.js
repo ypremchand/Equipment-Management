@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "./style.css"
 
 function Login({ onLoginSuccess }) {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -99,7 +100,7 @@ function Login({ onLoginSuccess }) {
   // UI COMPONENT
   // -------------------------------
   return (
-    <div className="container mt-5">
+    <div className="login-page container mt-5">
       <div className="row justify-content-center">
         <div className="col-12 col-sm-8 col-md-6 col-lg-4">
           <div className="card shadow-sm">

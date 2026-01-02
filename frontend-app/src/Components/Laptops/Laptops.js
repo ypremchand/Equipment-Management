@@ -162,24 +162,7 @@ export default function Laptops() {
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  const handleAssetTagChange = async (value) => {
-    setFormData((prev) => ({ ...prev, assetTag: value }));
-    setErrors((prev) => ({ ...prev, assetTag: "" }));
 
-    if (!value.trim()) {
-      setAssetError("");
-      return;
-    }
-
-    try {
-      const res = await axios.get(`${API_URL}/check-duplicate`, {
-        params: { assetTag: value }
-      });
-      setAssetError(res.data?.exists ? "Asset number already exists" : "");
-    } catch (err) {
-      console.error("asset check", err);
-    }
-  };
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -214,6 +197,19 @@ export default function Laptops() {
       alert(err.response?.data?.message || "Failed to save laptop");
     }
   };
+
+  const fetchNextLaptopAssetTag = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/next-asset-tag`);
+      setFormData((p) => ({
+        ...p,
+        assetTag: res.data.assetTag || ""
+      }));
+    } catch (err) {
+      alert("No available laptop asset tags. Please create a purchase order.");
+    }
+  };
+
 
   const handleEdit = (l) => {
     setEditingId(l.id);
@@ -430,10 +426,14 @@ export default function Laptops() {
         <div className="text-center mb-3">
           <button
             className="btn btn-success px-3 px-sm-4 py-2 w-sm-auto"
-            onClick={() => setShowForm(true)}
+            onClick={() => {
+              setShowForm(true);
+              fetchNextLaptopAssetTag();
+            }}
           >
             ➕ Add New Laptop
           </button>
+
         </div>
       )}
 
@@ -480,14 +480,15 @@ export default function Laptops() {
                 type="text"
                 name="assetTag"
                 value={formData.assetTag}
-                onChange={(e) => handleAssetTagChange(e.target.value)}
-                className={`form-control ${errors.assetTag || assetError ? "is-invalid" : ""
-                  }`}
+                readOnly
+                className={`form-control ${errors.assetTag ? "is-invalid" : ""} bg-light`}
               />
-              {errors.assetTag && (
-                <div className="invalid-feedback d-block">{errors.assetTag}</div>
-              )}
-              {assetError && <div className="invalid-feedback d-block">{assetError}</div>}
+
+              <small className="text-muted">
+                Auto-generated from Purchase Orders
+              </small>
+
+
             </div>
 
             {/* Purchase Date */}
@@ -835,7 +836,6 @@ export default function Laptops() {
           </Button>
         </Modal.Footer>
       </Modal>
-
       <div className="text-center mt-4">
         <Link
           to="/adminpanel"

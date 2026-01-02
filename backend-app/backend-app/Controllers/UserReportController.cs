@@ -64,7 +64,10 @@ namespace backend_app.Controllers
                                 i.Scanner2Type,
                                 i.Scanner2Resolution,
                                 i.Scanner3Type,
-                                i.Scanner3Resolution
+                                i.Scanner3Resolution,
+                                i.Type,
+                                i.Technology,
+
 
                             })
                         })

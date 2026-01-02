@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./style.css";
@@ -113,6 +114,14 @@ function AdminDeleteHistory() {
         >
           Next
         </button>
+      </div>
+      <div className="text-center my-4">
+        <Link
+          to="/adminpanel"
+          className="btn btn-outline-dark px-3 px-sm-4 py-2 w-sm-auto"
+        >
+          ⬅ Back to Admin Panel
+        </Link>
       </div>
     </div>
   );

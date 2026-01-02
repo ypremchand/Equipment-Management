@@ -44,6 +44,10 @@ function Inventory({ closeMenu }) {
     else if (slug.includes("scanner1")) route = "/scanner1";
     else if (slug.includes("scanner2")) route = "/scanner2";
     else if (slug.includes("scanner3")) route = "/scanner3";
+    else if (slug.includes("barcode")) route = "/barcodes";
+
+
+
 
     navigate(route);
     if (typeof closeMenu === "function") closeMenu();

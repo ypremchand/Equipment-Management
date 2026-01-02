@@ -182,6 +182,17 @@ namespace backend_app.Controllers
                     _context.Entry(scanner3).State = EntityState.Modified;
                 }
             }
+            else if (item.AssetType.ToLower() == "barcode")
+            {
+                var barcode = await _context.Barcodes
+                    .FirstOrDefaultAsync(x => x.Id == item.AssetTypeItemId);
+
+                if (barcode != null)
+                {
+                    barcode.Remarks = "No";
+                    _context.Entry(barcode).State = EntityState.Modified;
+                }
+            }
             // 3️⃣ REMOVE FROM DAMAGED LIST
             _context.DamagedAssets.Remove(item);
 

@@ -7,6 +7,10 @@ import "./style.css";
 function ReturnAssets() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const pageSize = 6;
+  
 
   const navigate = useNavigate();
 
@@ -30,30 +34,36 @@ function ReturnAssets() {
     return isNaN(dt.getTime()) ? "—" : dt.toLocaleString();
   };
 
-  const fetchRequests = useCallback(async () => {
-    if (!user?.email) {
-      setRequests([]);
-      setLoading(false);
-      return;
-    }
+const fetchRequests = useCallback(async () => {
+  if (!user?.email) {
+    setRequests([]);
+    setLoading(false);
+    setTotalPages(1);
+    setPage(1);
+    return;
+  }
 
-    try {
-      const res = await axios.get(
-        `${API}/by-email?email=${encodeURIComponent(user.email)}`
-      );
+  try {
+    const res = await axios.get(
+      `${API}/by-email?email=${encodeURIComponent(user.email)}`
+    );
 
-      const data = Array.isArray(res.data)
-        ? res.data
-        : res.data?.requests ?? [];
+    const data = Array.isArray(res.data)
+      ? res.data
+      : res.data?.requests ?? [];
 
-      setRequests(data || []);
-    } catch (err) {
-      console.error("Error fetching requests:", err);
-      setRequests([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [user?.email]);
+    setRequests(data);
+    setTotalPages(Math.ceil(data.length / pageSize));
+    setPage(1); //default page
+  } catch (err) {
+    console.error("Error fetching requests:", err);
+    setRequests([]);
+    setTotalPages(1);
+  } finally {
+    setLoading(false);
+  }
+}, [user?.email, pageSize]);
+
 
   useEffect(() => {
     fetchRequests();
@@ -76,7 +86,6 @@ function ReturnAssets() {
           reason: "User deleted their request"
         }
       });
-
       setRequests((prev) => prev.filter((r) => get(r, "id", "Id") !== id));
     } catch (err) {
       console.error("Error deleting request:", err);
@@ -84,6 +93,17 @@ function ReturnAssets() {
     }
   };
 
+  const paginatedRequests = requests.slice(
+  (page - 1) * pageSize,
+  page * pageSize
+);
+  const nextPage = () => {
+    if (page < totalPages) setPage((prev) => prev + 1);
+  };
+
+  const prevPage = () => {
+    if (page > 1) setPage((prev) => prev - 1);
+  };
 
   return (
     <div className="return-asset-page container mt-4">
@@ -99,7 +119,7 @@ function ReturnAssets() {
         </div>
       ) : (
         <div className="row g-3">
-          {requests.map((r, i) => {
+          {paginatedRequests.map((r, i) => {
             const id = get(r, "id", "Id");
             const requestDate = get(r, "requestDate", "RequestDate");
             const status = get(r, "status", "Status");
@@ -112,7 +132,9 @@ function ReturnAssets() {
 
                     {/* Header */}
                     <div className="d-flex justify-content-between">
-                      <h5 className="card-title">Request #{i + 1}</h5>
+                     <h5 className="card-title">
+  Request #{(page - 1) * pageSize + i + 1}
+</h5>
                       <span
                         className={`badge ${status === "Returned"
                           ? "bg-success"
@@ -151,7 +173,9 @@ function ReturnAssets() {
                           className="border rounded p-2 mb-2 bg-light"
                         >
                           <strong>{item.asset?.name}</strong>{" "}
-                          — Requested: {item.requestedQuantity}
+                          — Requested: {item.requestedQuantity}<br></br>
+                          <strong>{item.asset?.name}</strong>{" "}
+                          — Approved: {item.approvedQuantity}
                           <div
                             className="small mt-1"
                             style={{ lineHeight: "1.25" }}
@@ -199,13 +223,22 @@ function ReturnAssets() {
                             {item.scanner2Resolution && (
                               <div>• Scanner2 Resolution: {item.scanner2Resolution}</div>
                             )}
-                             {/* Scanner3 fields */}
+                            {/* Scanner3 fields */}
                             {item.scanner3Type && (
                               <div>• Scanner3 Type: {item.scanner3Type}</div>
                             )}
 
                             {item.scanner3Resolution && (
                               <div>• Scanner3 Resolution: {item.scanner3Resolution}</div>
+                            )}
+
+                            {/*Barcode Scanner fields */}
+                            {item.type && (
+                              <div>• Barcode Type: {item.type}</div>
+                            )}
+
+                            {item.technology && (
+                              <div>• Barcode Technology: {item.technology}</div>
                             )}
 
                           </div>
@@ -246,8 +279,22 @@ function ReturnAssets() {
                       )}
 
                       {status === "Approved" && (
-                        <button className="btn btn-sm btn-success" disabled>
-                          Approved
+                        <button
+                          className="btn btn-sm btn-success"
+                          onClick={async () => {
+                            try {
+                              await axios.post(`${API}/mark-received/${id}`, {
+                                userName: user?.name || "User"
+                              });
+
+                              alert("✅ Assets received successfully");
+                              fetchRequests(); // refresh list
+                            } catch (err) {
+                              alert("Failed to mark assets as received");
+                            }
+                          }}
+                        >
+                          Received
                         </button>
                       )}
                     </div>
@@ -258,6 +305,28 @@ function ReturnAssets() {
           })}
         </div>
       )}
+      {/* Pagination */}
+          <div className="d-flex justify-content-center mt-3 gap-2">
+            <button
+              className="btn btn-outline-primary"
+              disabled={page === 1}
+              onClick={prevPage}
+            >
+              ◀️ Prev
+            </button>
+
+            <span className="align-self-center">
+              Page {page} of {totalPages}
+            </span>
+
+            <button
+              className="btn btn-outline-primary"
+              disabled={page === totalPages}
+              onClick={nextPage}
+            >
+              Next ▶️
+            </button>
+          </div>
     </div>
   );
 }
